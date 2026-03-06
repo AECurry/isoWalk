@@ -8,7 +8,6 @@
 //  The View is dumb — it only reads from and calls into this ViewModel.
 //
 
-
 import SwiftUI
 import Observation
 import Combine
@@ -31,9 +30,6 @@ final class WalkSessionViewModel {
     private var timerCancellable: AnyCancellable?
     private var amplitudeLink: CADisplayLink?
     private var backgroundTime: Date?
-
-    // Tracks whether the timer was running before an alert paused it,
-    // so resumeAfterAlert() knows whether to restart or stay paused.
     private var wasRunningBeforeAlert = false
 
     deinit {
@@ -47,10 +43,13 @@ final class WalkSessionViewModel {
         WalkSessionOptions.clearActive()
         activeSession = nil
 
+        // pace is now passed into WalkSessionOptions
         let session = WalkSessionOptions(
             duration: duration,
             music: music,
-            startTime: Date()
+            pace: pace,
+            startTime: Date(),
+            wasPaused: false
         )
 
         activeSession = session
@@ -76,6 +75,12 @@ final class WalkSessionViewModel {
             timerState = .paused
             isAudioPlaying = false
             stopTimer()
+            // Mark session as having been paused — used for Unbroken badge
+            if var session = activeSession {
+                session.wasPaused = true
+                activeSession = session
+                WalkSessionOptions.saveActive(session)
+            }
         case .paused:
             timerState = .running
             isAudioPlaying = true
@@ -100,9 +105,6 @@ final class WalkSessionViewModel {
         activeSession = nil
     }
 
-    // Called the moment a confirmation alert appears (stop, back, tab tap).
-    // Freezes the timer without changing the visible timerState so the UI
-    // doesn't flicker. Records whether it was running so we can restore it.
     func pauseForAlert() {
         wasRunningBeforeAlert = timerState == .running
         if timerState == .running {
@@ -111,8 +113,6 @@ final class WalkSessionViewModel {
         }
     }
 
-    // Called when the user taps Cancel on a confirmation alert.
-    // Restores the timer exactly as it was before the alert appeared.
     func resumeAfterAlert() {
         if wasRunningBeforeAlert {
             startTimer()
@@ -134,7 +134,6 @@ final class WalkSessionViewModel {
             if timerState == .running {
                 backgroundTime = Date()
                 stopTimer()
-                // timerState stays .running so we know to resume on return
             }
         case .active:
             if let bg = backgroundTime {
@@ -219,4 +218,3 @@ final class WalkSessionViewModel {
         }
     }
 }
-

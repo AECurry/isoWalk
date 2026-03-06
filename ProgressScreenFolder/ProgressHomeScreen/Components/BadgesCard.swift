@@ -4,9 +4,10 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: ProgressScreenFolder/Components/
+//
 //  COMPONENT — dumb child.
 //  Label ABOVE number. Max width 340, centered, responsive.
+//  Tappable — presents BadgesScreenView as fullScreenCover.
 //  Receives badgesEarned from parent — owns nothing.
 //
 
@@ -15,6 +16,8 @@ import SwiftUI
 struct BadgesCard: View {
 
     let badgesEarned: Int
+
+    @State private var showBadgesScreen = false
 
     // MARK: - Design Constants
     private let cardCornerRadius: CGFloat = 14
@@ -26,47 +29,53 @@ struct BadgesCard: View {
     private let labelFontSize: CGFloat = 16
 
     var body: some View {
-        HStack(spacing: 16) {
+        Button(action: { showBadgesScreen = true }) {
+            HStack(spacing: 16) {
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Badges Earned")
-                    .font(.custom("Inter-Regular", size: labelFontSize))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.8))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Badges Earned")
+                        .font(.custom("Inter-Regular", size: labelFontSize))
+                        .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.8))
 
-                Text("\(badgesEarned)")
-                    .font(.custom("Inter-Bold", size: valueFontSize))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue)
-                    .contentTransition(.numericText())
-            }
+                    Text("\(badgesEarned)")
+                        .font(.custom("Inter-Bold", size: valueFontSize))
+                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .contentTransition(.numericText())
+                }
 
-            Spacer()
+                Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(isoWalkColors.balticBlue)
-                    .frame(width: trophyCircleSize, height: trophyCircleSize)
+                ZStack {
+                    Circle()
+                        .fill(isoWalkColors.balticBlue)
+                        .frame(width: trophyCircleSize, height: trophyCircleSize)
 
-                if UIImage(named: "TrophyIcon") != nil {
-                    Image("TrophyIcon")
-                        .renderingMode(.template)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: trophyIconSize, height: trophyIconSize)
-                        .foregroundColor(.white)
-                } else {
-                    Image(systemName: "trophy.fill")
-                        .font(.system(size: trophyIconSize))
-                        .foregroundColor(.white)
+                    if UIImage(named: "TrophyIcon") != nil {
+                        Image("TrophyIcon")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: trophyIconSize, height: trophyIconSize)
+                            .foregroundColor(.white)
+                    } else {
+                        Image(systemName: "trophy.fill")
+                            .font(.system(size: trophyIconSize))
+                            .foregroundColor(.white)
+                    }
                 }
             }
+            .padding(.horizontal, 24)
+            .frame(maxWidth: maxCardWidth)
+            .frame(height: cardHeight)
+            .background(
+                RoundedRectangle(cornerRadius: cardCornerRadius)
+                    .fill(isoWalkColors.ivory)
+            )
         }
-        .padding(.horizontal, 24)
-        .frame(maxWidth: maxCardWidth)
-        .frame(height: cardHeight)
-        .background(
-            RoundedRectangle(cornerRadius: cardCornerRadius)
-                .fill(Color(UIColor.systemGray6).opacity(0.92))
-        )
+        .buttonStyle(.plain)
+        .fullScreenCover(isPresented: $showBadgesScreen) {
+            BadgesScreenView()
+        }
     }
 }
 
@@ -81,4 +90,3 @@ struct BadgesCard: View {
         }
     }
 }
-

@@ -78,7 +78,7 @@ struct TodayStatsCard: View {
         .frame(height: cardHeight)
         .background(
             RoundedRectangle(cornerRadius: cardCornerRadius)
-                .fill(Color(UIColor.systemGray6).opacity(0.92))
+                .fill(isoWalkColors.ivory)
         )
     }
 }

@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: ProgressScreenFolder/Components/
 //  COMPONENT — dumb child.
 //  24-hour dashed timeline. Max 3 session markers at actual time positions.
 //  "12 AM _ _ _ 12 AM" all on the same line, 16pt from card bottom.
@@ -31,7 +30,7 @@ struct TodayTimelineCard: View {
         ZStack(alignment: .bottomLeading) {
             // Card background
             RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color(UIColor.systemGray6).opacity(0.92))
+                .fill(isoWalkColors.ivory)
 
             // Timeline row — labels + dashed line on same baseline
             GeometryReader { geo in
@@ -66,7 +65,7 @@ struct TodayTimelineCard: View {
                         SessionMarkerGroup(barHeights: barHeights)
                             .offset(
                                 x: xPos - 7,
-                                y: -(bottomPadding + 4) // sits just above the line
+                                y: -(bottomPadding + 4)
                             )
                     }
                 }
@@ -87,7 +86,6 @@ struct TodayTimelineCard: View {
 }
 
 // MARK: - Dashed Line
-// Stretches to fill all available horizontal space via maxWidth: .infinity
 private struct TimelineDashLine: View {
     var body: some View {
         GeometryReader { geo in
@@ -106,7 +104,6 @@ private struct TimelineDashLine: View {
 }
 
 // MARK: - Session Marker Group
-// Three bars of varied height, aligned to bottom so they sit on the line.
 private struct SessionMarkerGroup: View {
     let barHeights: [CGFloat]
 
@@ -133,27 +130,41 @@ private struct SessionMarkerGroup: View {
             // One session — morning
             TodayTimelineCard(sessions: [
                 CompletedSession(
-                    id: UUID(), duration: .twentyOne, music: .placeholder,
+                    id: UUID(),
+                    duration: .twentyOne,
+                    music: .placeholder,
+                    pace: .steady,
                     startTime: Calendar.current.date(bySettingHour: 8, minute: 30, second: 0, of: Date())!,
-                    endTime: Date(), totalDuration: 21 * 60
+                    endTime: Date(),
+                    totalDuration: 21 * 60,
+                    wasPaused: false
                 )
             ])
 
             // Two sessions
             TodayTimelineCard(sessions: [
                 CompletedSession(
-                    id: UUID(), duration: .twentyOne, music: .placeholder,
+                    id: UUID(),
+                    duration: .twentyOne,
+                    music: .placeholder,
+                    pace: .steady,
                     startTime: Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!,
-                    endTime: Date(), totalDuration: 21 * 60
+                    endTime: Date(),
+                    totalDuration: 21 * 60,
+                    wasPaused: false
                 ),
                 CompletedSession(
-                    id: UUID(), duration: .twentyOne, music: .placeholder,
+                    id: UUID(),
+                    duration: .twentyOne,
+                    music: .placeholder,
+                    pace: .steady,
                     startTime: Calendar.current.date(bySettingHour: 17, minute: 0, second: 0, of: Date())!,
-                    endTime: Date(), totalDuration: 21 * 60
+                    endTime: Date(),
+                    totalDuration: 21 * 60,
+                    wasPaused: false
                 )
             ])
         }
         .padding()
     }
 }
-
