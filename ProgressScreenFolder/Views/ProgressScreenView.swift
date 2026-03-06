@@ -10,7 +10,6 @@
 //  Owns ProgressViewModel. Passes data down to child components.
 //
 
-
 import SwiftUI
 
 struct ProgressScreenView: View {
@@ -20,8 +19,8 @@ struct ProgressScreenView: View {
     @AppStorage(IsoWalkThemes.selectedThemeKey) private var selectedThemeId: String = IsoWalkThemes.defaultThemeId
     private var theme: IsoWalkTheme { IsoWalkThemes.current(selectedId: selectedThemeId) }
 
-    // BottomNavBar (~83pt) + 32pt gap above it
     private let navBarHeight: CGFloat = 115
+    private let maxCardWidth: CGFloat = 340
 
     var body: some View {
         GeometryReader { geo in
@@ -44,11 +43,13 @@ struct ProgressScreenView: View {
                     )
 
                     // MARK: - FIXED: Today label
+                    // Left edge aligned to match card left edge on all screen sizes
+                    let cardLeadingPadding = max((geo.size.width - maxCardWidth) / 2, 16)
                     HStack {
                         Text("Today")
-                            .font(.custom("Inter-Bold", size: 22))
+                            .font(.custom("Inter-Bold", size: 24))
                             .foregroundColor(isoWalkColors.deepSpaceBlue)
-                            .padding(.leading, 20)
+                            .padding(.leading, cardLeadingPadding)
                             .padding(.top, 10)
                             .padding(.bottom, 4)
                         Spacer()
@@ -77,8 +78,6 @@ struct ProgressScreenView: View {
                 }
                 .frame(width: geo.size.width, height: geo.size.height - navBarHeight)
             }
-            // This is the centering fix — fills full width and height
-            // so GeometryReader does not default to top-left alignment
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
         .onAppear {
@@ -103,4 +102,3 @@ struct ProgressScreenView: View {
     ProgressScreenView()
         .environment(SessionManager())
 }
-
