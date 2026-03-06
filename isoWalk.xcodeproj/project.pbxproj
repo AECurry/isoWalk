@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		49FDC6672F3F623900550D4F /* isoWalkMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FDC6662F3F623900550D4F /* isoWalkMainView.swift */; };
+		49467D362F590B7100EBEB04 /* isoWalkMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49467D352F590B7100EBEB04 /* isoWalkMainView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		49467D352F590B7100EBEB04 /* isoWalkMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = isoWalkMainView.swift; sourceTree = "<group>"; };
 		49FDC6582F3E2E9A00550D4F /* isoWalk.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = isoWalk.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		49FDC6662F3F623900550D4F /* isoWalkMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = isoWalkMainView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -57,7 +57,7 @@
 		49FDC64F2F3E2E9A00550D4F = {
 			isa = PBXGroup;
 			children = (
-				49FDC6662F3F623900550D4F /* isoWalkMainView.swift */,
+				49467D352F590B7100EBEB04 /* isoWalkMainView.swift */,
 				49FDC6682F3F63C100550D4F /* HomeScreenFolder */,
 				49FDC6C82F44AE5000550D4F /* ProgressScreenFolder */,
 				49FDC6C62F44AD9D00550D4F /* FeaturesScreenFolder */,
@@ -153,7 +153,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				49FDC6672F3F623900550D4F /* isoWalkMainView.swift in Sources */,
+				49467D362F590B7100EBEB04 /* isoWalkMainView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

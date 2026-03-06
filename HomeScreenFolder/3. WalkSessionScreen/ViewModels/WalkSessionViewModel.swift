@@ -219,3 +219,4 @@ final class WalkSessionViewModel {
         }
     }
 }
+
