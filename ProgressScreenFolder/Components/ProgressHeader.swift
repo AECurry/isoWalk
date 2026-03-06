@@ -25,14 +25,16 @@ struct ProgressHeader: View {
     private let iconSize: CGFloat = 32
 
     var body: some View {
-        HStack(alignment: .center, spacing: 24) {
+        HStack(alignment: .center, spacing: 16) {
 
             // LEFT: Greeting
             VStack(spacing: 8) {
                 Image("HandWavingIcon")
+                    .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
                     .frame(width: iconSize, height: iconSize)
+                    .foregroundColor(isoWalkColors.deepSpaceBlue)
 
                 VStack(spacing: 4) {
                     Text("Hello")
@@ -45,8 +47,6 @@ struct ProgressHeader: View {
             .frame(width: sideColumnWidth)
 
             // CENTER: Badge Display
-            // Shows most recently earned badge.
-            // Placeholder shown until first badge is earned.
             ZStack {
                 Circle()
                     .fill(isoWalkColors.balticBlue.opacity(0.12))
@@ -55,30 +55,26 @@ struct ProgressHeader: View {
                 if let badgeId = mostRecentBadgeId {
                     BadgeIconView(badgeId: badgeId, size: 80)
                 } else {
-                    // No badge earned yet — neutral placeholder
                     Image(systemName: "figure.walk.circle")
                         .font(.system(size: 60))
                         .foregroundColor(isoWalkColors.balticBlue.opacity(0.4))
                 }
             }
 
-            // RIGHT: Total Walks
-            VStack(spacing: 8) {
-                Image("CalendarIcon")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: iconSize, height: iconSize)
+            // RIGHT: Total Walks — no icon, number + two-line label centered
+            VStack(spacing: 4) {
+                Text("\(totalWalkCount)")
+                    .font(.custom("Inter-Bold", size: 32))
+                    .foregroundColor(isoWalkColors.deepSpaceBlue)
 
-                VStack(spacing: 4) {
-                    Text("\(totalWalkCount)")
-                        .font(.custom("Inter-Bold", size: 24))
-
-                    Text("Total Walks")
-                        .fixedSize(horizontal: true, vertical: false)
-                }
-                .font(.custom("Inter-Regular", size: 16))
-                .foregroundColor(isoWalkColors.deepSpaceBlue)
+                Text("Total")
+                    .font(.custom("Inter-Regular", size: 16))
+                    .foregroundColor(isoWalkColors.deepSpaceBlue)
+                Text("Walks")
+                    .font(.custom("Inter-Regular", size: 16))
+                    .foregroundColor(isoWalkColors.deepSpaceBlue)
             }
+            .multilineTextAlignment(.center)
             .frame(width: sideColumnWidth)
         }
         .frame(maxWidth: .infinity, alignment: .center)
@@ -88,8 +84,6 @@ struct ProgressHeader: View {
 }
 
 // MARK: - Badge Icon View
-// Resolves a badgeId string to the correct SF Symbol or asset.
-// Extend this switch as new badges are added.
 struct BadgeIconView: View {
     let badgeId: String
     let size: CGFloat
@@ -132,4 +126,3 @@ struct BadgeIconView: View {
         }
     }
 }
-
