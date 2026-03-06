@@ -18,6 +18,7 @@ struct isoWalkColors {
     static let white      = Color(hex: "FFFEFE")
     static let silverMist = Color(hex: "E0E0E0")
     static let slateGray  = Color(hex: "707070")
+    static let ivory      = Color(hex: "FFFFEE")
 
     // Background colors
     static let parchment = Color(hex: "F5F0E8")
