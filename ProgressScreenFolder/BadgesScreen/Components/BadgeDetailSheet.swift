@@ -5,8 +5,9 @@
 //  Created by AnnElaine on 2/17/26.
 //
 //  COMPONENT — dumb child.
-//  Sheet shown when user taps a badge in the grid.
-//  Locked: shows name and requirement, hides badge artwork.
+//  Centered popup shown when user taps a badge in the grid.
+//  Not a sheet — rendered as an overlay in BadgesScreenView.
+//  Locked: shows name and requirement only, no badge artwork revealed.
 //  Unlocked: shows badge artwork, name, requirement, and date earned.
 //  Receives badge data from parent — owns nothing.
 //
@@ -20,31 +21,36 @@ struct BadgeDetailSheet: View {
     let onDismiss: () -> Void
 
     // MARK: - Design Constants
-    private let circleSize: CGFloat = 120
-    private let iconSize: CGFloat = 60
-    private let titleFontSize: CGFloat = 24
-    private let bodyFontSize: CGFloat = 16
-    private let labelFontSize: CGFloat = 14
+    private let popupWidth: CGFloat = 320
+    private let popupHeight: CGFloat = 400
+    private let cornerRadius: CGFloat = 24
+    private let circleSize: CGFloat = 100
+    private let iconSize: CGFloat = 50
+    private let titleFontSize: CGFloat = 22
+    private let bodyFontSize: CGFloat = 15
+    private let labelFontSize: CGFloat = 13
 
     var body: some View {
         ZStack {
-            // Background
-            if let bgName = currentThemeBackground {
-                Image(bgName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .ignoresSafeArea()
-            } else {
-                isoWalkColors.ivory.ignoresSafeArea()
-            }
+            // Dim background — tapping it dismisses
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .onTapGesture { onDismiss() }
 
-            VStack(spacing: 24) {
+            // Popup card
+            VStack(spacing: 16) {
 
-                // Drag indicator
-                Capsule()
-                    .fill(isoWalkColors.deepSpaceBlue.opacity(0.3))
-                    .frame(width: 40, height: 5)
-                    .padding(.top, 12)
+                // Close button top right
+                HStack {
+                    Spacer()
+                    Button(action: onDismiss) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.5))
+                    }
+                    .padding(.top, 16)
+                    .padding(.trailing, 16)
+                }
 
                 // Badge circle
                 ZStack {
@@ -62,17 +68,16 @@ struct BadgeDetailSheet: View {
                     .font(.custom("Inter-Bold", size: titleFontSize))
                     .foregroundColor(isoWalkColors.deepSpaceBlue)
                     .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
 
-                // Status label
+                // Status pill
                 if badge.isUnlocked {
                     Text("Badge Earned")
                         .font(.custom("Inter-SemiBold", size: labelFontSize))
                         .foregroundColor(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 6)
-                        .background(
-                            Capsule().fill(isoWalkColors.forestGreen)
-                        )
+                        .background(Capsule().fill(isoWalkColors.forestGreen))
 
                     if let dateString = badge.formattedUnlockDate {
                         Text(dateString)
@@ -86,13 +91,12 @@ struct BadgeDetailSheet: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 6)
                         .background(
-                            Capsule()
-                                .fill(isoWalkColors.deepSpaceBlue.opacity(0.5))
+                            Capsule().fill(isoWalkColors.deepSpaceBlue.opacity(0.5))
                         )
                 }
 
                 // Requirement
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     Text("How to Earn")
                         .font(.custom("Inter-SemiBold", size: labelFontSize))
                         .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.7))
@@ -101,14 +105,29 @@ struct BadgeDetailSheet: View {
                         .font(.custom("Inter-Regular", size: bodyFontSize))
                         .foregroundColor(isoWalkColors.deepSpaceBlue)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
+                        .padding(.horizontal, 24)
                 }
 
                 Spacer()
             }
+            .frame(width: popupWidth, height: popupHeight)
+            .background(
+                Group {
+                    if let bgName = currentThemeBackground {
+                        Image(bgName)
+                            .resizable()
+                            .scaledToFill()
+                            // Scale up so the texture center covers the card edges —
+                            // eliminates the light cream line at the card boundary
+                            .scaleEffect(1.2)
+                    } else {
+                        isoWalkColors.ivory
+                    }
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .shadow(color: .black.opacity(0.25), radius: 20, x: 0, y: 8)
         }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.hidden)
     }
 
     @ViewBuilder
@@ -139,9 +158,12 @@ struct BadgeDetailSheet: View {
 }
 
 #Preview {
-    BadgeDetailSheet(
-        badge: Badge(id: .firstSteps, unlockedDate: Date()),
-        themeId: "Golden",
-        onDismiss: {}
-    )
+    ZStack {
+        Color.gray.ignoresSafeArea()
+        BadgeDetailSheet(
+            badge: Badge(id: .firstSteps, unlockedDate: nil),
+            themeId: "Golden",
+            onDismiss: {}
+        )
+    }
 }

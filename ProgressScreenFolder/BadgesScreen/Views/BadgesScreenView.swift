@@ -4,12 +4,12 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//
 //  PARENT VIEW — intentionally dumb.
 //  Owns BadgesViewModel. Passes data down to child components.
 //  Presented as fullScreenCover from isoWalkMainView.
 //  Back button calls onDismiss.
 //  Uses GeometryReader height cap so content never goes behind BottomNavBar.
+//  BadgeDetailSheet shown as centered overlay — not a sheet.
 //
 
 import SwiftUI
@@ -22,7 +22,6 @@ struct BadgesScreenView: View {
     @AppStorage(IsoWalkThemes.selectedThemeKey) private var selectedThemeId: String = IsoWalkThemes.defaultThemeId
     @State private var selectedTab: Int = 1
 
-    // Same nav bar height used in ProgressScreenView
     private let navBarHeight: CGFloat = 115
 
     private let columns = [
@@ -35,22 +34,18 @@ struct BadgesScreenView: View {
             ZStack(alignment: .top) {
                 themeBackground
 
-                // Content is hard-capped so it never reaches the BottomNavBar
+                // Content hard-capped above BottomNavBar
                 VStack(spacing: 0) {
 
                     // MARK: - Back Button Row
-                    // Extra top padding pushes it below the status bar
                     HStack {
                         Button(action: onDismiss) {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(isoWalkColors.deepSpaceBlue)
-                            // Standardize padding for a better hit target
                                 .padding(12)
                         }
-                        
                         .padding(.leading, 32)
-                        
                         Spacer()
                     }
                     .padding(.top, -8)
@@ -83,6 +78,19 @@ struct BadgesScreenView: View {
                     }
                 }
                 .frame(width: geo.size.width, height: geo.size.height - navBarHeight)
+
+                // MARK: - Centered Badge Detail Popup
+                // Rendered in ZStack so it floats centered over everything
+                if viewModel.showDetailSheet, let badge = viewModel.selectedBadge {
+                    BadgeDetailSheet(
+                        badge: badge,
+                        themeId: selectedThemeId,
+                        onDismiss: { viewModel.showDetailSheet = false }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.showDetailSheet)
+                    .zIndex(10)
+                }
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
@@ -103,15 +111,6 @@ struct BadgesScreenView: View {
         }
         .onAppear {
             viewModel.loadBadges()
-        }
-        .sheet(isPresented: $viewModel.showDetailSheet) {
-            if let badge = viewModel.selectedBadge {
-                BadgeDetailSheet(
-                    badge: badge,
-                    themeId: selectedThemeId,
-                    onDismiss: { viewModel.showDetailSheet = false }
-                )
-            }
         }
     }
 
