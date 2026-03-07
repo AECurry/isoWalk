@@ -4,11 +4,9 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//
 //  COMPONENT — dumb child.
-//  Label ABOVE number. Max width 340, centered, responsive.
-//  Tappable — presents BadgesScreenView as fullScreenCover.
-//  Receives badgesEarned from parent — owns nothing.
+//  Tappable — calls onShowBadges so isoWalkMainView presents BadgesScreenView.
+//  Owns nothing — receives badgesEarned and onShowBadges from parent.
 //
 
 import SwiftUI
@@ -16,8 +14,7 @@ import SwiftUI
 struct BadgesCard: View {
 
     let badgesEarned: Int
-
-    @State private var showBadgesScreen = false
+    let onShowBadges: () -> Void
 
     // MARK: - Design Constants
     private let cardCornerRadius: CGFloat = 14
@@ -29,7 +26,7 @@ struct BadgesCard: View {
     private let labelFontSize: CGFloat = 16
 
     var body: some View {
-        Button(action: { showBadgesScreen = true }) {
+        Button(action: onShowBadges) {
             HStack(spacing: 16) {
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -73,9 +70,6 @@ struct BadgesCard: View {
             )
         }
         .buttonStyle(.plain)
-        .fullScreenCover(isPresented: $showBadgesScreen) {
-            BadgesScreenView()
-        }
     }
 }
 
@@ -85,8 +79,8 @@ struct BadgesCard: View {
             .resizable()
             .ignoresSafeArea()
         VStack(spacing: 12) {
-            BadgesCard(badgesEarned: 8)
-            BadgesCard(badgesEarned: 0)
+            BadgesCard(badgesEarned: 8, onShowBadges: {})
+            BadgesCard(badgesEarned: 0, onShowBadges: {})
         }
     }
 }

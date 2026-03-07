@@ -4,15 +4,17 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: ProgressScreenFolder/Views/
 //
 //  PARENT VIEW — intentionally dumb.
 //  Owns ProgressViewModel. Passes data down to child components.
+//  Receives onShowBadges from isoWalkMainView and passes it to BadgesCard.
 //
 
 import SwiftUI
 
 struct ProgressScreenView: View {
+
+    let onShowBadges: () -> Void
 
     @State private var viewModel = ProgressViewModel()
     @AppStorage("userName") private var userName: String = ""
@@ -43,11 +45,10 @@ struct ProgressScreenView: View {
                     )
 
                     // MARK: - FIXED: Today label
-                    // Left edge aligned to match card left edge on all screen sizes
                     let cardLeadingPadding = max((geo.size.width - maxCardWidth) / 2, 16)
                     HStack {
                         Text("Today")
-                            .font(.custom("Inter-Bold", size: 24))
+                            .font(.custom("Inter-Bold", size: 22))
                             .foregroundColor(isoWalkColors.deepSpaceBlue)
                             .padding(.leading, cardLeadingPadding)
                             .padding(.top, 10)
@@ -69,7 +70,10 @@ struct ProgressScreenView: View {
                                 walksThisMonth: viewModel.walksThisMonth,
                                 longestStreak: viewModel.longestStreak
                             )
-                            BadgesCard(badgesEarned: viewModel.badgesEarned)
+                            BadgesCard(
+                                badgesEarned: viewModel.badgesEarned,
+                                onShowBadges: onShowBadges
+                            )
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.top, 4)
@@ -99,6 +103,6 @@ struct ProgressScreenView: View {
 }
 
 #Preview {
-    ProgressScreenView()
+    ProgressScreenView(onShowBadges: {})
         .environment(SessionManager())
 }

@@ -4,19 +4,26 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
+//
 //  PARENT VIEW — intentionally dumb.
 //  Owns BadgesViewModel. Passes data down to child components.
-//  Presented as a sheet from BadgesCard in ProgressScreenView.
-//  Back button (top left) dismisses the sheet.
+//  Presented as fullScreenCover from isoWalkMainView.
+//  Back button calls onDismiss.
+//  Uses GeometryReader height cap so content never goes behind BottomNavBar.
 //
 
 import SwiftUI
 
 struct BadgesScreenView: View {
 
-    @Environment(\.dismiss) private var dismiss
+    let onDismiss: () -> Void
+
     @State private var viewModel = BadgesViewModel()
     @AppStorage(IsoWalkThemes.selectedThemeKey) private var selectedThemeId: String = IsoWalkThemes.defaultThemeId
+    @State private var selectedTab: Int = 1
+
+    // Same nav bar height used in ProgressScreenView
+    private let navBarHeight: CGFloat = 115
 
     private let columns = [
         GridItem(.flexible(), spacing: 24),
@@ -24,54 +31,75 @@ struct BadgesScreenView: View {
     ]
 
     var body: some View {
-        ZStack(alignment: .top) {
-            themeBackground
+        GeometryReader { geo in
+            ZStack(alignment: .top) {
+                themeBackground
 
-            VStack(spacing: 0) {
+                // Content is hard-capped so it never reaches the BottomNavBar
+                VStack(spacing: 0) {
 
-                // MARK: - Back Button Row
-                HStack {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(isoWalkColors.deepSpaceBlue)
-                            .padding(12)
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 8)
-                .padding(.top, 8)
-
-                // MARK: - Scrollable Content
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 24) {
-
-                        // MARK: - Featured Badge
-                        BadgeFeaturedView(
-                            mostRecentBadge: viewModel.mostRecentBadge,
-                            earnedCount: viewModel.earnedCount,
-                            themeId: selectedThemeId,
-                            showReveal: viewModel.showRevealAnimation,
-                            newlyUnlockedBadge: viewModel.newlyUnlockedBadge,
-                            onRevealComplete: { viewModel.didShowReveal() }
-                        )
-
-                        // MARK: - Badge Grid
-                        // Fixed order 1-38. Locked badges show placeholder.
-                        LazyVGrid(columns: columns, spacing: 32) {
-                            ForEach(viewModel.badges) { badge in
-                                BadgeGridCell(
-                                    badge: badge,
-                                    themeId: selectedThemeId,
-                                    onTap: { viewModel.didTapBadge(badge) }
-                                )
-                            }
+                    // MARK: - Back Button Row
+                    // Extra top padding pushes it below the status bar
+                    HStack {
+                        Button(action: onDismiss) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(isoWalkColors.deepSpaceBlue)
+                            // Standardize padding for a better hit target
+                                .padding(12)
                         }
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 40)
+                        
+                        .padding(.leading, 32)
+                        
+                        Spacer()
+                    }
+                    .padding(.top, -8)
+
+                    // MARK: - Scrollable Content
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 24) {
+
+                            BadgeFeaturedView(
+                                mostRecentBadge: viewModel.mostRecentBadge,
+                                earnedCount: viewModel.earnedCount,
+                                themeId: selectedThemeId,
+                                showReveal: viewModel.showRevealAnimation,
+                                newlyUnlockedBadge: viewModel.newlyUnlockedBadge,
+                                onRevealComplete: { viewModel.didShowReveal() }
+                            )
+
+                            LazyVGrid(columns: columns, spacing: 32) {
+                                ForEach(viewModel.badges) { badge in
+                                    BadgeGridCell(
+                                        badge: badge,
+                                        themeId: selectedThemeId,
+                                        onTap: { viewModel.didTapBadge(badge) }
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 16)
+                        }
                     }
                 }
+                .frame(width: geo.size.width, height: geo.size.height - navBarHeight)
             }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+        }
+        // MARK: - BottomNavBar overlay
+        .overlay(alignment: .bottom) {
+            BottomNavBar(
+                selectedTab: $selectedTab,
+                onTabReTap: { onDismiss() },
+                onTabChange: { tab in
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { selectedTab = tab }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        onDismiss()
+                    }
+                }
+            )
         }
         .onAppear {
             viewModel.loadBadges()
@@ -102,5 +130,5 @@ struct BadgesScreenView: View {
 }
 
 #Preview {
-    BadgesScreenView()
+    BadgesScreenView(onDismiss: {})
 }

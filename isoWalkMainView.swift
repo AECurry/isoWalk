@@ -5,7 +5,7 @@
 //  Created by AnnElaine on 2/17/26.
 //
 //  ROOT VIEW — intentionally dumb.
-//  Owns tab state, the fullScreenCover, and the single BottomNavBar instance.
+//  Owns tab state, fullScreenCovers, and the single BottomNavBar instance.
 //  Has zero knowledge of walk sessions, alerts, or what any tab contains.
 //
 
@@ -14,6 +14,7 @@ import SwiftUI
 struct isoWalkMainView: View {
     @State private var selectedTab: Int = 0
     @State private var showingSetup: Bool = false
+    @State private var showingBadges: Bool = false
     @Environment(SessionManager.self) private var sessionManager
 
     var body: some View {
@@ -32,7 +33,7 @@ struct isoWalkMainView: View {
             )) {
                 GetWalkingView(onStartWalking: { showingSetup = true })
                     .tag(0)
-                ProgressScreenView()
+                ProgressScreenView(onShowBadges: { showingBadges = true })
                     .tag(1)
                 Text("Features Screen")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -47,14 +48,16 @@ struct isoWalkMainView: View {
                 onTabReTap: { showingSetup = true }
             )
         }
-        // MARK: - fullScreenCover
-        // WalkSetUpView owns its NavigationStack and pushes WalkSessionView.
-        // This view only knows the cover exists — nothing about what is inside.
+        // MARK: - Walk Setup Cover
         .fullScreenCover(isPresented: $showingSetup) {
             WalkSetUpView(
                 selectedTab: $selectedTab,
                 onDismiss: { showingSetup = false }
             )
+        }
+        // MARK: - Badges Cover
+        .fullScreenCover(isPresented: $showingBadges) {
+            BadgesScreenView(onDismiss: { showingBadges = false })
         }
     }
 }
