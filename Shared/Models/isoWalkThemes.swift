@@ -9,9 +9,9 @@
 //  in AnimatedImageConfig.swift. Nothing else needs to change.
 //
 //  CONTAINS:
-//  - ThemeAnimationType    → the animation styles a theme can have
-//  - IsoWalkTheme          → model for ONE theme (singular is correct Swift convention)
-//  - IsoWalkThemes         → the collection/catalog of ALL themes + helper methods
+//  - ThemeAnimationType    → animation styles a theme can have
+//  - IsoWalkTheme          → model for ONE theme
+//  - IsoWalkThemes         → catalog of ALL themes + helper methods
 //
 
 import SwiftUI
@@ -35,23 +35,26 @@ struct IsoWalkTheme: Identifiable {
     let id: String
     let displayName: String
     let mainImageName: String
+    let logoImageName: String          // Hero image shown on FeaturesHomeScreen
     let backgroundImageName: String?
     let backgroundColor: Color
     let animationType: ThemeAnimationType
 
-    // Built dynamically from a config — no manual wiring needed
+    // Built dynamically from config — no manual wiring needed.
+    // Adding logoImageName here means every future theme gets it for free.
     init(from config: AnimatedImageConfig) {
-        self.id = config.id
-        self.displayName = config.name
-        self.mainImageName = config.imageName
+        self.id                  = config.id
+        self.displayName         = config.name
+        self.mainImageName       = config.imageName
+        self.logoImageName       = config.logoImageName
         self.backgroundImageName = "GoldenTextureBackground"
-        self.backgroundColor = isoWalkColors.parchment
+        self.backgroundColor     = isoWalkColors.parchment
 
         if config.isRotationEnabled && config.isScaleEnabled {
             self.animationType = .rotatingPulse(
-                rotSpeed: config.rotationSpeed,
-                minScale: config.minScale,
-                maxScale: config.maxScale,
+                rotSpeed:   config.rotationSpeed,
+                minScale:   config.minScale,
+                maxScale:   config.maxScale,
                 pulseSpeed: config.scaleSpeed
             )
         } else if config.isRotationEnabled {
@@ -60,7 +63,7 @@ struct IsoWalkTheme: Identifiable {
             self.animationType = .pulse(
                 minScale: config.minScale,
                 maxScale: config.maxScale,
-                speed: config.scaleSpeed
+                speed:    config.scaleSpeed
             )
         } else {
             self.animationType = .none
@@ -70,29 +73,24 @@ struct IsoWalkTheme: Identifiable {
 
 // ==========================================
 // MARK: - ISOWALKSTHEMES (the full catalog)
-// Derives all themes dynamically from AnimatedImageLibrary.
-// Add a new theme there — this catalog updates automatically.
 //
 // USAGE ANYWHERE IN THE APP:
-//   IsoWalkThemes.all               → [IsoWalkTheme]
+//   IsoWalkThemes.all                  → [IsoWalkTheme]
 //   IsoWalkThemes.current(selectedId:) → IsoWalkTheme
-//   IsoWalkThemes.selectedThemeKey  → UserDefaults key String
+//   IsoWalkThemes.selectedThemeKey     → UserDefaults key String
+//   IsoWalkThemes.defaultThemeId       → "koi"
 // ==========================================
 
 struct IsoWalkThemes {
 
-    // All available themes, built from AnimatedImageLibrary
     static var all: [IsoWalkTheme] {
         AnimatedImageLibrary.availableImages.map { IsoWalkTheme(from: $0) }
     }
 
-    // The currently selected theme
     static func current(selectedId: String) -> IsoWalkTheme {
         all.first { $0.id == selectedId } ?? all[0]
     }
 
-    // UserDefaults key — use this everywhere so it never drifts out of sync
     static let selectedThemeKey = "selectedThemeId"
     static let defaultThemeId   = "koi"
 }
-

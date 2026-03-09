@@ -35,8 +35,7 @@ struct isoWalkMainView: View {
                     .tag(0)
                 ProgressScreenView(onShowBadges: { showingBadges = true })
                     .tag(1)
-                Text("Features Screen")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                FeaturesHomeScreenView()
                     .tag(2)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))

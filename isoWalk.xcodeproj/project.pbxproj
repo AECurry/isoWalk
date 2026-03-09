@@ -15,9 +15,22 @@
 		49FDC6582F3E2E9A00550D4F /* isoWalk.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = isoWalk.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		49434A662F5F20D300192EB4 /* Exceptions for "isoWalk" folder in "isoWalk" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 49FDC6572F3E2E9A00550D4F /* isoWalk */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		49FDC65A2F3E2E9A00550D4F /* isoWalk */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				49434A662F5F20D300192EB4 /* Exceptions for "isoWalk" folder in "isoWalk" target */,
+			);
 			path = isoWalk;
 			sourceTree = "<group>";
 		};
@@ -291,6 +304,8 @@
 				DEVELOPMENT_TEAM = 5X3HQD4PR7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = isoWalk/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "isoWalk uses Apple Health to track your walking distance, steps, and calories burned.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -323,6 +338,8 @@
 				DEVELOPMENT_TEAM = 5X3HQD4PR7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = isoWalk/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "isoWalk uses Apple Health to track your walking distance, steps, and calories burned.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

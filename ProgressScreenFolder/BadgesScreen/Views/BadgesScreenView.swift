@@ -77,10 +77,9 @@ struct BadgesScreenView: View {
                         }
                     }
                 }
-                .frame(width: geo.size.width, height: geo.size.height - navBarHeight)
+                .frame(width: geo.size.width, height: max(0, geo.size.height - navBarHeight))
 
                 // MARK: - Centered Badge Detail Popup
-                // Rendered in ZStack so it floats centered over everything
                 if viewModel.showDetailSheet, let badge = viewModel.selectedBadge {
                     BadgeDetailSheet(
                         badge: badge,

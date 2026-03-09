@@ -4,10 +4,15 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
+//  TO ADD A NEW THEME: add ONE AnimatedImageConfig entry to availableImages below.
+//  Everything else (theme grid, hero image, logo, backgrounds) picks it up automatically.
+//
 
 import SwiftUI
 
-
+// ==========================================
+// MARK: - SIZE ENUM
+// ==========================================
 
 enum AnimatedImageSize {
     case extraLarge  // 335x335 — Get Walking screen
@@ -21,14 +26,22 @@ enum AnimatedImageSize {
     }
 }
 
-
+// ==========================================
+// MARK: - CONFIG MODEL
+// ==========================================
 
 struct AnimatedImageConfig: Identifiable {
-    // MARK: - Core Identification Properties
+
+    // MARK: - Core Identification
     let id: String
     let name: String
     let imageName: String
     let description: String
+
+    // MARK: - Logo image shown on FeaturesHomeScreen hero area.
+    // Usually the same as imageName. Override if you have a separate
+    // dedicated logo asset for the theme.
+    let logoImageName: String
 
     // MARK: - Default Animation Settings
     let defaultRotationSpeed: Double
@@ -37,50 +50,47 @@ struct AnimatedImageConfig: Identifiable {
     let defaultScaleSpeed: Double
 
     // MARK: - UserDefaults Key Generators
-    var userRotationSpeedKey: String { "\(id)_rotationSpeed" }
-    var userMinScaleKey: String { "\(id)_minScale" }
-    var userMaxScaleKey: String { "\(id)_maxScale" }
-    var userScaleSpeedKey: String { "\(id)_scaleSpeed" }
-    var rotationEnabledKey: String { "\(id)_rotationEnabled" }
-    var scaleEnabledKey: String { "\(id)_scaleEnabled" }
+    var userRotationSpeedKey:   String { "\(id)_rotationSpeed" }
+    var userMinScaleKey:        String { "\(id)_minScale" }
+    var userMaxScaleKey:        String { "\(id)_maxScale" }
+    var userScaleSpeedKey:      String { "\(id)_scaleSpeed" }
+    var rotationEnabledKey:     String { "\(id)_rotationEnabled" }
+    var scaleEnabledKey:        String { "\(id)_scaleEnabled" }
 
-    // MARK: - Computed Properties (User Custom OR Default)
+    // MARK: - Computed (User Custom OR Default)
     var rotationSpeed: Double {
-        let userValue = UserDefaults.standard.double(forKey: userRotationSpeedKey)
-        return userValue > 0 ? userValue : defaultRotationSpeed
+        let v = UserDefaults.standard.double(forKey: userRotationSpeedKey)
+        return v > 0 ? v : defaultRotationSpeed
     }
-
     var minScale: Double {
-        let userValue = UserDefaults.standard.double(forKey: userMinScaleKey)
-        return userValue > 0 ? userValue : defaultMinScale
+        let v = UserDefaults.standard.double(forKey: userMinScaleKey)
+        return v > 0 ? v : defaultMinScale
     }
-
     var maxScale: Double {
-        let userValue = UserDefaults.standard.double(forKey: userMaxScaleKey)
-        return userValue > 0 ? userValue : defaultMaxScale
+        let v = UserDefaults.standard.double(forKey: userMaxScaleKey)
+        return v > 0 ? v : defaultMaxScale
     }
-
     var scaleSpeed: Double {
-        let userValue = UserDefaults.standard.double(forKey: userScaleSpeedKey)
-        return userValue > 0 ? userValue : defaultScaleSpeed
+        let v = UserDefaults.standard.double(forKey: userScaleSpeedKey)
+        return v > 0 ? v : defaultScaleSpeed
     }
-
     var isRotationEnabled: Bool {
-        if UserDefaults.standard.object(forKey: rotationEnabledKey) == nil { return true }
+        guard UserDefaults.standard.object(forKey: rotationEnabledKey) != nil else { return true }
         return UserDefaults.standard.bool(forKey: rotationEnabledKey)
     }
-
     var isScaleEnabled: Bool {
-        if UserDefaults.standard.object(forKey: scaleEnabledKey) == nil { return true }
+        guard UserDefaults.standard.object(forKey: scaleEnabledKey) != nil else { return true }
         return UserDefaults.standard.bool(forKey: scaleEnabledKey)
     }
 
     // MARK: - Initializer
+    // logoImageName defaults to imageName so existing themes need no change.
     init(
         id: String,
         name: String,
         imageName: String,
         description: String,
+        logoImageName: String? = nil,
         defaultRotationSpeed: Double = 20.0,
         defaultMinScale: Double = 0.94,
         defaultMaxScale: Double = 1.56,
@@ -90,45 +100,63 @@ struct AnimatedImageConfig: Identifiable {
         self.name = name
         self.imageName = imageName
         self.description = description
+        self.logoImageName = logoImageName ?? imageName
         self.defaultRotationSpeed = defaultRotationSpeed
         self.defaultMinScale = defaultMinScale
         self.defaultMaxScale = defaultMaxScale
         self.defaultScaleSpeed = defaultScaleSpeed
     }
 
-    // MARK: - User Customization Methods
-    func saveRotationSpeed(_ speed: Double) { UserDefaults.standard.set(speed, forKey: userRotationSpeedKey) }
-    func saveMinScale(_ scale: Double)      { UserDefaults.standard.set(scale, forKey: userMinScaleKey) }
-    func saveMaxScale(_ scale: Double)      { UserDefaults.standard.set(scale, forKey: userMaxScaleKey) }
-    func saveScaleSpeed(_ speed: Double)    { UserDefaults.standard.set(speed, forKey: userScaleSpeedKey) }
-    func saveRotationEnabled(_ enabled: Bool) { UserDefaults.standard.set(enabled, forKey: rotationEnabledKey) }
-    func saveScaleEnabled(_ enabled: Bool)    { UserDefaults.standard.set(enabled, forKey: scaleEnabledKey) }
+    // MARK: - Customization Methods
+    func saveRotationSpeed(_ speed: Double)     { UserDefaults.standard.set(speed,   forKey: userRotationSpeedKey) }
+    func saveMinScale(_ scale: Double)          { UserDefaults.standard.set(scale,   forKey: userMinScaleKey) }
+    func saveMaxScale(_ scale: Double)          { UserDefaults.standard.set(scale,   forKey: userMaxScaleKey) }
+    func saveScaleSpeed(_ speed: Double)        { UserDefaults.standard.set(speed,   forKey: userScaleSpeedKey) }
+    func saveRotationEnabled(_ enabled: Bool)   { UserDefaults.standard.set(enabled, forKey: rotationEnabledKey) }
+    func saveScaleEnabled(_ enabled: Bool)      { UserDefaults.standard.set(enabled, forKey: scaleEnabledKey) }
 
-    // MARK: - Reset Method
     func resetToDefaults() {
-        UserDefaults.standard.removeObject(forKey: userRotationSpeedKey)
-        UserDefaults.standard.removeObject(forKey: userMinScaleKey)
-        UserDefaults.standard.removeObject(forKey: userMaxScaleKey)
-        UserDefaults.standard.removeObject(forKey: userScaleSpeedKey)
-        UserDefaults.standard.removeObject(forKey: rotationEnabledKey)
-        UserDefaults.standard.removeObject(forKey: scaleEnabledKey)
+        [userRotationSpeedKey, userMinScaleKey, userMaxScaleKey,
+         userScaleSpeedKey, rotationEnabledKey, scaleEnabledKey]
+            .forEach { UserDefaults.standard.removeObject(forKey: $0) }
     }
 }
 
-
+// ==========================================
+// MARK: - LIBRARY
+// ADD A NEW THEME HERE — nothing else needs to change.
+// ==========================================
 
 struct AnimatedImageLibrary {
+
     static let availableImages: [AnimatedImageConfig] = [
+
+        // ── Theme 1: Japanese Koi ──────────────────────────────────────
         AnimatedImageConfig(
             id: "koi",
             name: "Japanese Koi",
             imageName: "JapaneseKoi",
             description: "Two koi swimming in harmony",
+            logoImageName: "JapaneseKoi",   // override if you add a separate logo asset
             defaultRotationSpeed: 88.0,
             defaultMinScale: 1.0,
             defaultMaxScale: 1.32,
             defaultScaleSpeed: 8.0
-        )
+        ),
+
+        // ── ADD NEW THEMES BELOW THIS LINE ────────────────────────────
+        // Example:
+        // AnimatedImageConfig(
+        //     id: "bonsai",
+        //     name: "Japanese Tree with Clouds",
+        //     imageName: "BonsaiTree",
+        //     description: "A peaceful bonsai under cloudy skies",
+        //     logoImageName: "BonsaiTree",
+        //     defaultRotationSpeed: 0,
+        //     defaultMinScale: 0.96,
+        //     defaultMaxScale: 1.08,
+        //     defaultScaleSpeed: 6.0
+        // ),
     ]
 
     static func getImage(byId id: String) -> AnimatedImageConfig? {
@@ -137,7 +165,7 @@ struct AnimatedImageLibrary {
 
     static func getCurrentImage() -> AnimatedImageConfig {
         let selectedId = UserDefaults.standard.string(forKey: "selectedImageId") ?? "koi"
-        return getImage(byId: selectedId) ?? availableImages.first!
+        return getImage(byId: selectedId) ?? availableImages[0]
     }
 
     static func setCurrentImage(id: String) {
@@ -148,4 +176,3 @@ struct AnimatedImageLibrary {
         availableImages.forEach { $0.resetToDefaults() }
     }
 }
-
