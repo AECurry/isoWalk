@@ -13,18 +13,15 @@ import SwiftUI
 
 struct ThemeGridSection: View {
 
-    // MARK: - Input
     let themes: [IsoWalkTheme]
     let selectedThemeId: String
     let onSelect: (IsoWalkTheme) -> Void
 
-    // MARK: - Layout
     private let columns = [
         GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
     ]
 
-    // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             sectionHeader
@@ -32,12 +29,10 @@ struct ThemeGridSection: View {
         }
     }
 
-    // MARK: - Subviews
-
     private var sectionHeader: some View {
         Text("Theme Options")
             .font(.custom("Inter-Bold", size: 28))
-            .foregroundStyle(isoWalkColors.adaptiveText)
+            .foregroundStyle(isoWalkColors.deepSpaceBlue)
             .padding(.horizontal, 4)
     }
 
@@ -62,4 +57,3 @@ struct ThemeGridSection: View {
     )
     .padding()
 }
-

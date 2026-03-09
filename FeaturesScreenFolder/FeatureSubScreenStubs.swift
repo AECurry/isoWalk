@@ -8,21 +8,9 @@
 //
 //  TEMPORARY STUBS — each will be replaced with its own
 //  MVVM folder (Views / ViewModels / Components) when built.
-//  Keeping them in one file until each screen is ready to build.
 //
 
 import SwiftUI
-
-// ==========================================
-// MARK: - Name & Email
-// ==========================================
-
-struct NameEmailScreenView: View {
-    var body: some View {
-        Text("Name & Email — Coming Soon")
-            .navigationBarHidden(true)
-    }
-}
 
 // ==========================================
 // MARK: - Notifications

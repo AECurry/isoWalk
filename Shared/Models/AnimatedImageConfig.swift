@@ -5,7 +5,7 @@
 //  Created by AnnElaine on 2/17/26.
 //
 //  TO ADD A NEW THEME: add ONE AnimatedImageConfig entry to availableImages below.
-//  Everything else (theme grid, hero image, logo, backgrounds) picks it up automatically.
+//  Everything else picks it up automatically.
 //
 
 import SwiftUI
@@ -32,24 +32,17 @@ enum AnimatedImageSize {
 
 struct AnimatedImageConfig: Identifiable {
 
-    // MARK: - Core Identification
     let id: String
     let name: String
     let imageName: String
     let description: String
-
-    // MARK: - Logo image shown on FeaturesHomeScreen hero area.
-    // Usually the same as imageName. Override if you have a separate
-    // dedicated logo asset for the theme.
     let logoImageName: String
 
-    // MARK: - Default Animation Settings
     let defaultRotationSpeed: Double
     let defaultMinScale: Double
     let defaultMaxScale: Double
     let defaultScaleSpeed: Double
 
-    // MARK: - UserDefaults Key Generators
     var userRotationSpeedKey:   String { "\(id)_rotationSpeed" }
     var userMinScaleKey:        String { "\(id)_minScale" }
     var userMaxScaleKey:        String { "\(id)_maxScale" }
@@ -57,7 +50,6 @@ struct AnimatedImageConfig: Identifiable {
     var rotationEnabledKey:     String { "\(id)_rotationEnabled" }
     var scaleEnabledKey:        String { "\(id)_scaleEnabled" }
 
-    // MARK: - Computed (User Custom OR Default)
     var rotationSpeed: Double {
         let v = UserDefaults.standard.double(forKey: userRotationSpeedKey)
         return v > 0 ? v : defaultRotationSpeed
@@ -83,8 +75,6 @@ struct AnimatedImageConfig: Identifiable {
         return UserDefaults.standard.bool(forKey: scaleEnabledKey)
     }
 
-    // MARK: - Initializer
-    // logoImageName defaults to imageName so existing themes need no change.
     init(
         id: String,
         name: String,
@@ -93,7 +83,7 @@ struct AnimatedImageConfig: Identifiable {
         logoImageName: String? = nil,
         defaultRotationSpeed: Double = 20.0,
         defaultMinScale: Double = 0.94,
-        defaultMaxScale: Double = 1.56,
+        defaultMaxScale: Double = 1.08,
         defaultScaleSpeed: Double = 4.0
     ) {
         self.id = id
@@ -107,7 +97,6 @@ struct AnimatedImageConfig: Identifiable {
         self.defaultScaleSpeed = defaultScaleSpeed
     }
 
-    // MARK: - Customization Methods
     func saveRotationSpeed(_ speed: Double)     { UserDefaults.standard.set(speed,   forKey: userRotationSpeedKey) }
     func saveMinScale(_ scale: Double)          { UserDefaults.standard.set(scale,   forKey: userMinScaleKey) }
     func saveMaxScale(_ scale: Double)          { UserDefaults.standard.set(scale,   forKey: userMaxScaleKey) }
@@ -137,10 +126,10 @@ struct AnimatedImageLibrary {
             name: "Japanese Koi",
             imageName: "JapaneseKoi",
             description: "Two koi swimming in harmony",
-            logoImageName: "JapaneseKoi",   // override if you add a separate logo asset
+            logoImageName: "JapaneseKoi",
             defaultRotationSpeed: 88.0,
             defaultMinScale: 1.0,
-            defaultMaxScale: 1.32,
+            defaultMaxScale: 1.08,   // reduced from 1.32 — subtle pulse
             defaultScaleSpeed: 8.0
         ),
 

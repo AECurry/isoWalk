@@ -47,6 +47,8 @@ struct isoWalkMainView: View {
                 onTabReTap: { showingSetup = true }
             )
         }
+        // Keyboard slides over the entire app — BottomNavBar never moves
+        .ignoresSafeArea(.keyboard)
         // MARK: - Walk Setup Cover
         .fullScreenCover(isPresented: $showingSetup) {
             WalkSetUpView(

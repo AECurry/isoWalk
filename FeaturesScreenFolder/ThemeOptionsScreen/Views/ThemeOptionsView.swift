@@ -7,39 +7,82 @@
 //  PARENT VIEW — intentionally dumb.
 //  Owns the ViewModel. Passes data down. Passes callbacks up.
 //  Contains zero business logic — all logic lives in ThemeOptionsViewModel.
+//
 
 import SwiftUI
 
 struct ThemeOptionsView: View {
 
-    // MARK: - ViewModel (owned here, passed down as data)
     @State private var viewModel = ThemeOptionsViewModel()
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage(IsoWalkThemes.selectedThemeKey) private var selectedThemeId: String = IsoWalkThemes.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkThemes.current(selectedId: selectedThemeId) }
 
-    // MARK: - Body
+    private let navBarHeight: CGFloat = 115
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 32) {
-                // Add the frameSize: 220 here
-                ThemeHeaderPreview(
-                    theme: viewModel.selectedTheme,
-                    frameSize: 220
-                )
-                .padding(.top, 24)
+        GeometryReader { geo in
+            ZStack(alignment: .top) {
 
-                ThemeGridSection(
-                    themes: viewModel.themes,
-                    selectedThemeId: viewModel.selectedThemeId,
-                    onSelect: { theme in
-                        viewModel.select(theme: theme)
+                themeBackground
+
+                // ScrollView ignores safe area so content can start from very top
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 24) {
+
+                        // Top padding clears the back button row
+                        ThemeHeaderPreview(
+                            theme: viewModel.selectedTheme,
+                            frameSize: 200
+                        )
+                        .padding(.top, 56)
+                        .frame(maxWidth: .infinity)
+
+                        ThemeGridSection(
+                            themes: viewModel.themes,
+                            selectedThemeId: viewModel.selectedThemeId,
+                            onSelect: { theme in
+                                viewModel.select(theme: theme)
+                            }
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 20)
+
+                        Spacer(minLength: 24)
                     }
-                )
-                .padding(.horizontal, 20)
+                    .frame(maxWidth: .infinity)
+                }
+                .ignoresSafeArea(edges: .top)
+                .frame(width: geo.size.width, height: max(0, geo.size.height - navBarHeight))
 
-                Spacer(minLength: 24)
+                // MARK: - Custom Back Button
+                HStack {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(isoWalkColors.deepSpaceBlue)
+                            .padding(12)
+                    }
+                    .padding(.leading, 32)
+                    Spacer()
+                }
+                .padding(.top, -8)
             }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
-        .background(isoWalkColors.adaptiveBackground)
-        .navigationTitle("")
+        .navigationBarHidden(true)
+    }
+
+    @ViewBuilder
+    private var themeBackground: some View {
+        if let bgName = theme.backgroundImageName {
+            Image(bgName)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .ignoresSafeArea()
+        } else {
+            theme.backgroundColor.ignoresSafeArea()
+        }
     }
 }
 
@@ -48,4 +91,3 @@ struct ThemeOptionsView: View {
         ThemeOptionsView()
     }
 }
-
