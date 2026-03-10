@@ -4,13 +4,11 @@
 //
 //  Created by AnnElaine on 3/9/26.
 //
-//
 //  PARENT VIEW — intentionally dumb.
 //  Owns NameEmailViewModel. Passes data and callbacks to child components.
-//  Pushed via NavigationStack from FeaturesHomeScreenView.
+//  ScrollView starts from top of screen (ignoresSafeArea).
+//  Back button floats over content in ZStack — same structure as ThemeOptionsView.
 //  Keyboard slides OVER the BottomNavBar — never pushes content up.
-//  Dragging down on scroll OR tapping background dismisses keyboard.
-//  Color.clear overlay removed — was blocking text field taps.
 //
 
 import SwiftUI
@@ -30,86 +28,81 @@ struct NameEmailScreenView: View {
             ZStack(alignment: .top) {
                 themeBackground
 
-                VStack(spacing: 0) {
+                // MARK: - Scrollable Content (starts from very top)
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 0) {
 
-                    // MARK: - Back button row
-                    HStack {
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(isoWalkColors.deepSpaceBlue)
-                                .padding(12)
-                        }
-                        .padding(.leading, 32)
-                        Spacer()
-                    }
-                    .padding(.top, -8)
+                            ThemeHeaderPreview(
+                                theme: theme,
+                                frameSize: 200
+                            )
+                            .padding(.top, 56)
+                            .padding(.bottom, 16)
+                            .frame(maxWidth: .infinity)
 
-                    // MARK: - Scrollable content
-                    ScrollViewReader { proxy in
-                        ScrollView(.vertical, showsIndicators: false) {
-                            VStack(spacing: 0) {
+                            HStack {
+                                Text("Name & Email")
+                                    .font(.custom("Inter-Bold", size: 34))
+                                    .foregroundColor(isoWalkColors.deepSpaceBlue)
+                                Spacer()
+                            }
+                            .padding(.horizontal, max((geo.size.width - maxCardWidth) / 2, 20))
+                            .padding(.bottom, 28)
 
-                                // Hero theme image
-                                ThemeHeaderPreview(
-                                    theme: theme,
-                                    frameSize: 160
-                                )
-                                .padding(.top, 8)
-                                .padding(.bottom, 16)
+                            // MARK: - Name Field
+                            NameInputField(
+                                name: $viewModel.name,
+                                maxLength: viewModel.maxNameLength,
+                                onEndEditing: { viewModel.nameFieldDidEndEditing() }
+                            )
+                            .padding(.horizontal, max((geo.size.width - maxCardWidth) / 2, 20))
+                            .padding(.bottom, 24)
+                            .id("nameField")
 
-                                // Title
-                                HStack {
-                                    Text("Name & Email")
-                                        .font(.custom("Inter-Bold", size: 34))
-                                        .foregroundColor(isoWalkColors.deepSpaceBlue)
-                                    Spacer()
+                            // MARK: - Email Field
+                            EmailInputField(
+                                email: $viewModel.email,
+                                errorMessage: viewModel.emailError,
+                                isSaved: viewModel.emailSaved,
+                                onSave: {
+                                    viewModel.saveEmail()
+                                    hideKeyboard()
                                 }
-                                .padding(.horizontal, max((geo.size.width - maxCardWidth) / 2, 20))
-                                .padding(.bottom, 28)
-
-                                // MARK: - Name Field
-                                NameInputField(
-                                    name: $viewModel.name,
-                                    maxLength: viewModel.maxNameLength,
-                                    onEndEditing: { viewModel.nameFieldDidEndEditing() }
-                                )
-                                .padding(.horizontal, max((geo.size.width - maxCardWidth) / 2, 20))
-                                .padding(.bottom, 24)
-                                .id("nameField")
-
-                                // MARK: - Email Field
-                                EmailInputField(
-                                    email: $viewModel.email,
-                                    errorMessage: viewModel.emailError,
-                                    isSaved: viewModel.emailSaved,
-                                    onSave: {
-                                        viewModel.saveEmail()
-                                        hideKeyboard()
-                                    }
-                                )
-                                .padding(.horizontal, max((geo.size.width - maxCardWidth) / 2, 20))
-                                .padding(.bottom, 40)
-                                .id("emailField")
-                                .onTapGesture {
-                                    withAnimation {
-                                        proxy.scrollTo("emailField", anchor: .center)
-                                    }
+                            )
+                            .padding(.horizontal, max((geo.size.width - maxCardWidth) / 2, 20))
+                            .padding(.bottom, 40)
+                            .id("emailField")
+                            .onTapGesture {
+                                withAnimation {
+                                    proxy.scrollTo("emailField", anchor: .center)
                                 }
                             }
-                            .frame(maxWidth: .infinity)
-                            // Tapping the background (not a field) dismisses keyboard
-                            .background(
-                                Color.clear
-                                    .contentShape(Rectangle())
-                                    .onTapGesture { hideKeyboard() }
-                            )
                         }
-                        // Dragging scroll view down dismisses keyboard naturally
-                        .scrollDismissesKeyboard(.interactively)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture { hideKeyboard() }
+                        )
                     }
+                    .ignoresSafeArea(edges: .top)
+                    .scrollDismissesKeyboard(.interactively)
+                    .frame(width: geo.size.width, height: max(0, geo.size.height - navBarHeight))
                 }
-                .frame(width: geo.size.width, height: max(0, geo.size.height - navBarHeight))
+
+                // MARK: - Back Button (floats over scroll content)
+                HStack {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(isoWalkColors.deepSpaceBlue)
+                            .padding(12)
+                    }
+                    .padding(.leading, 56)
+                    Spacer()
+                }
+                .padding(.top, -8)
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
@@ -142,3 +135,4 @@ struct NameEmailScreenView: View {
         NameEmailScreenView()
     }
 }
+

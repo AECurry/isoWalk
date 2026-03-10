@@ -63,7 +63,7 @@ struct ThemeOptionsView: View {
                             .foregroundColor(isoWalkColors.deepSpaceBlue)
                             .padding(12)
                     }
-                    .padding(.leading, 32)
+                    .padding(.leading, 56)
                     Spacer()
                 }
                 .padding(.top, -8)
@@ -91,3 +91,4 @@ struct ThemeOptionsView: View {
         ThemeOptionsView()
     }
 }
+
