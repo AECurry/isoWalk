@@ -4,6 +4,11 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
+//  LOCATION: Models/
+//
+//  MODEL — represents an active or in-progress walk session.
+//  CompletedSession has been moved to its own file: CompletedSession.swift
+//
 
 import Foundation
 
@@ -11,12 +16,12 @@ struct WalkSessionOptions: Identifiable, Codable {
     let id: UUID
     let duration: DurationOptions
     let music: MusicOptions
-    let pace: PaceOptions          // added — needed for badge logic
+    let pace: PaceOptions
     let startTime: Date
     var endTime: Date?
     var isCompleted: Bool = false
     var pausedAt: TimeInterval?
-    var wasPaused: Bool = false    // added — tracks if user ever tapped pause
+    var wasPaused: Bool = false
 
     init(
         id: UUID = UUID(),
@@ -40,6 +45,7 @@ struct WalkSessionOptions: Identifiable, Codable {
         self.wasPaused = wasPaused
     }
 
+    // MARK: - Computed
     var durationInSeconds: TimeInterval {
         TimeInterval(duration.minutes * 60)
     }
@@ -62,7 +68,7 @@ struct WalkSessionOptions: Identifiable, Codable {
         min(1.0, elapsedTime / durationInSeconds)
     }
 
-    // MARK: - Persistence
+    // MARK: - Active Session Persistence
     static func saveActive(_ session: WalkSessionOptions) {
         if let encoded = try? JSONEncoder().encode(session) {
             UserDefaults.standard.set(encoded, forKey: "activeWalkSession")
@@ -70,7 +76,8 @@ struct WalkSessionOptions: Identifiable, Codable {
     }
 
     static func loadActive() -> WalkSessionOptions? {
-        guard let data = UserDefaults.standard.data(forKey: "activeWalkSession") else { return nil }
+        guard let data = UserDefaults.standard.data(forKey: "activeWalkSession")
+        else { return nil }
         return try? JSONDecoder().decode(WalkSessionOptions.self, from: data)
     }
 
@@ -78,28 +85,27 @@ struct WalkSessionOptions: Identifiable, Codable {
         UserDefaults.standard.removeObject(forKey: "activeWalkSession")
     }
 
+    // MARK: - Complete Session
+    // Creates a CompletedSession, saves it, and clears the active session.
+    @discardableResult
     static func completeSession(_ session: WalkSessionOptions) -> CompletedSession {
-        var completed = session
-        completed.endTime = Date()
-        completed.isCompleted = true
-
         let completedSession = CompletedSession(
-            id: completed.id,
-            duration: completed.duration,
-            music: completed.music,
-            pace: completed.pace,
-            startTime: completed.startTime,
-            endTime: completed.endTime ?? Date(),
-            totalDuration: completed.durationInSeconds,
-            wasPaused: completed.wasPaused
+            id: session.id,
+            duration: session.duration,
+            music: session.music,
+            pace: session.pace,
+            startTime: session.startTime,
+            endTime: session.endTime ?? Date(),
+            totalDuration: session.durationInSeconds,
+            wasPaused: session.wasPaused
         )
 
         var allSessions = CompletedSession.loadAll()
         allSessions.append(completedSession)
         CompletedSession.saveAll(allSessions)
 
-        // Mark pause-free badge trigger if session was never paused
-        if !completed.wasPaused {
+        // Pause-free badge trigger
+        if !session.wasPaused {
             UserDefaults.standard.set(true, forKey: "hasCompletedPauseFreeSession")
         }
 
@@ -107,28 +113,3 @@ struct WalkSessionOptions: Identifiable, Codable {
         return completedSession
     }
 }
-
-// MARK: - Completed Session
-// Stores finished walks. pace and wasPaused added for badge evaluation.
-struct CompletedSession: Identifiable, Codable {
-    let id: UUID
-    let duration: DurationOptions
-    let music: MusicOptions
-    let pace: PaceOptions          // added
-    let startTime: Date
-    let endTime: Date
-    let totalDuration: TimeInterval
-    let wasPaused: Bool            // added
-
-    static func loadAll() -> [CompletedSession] {
-        guard let data = UserDefaults.standard.data(forKey: "completedSessions") else { return [] }
-        return (try? JSONDecoder().decode([CompletedSession].self, from: data)) ?? []
-    }
-
-    static func saveAll(_ sessions: [CompletedSession]) {
-        if let encoded = try? JSONEncoder().encode(sessions) {
-            UserDefaults.standard.set(encoded, forKey: "completedSessions")
-        }
-    }
-}
-
