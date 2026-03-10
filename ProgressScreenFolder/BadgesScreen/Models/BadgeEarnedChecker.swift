@@ -244,3 +244,4 @@ struct BadgeEarnedChecker {
         return grouped.values.contains { $0.count >= 3 }
     }
 }
+

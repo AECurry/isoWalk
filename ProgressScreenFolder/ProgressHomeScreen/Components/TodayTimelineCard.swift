@@ -168,3 +168,4 @@ private struct SessionMarkerGroup: View {
         .padding()
     }
 }
+

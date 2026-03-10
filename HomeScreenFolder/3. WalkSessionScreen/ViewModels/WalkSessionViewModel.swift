@@ -43,7 +43,6 @@ final class WalkSessionViewModel {
         WalkSessionOptions.clearActive()
         activeSession = nil
 
-        // pace is now passed into WalkSessionOptions
         let session = WalkSessionOptions(
             duration: duration,
             music: music,
@@ -75,7 +74,6 @@ final class WalkSessionViewModel {
             timerState = .paused
             isAudioPlaying = false
             stopTimer()
-            // Mark session as having been paused — used for Unbroken badge
             if var session = activeSession {
                 session.wasPaused = true
                 activeSession = session
@@ -184,6 +182,9 @@ final class WalkSessionViewModel {
         isAudioPlaying = false
         stopTimer()
         updateFormattedTime()
+
+        // Cancel today's pending reminders — user has now walked
+        DailyReminderScheduler.refreshSchedule()
     }
 
     private func updateFormattedTime() {

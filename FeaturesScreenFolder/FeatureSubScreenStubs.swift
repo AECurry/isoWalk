@@ -13,17 +13,6 @@
 import SwiftUI
 
 // ==========================================
-// MARK: - Notifications
-// ==========================================
-
-struct NotificationsScreenView: View {
-    var body: some View {
-        Text("Notifications — Coming Soon")
-            .navigationBarHidden(true)
-    }
-}
-
-// ==========================================
 // MARK: - Privacy
 // ==========================================
 
