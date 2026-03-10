@@ -56,8 +56,6 @@ struct FeaturesHomeScreenView: View {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
 
-                                // HealthKitCard owns its own HealthKitViewModel —
-                                // no params needed from this parent
                                 HealthKitCard()
                                     .shadow(color: .black.opacity(0.10), radius: cardShadowRadius, x: 0, y: cardShadowY)
                                     .padding(.bottom, 24)
@@ -102,10 +100,7 @@ struct FeaturesHomeScreenView: View {
                 ScientificProofScreenView()
             }
             .navigationDestination(isPresented: $viewModel.navigateToSubmitFeedback) {
-                SubmitFeedbackScreenView(
-                    userName: viewModel.userName,
-                    userEmail: viewModel.userEmail
-                )
+                SubmitFeedbackScreenView()
             }
             .navigationBarHidden(true)
         }
