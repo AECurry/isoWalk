@@ -8,6 +8,10 @@
 //  Displays the animated theme image.
 //  Size comes from AnimatedImageSize defined in AnimatedImageConfig.swift.
 //
+//  FIX: Animation jump and erratic speed resolved.
+//  - DispatchQueue.main.async defers animation start by one run loop tick.
+//  - rotation/scale reset synchronously before the async block.
+//
 
 import SwiftUI
 
@@ -28,34 +32,38 @@ struct SetUpImageArea: View {
             .scaleEffect(scale)
             .id(theme.id)
             .onAppear { applyThemeAnimation() }
+            .onChange(of: theme.id) { applyThemeAnimation() }
     }
 
     private func applyThemeAnimation() {
-        // Reset to starting values first — prevents stacked animations
-        // when onAppear fires again after navigation back to this screen.
         rotation = 0
         scale = 1.0
 
-        switch theme.animationType {
-        case .rotation(let speed):
-            withAnimation(.linear(duration: speed).repeatForever(autoreverses: false)) {
-                rotation = 360
+        DispatchQueue.main.async {
+            switch theme.animationType {
+            case .rotation(let speed):
+                withAnimation(.linear(duration: speed).repeatForever(autoreverses: false)) {
+                    rotation = 360
+                }
+
+            case .pulse(let min, let max, let speed):
+                scale = min
+                withAnimation(.easeInOut(duration: speed).repeatForever(autoreverses: true)) {
+                    scale = max
+                }
+
+            case .rotatingPulse(let rotSpeed, let minSc, let maxSc, let pulseSpeed):
+                withAnimation(.linear(duration: rotSpeed).repeatForever(autoreverses: false)) {
+                    rotation = 360
+                }
+                scale = minSc
+                withAnimation(.easeInOut(duration: pulseSpeed).repeatForever(autoreverses: true)) {
+                    scale = maxSc
+                }
+
+            case .none:
+                break
             }
-        case .pulse(let min, let max, let speed):
-            scale = min
-            withAnimation(.easeInOut(duration: speed).repeatForever(autoreverses: true)) {
-                scale = max
-            }
-        case .rotatingPulse(let rotSpeed, let minSc, let maxSc, let pulseSpeed):
-            withAnimation(.linear(duration: rotSpeed).repeatForever(autoreverses: false)) {
-                rotation = 360
-            }
-            scale = minSc
-            withAnimation(.easeInOut(duration: pulseSpeed).repeatForever(autoreverses: true)) {
-                scale = maxSc
-            }
-        case .none:
-            break
         }
     }
 }

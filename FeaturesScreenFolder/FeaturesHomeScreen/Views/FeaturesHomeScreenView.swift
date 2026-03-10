@@ -37,7 +37,7 @@ struct FeaturesHomeScreenView: View {
                         // MARK: - FIXED: Hero image
                         ThemeHeaderPreview(
                             theme: theme,
-                            frameSize: 160
+                            frameSize: 200
                         )
                         .padding(.top, 8)
                         .padding(.bottom, 8)
