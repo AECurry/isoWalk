@@ -28,7 +28,7 @@ class SessionManager {
     }
 
     // MARK: - Actions
-    func startSession(duration: DurationOptions, pace: PaceOptions, music: MusicOptions) {
+    func startSession(duration: DurationOptions, pace: PaceOptions, music: MusicMode) {
         print("Starting session: \(duration.minutes) min, Pace: \(pace.displayName), Music: \(music.displayName)")
 
         let newSession = WalkSessionOptions(

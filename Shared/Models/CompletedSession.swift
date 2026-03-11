@@ -4,7 +4,7 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: Models/
+//  LOCATION: Shared/Models/
 //
 //  MODEL — pure data, no UI, no business logic.
 //  Represents a finished walk session.
@@ -19,7 +19,7 @@ import Foundation
 struct CompletedSession: Identifiable, Codable {
     let id: UUID
     let duration: DurationOptions
-    let music: MusicOptions
+    let music: MusicMode          // was MusicOptions
     let pace: PaceOptions
     let startTime: Date
     let endTime: Date
@@ -39,3 +39,4 @@ struct CompletedSession: Identifiable, Codable {
         }
     }
 }
+

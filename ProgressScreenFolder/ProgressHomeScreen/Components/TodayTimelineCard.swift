@@ -132,7 +132,7 @@ private struct SessionMarkerGroup: View {
                 CompletedSession(
                     id: UUID(),
                     duration: .twentyOne,
-                    music: .placeholder,
+                    music: .noMusic,          // was .placeholder
                     pace: .steady,
                     startTime: Calendar.current.date(bySettingHour: 8, minute: 30, second: 0, of: Date())!,
                     endTime: Date(),
@@ -146,7 +146,7 @@ private struct SessionMarkerGroup: View {
                 CompletedSession(
                     id: UUID(),
                     duration: .twentyOne,
-                    music: .placeholder,
+                    music: .noMusic,          // was .placeholder
                     pace: .steady,
                     startTime: Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!,
                     endTime: Date(),
@@ -156,7 +156,7 @@ private struct SessionMarkerGroup: View {
                 CompletedSession(
                     id: UUID(),
                     duration: .twentyOne,
-                    music: .placeholder,
+                    music: .noMusic,          // was .placeholder
                     pace: .steady,
                     startTime: Calendar.current.date(bySettingHour: 17, minute: 0, second: 0, of: Date())!,
                     endTime: Date(),

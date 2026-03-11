@@ -22,7 +22,8 @@ struct WalkSessionView: View {
 
     let duration: DurationOptions
     let pace: PaceOptions
-    let music: MusicOptions
+    let musicMode: MusicMode              // was: music: MusicOptions
+    let musicSelection: MusicSelection    // full selection for playback
     var onDismissAll: (() -> Void)?
 
     var body: some View {
@@ -56,10 +57,6 @@ struct WalkSessionView: View {
             }
             .padding(.bottom, 100)
 
-            // MARK: - BottomNavBar
-            // Both onTabReTap and onTabChange use handleTabTap() so that
-            // confirming on any tab — including Walk (the current tab) —
-            // always routes through onNavigateToTab and closes the full cover.
             BottomNavBar(
                 selectedTab: $selectedTab,
                 onTabReTap: {
@@ -88,7 +85,12 @@ struct WalkSessionView: View {
                 }
             }
 
-            vm.initializeSession(duration: duration, pace: pace, music: music)
+            vm.initializeSession(
+                duration: duration,
+                pace: pace,
+                musicMode: musicMode,
+                musicSelection: musicSelection
+            )
         }
         .onDisappear {
             viewModel.saveSessionState()
@@ -127,6 +129,7 @@ struct WalkSessionView: View {
         selectedTab: $selectedTab,
         duration: .twentyOne,
         pace: .steady,
-        music: .placeholder
+        musicMode: .noMusic,
+        musicSelection: MusicSelection()
     )
 }

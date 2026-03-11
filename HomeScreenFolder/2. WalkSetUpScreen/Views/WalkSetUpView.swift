@@ -4,28 +4,23 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
+//  LOCATION: WalkSetUpScreen/Views/
+//
 //  PARENT VIEW — intentionally dumb.
 //  Owns the ViewModel and all popup expanded states.
 //  Modals rendered in root ZStack — guaranteed to float above everything.
 //  Only one popup can be open at a time.
-//  Navigates to WalkSessionView via NavigationStack push — no flash,
-//  no cover sequencing.
-//
-//  BOTTOM NAV BAR:
-//  The overlay nav bar is visible on this screen only.
-//  Once navigateToSession is true, it hides — WalkSessionView owns
-//  its own nav bar wired directly to its coordinator.
-//  This view has zero knowledge of WalkSessionView's internals.
 //
 
 import SwiftUI
 
 struct WalkSetUpView: View {
-    @State private var viewModel = WalkSetUpViewModel()
-    @Binding var selectedTab: Int
-    @State private var paceExpanded: Bool = false
+
+    @State private var viewModel       = WalkSetUpViewModel()
+    @Binding var selectedTab:            Int
+    @State private var paceExpanded:     Bool = false
     @State private var durationExpanded: Bool = false
-    @State private var musicExpanded: Bool = false
+    @State private var musicExpanded:    Bool = false
     @State private var navigateToSession: Bool = false
 
     @AppStorage(IsoWalkThemes.selectedThemeKey) private var selectedThemeId: String = IsoWalkThemes.defaultThemeId
@@ -53,7 +48,7 @@ struct WalkSetUpView: View {
                             isExpanded: $durationExpanded
                         )
                         MusicPopUp(
-                            selectedMusic: $viewModel.selectedMusic,
+                            viewModel: viewModel.musicViewModel,
                             isExpanded: $musicExpanded
                         )
                     }
@@ -71,7 +66,7 @@ struct WalkSetUpView: View {
                     .padding(.bottom, 124)
                 }
 
-                // 2. POPUP MODALS
+                // 2. POPUP MODALS — float above everything in ZStack
                 if paceExpanded {
                     PacePopupModal(
                         selectedPace: $viewModel.selectedPace,
@@ -90,36 +85,28 @@ struct WalkSetUpView: View {
                 }
                 if musicExpanded {
                     MusicPopupModal(
-                        selectedMusic: $viewModel.selectedMusic,
+                        viewModel: viewModel.musicViewModel,
                         isExpanded: $musicExpanded
                     )
                     .ignoresSafeArea()
                     .zIndex(10)
                 }
             }
-            .onChange(of: paceExpanded) {
-                if paceExpanded { durationExpanded = false; musicExpanded = false }
-            }
-            .onChange(of: durationExpanded) {
-                if durationExpanded { paceExpanded = false; musicExpanded = false }
-            }
-            .onChange(of: musicExpanded) {
-                if musicExpanded { paceExpanded = false; durationExpanded = false }
-            }
+            .onChange(of: paceExpanded)     { if paceExpanded     { durationExpanded = false; musicExpanded = false } }
+            .onChange(of: durationExpanded) { if durationExpanded { paceExpanded     = false; musicExpanded = false } }
+            .onChange(of: musicExpanded)    { if musicExpanded    { paceExpanded     = false; durationExpanded = false } }
             .navigationDestination(isPresented: $navigateToSession) {
                 WalkSessionView(
                     selectedTab: $selectedTab,
                     duration: viewModel.selectedDuration,
                     pace: viewModel.selectedPace,
-                    music: viewModel.selectedMusic,
+                    musicMode: viewModel.selectedMusicMode,
+                    musicSelection: viewModel.musicViewModel.selection,
                     onDismissAll: { onDismiss() }
                 )
             }
             .navigationBarHidden(true)
         }
-        // MARK: - BottomNavBar overlay
-        // Hidden once the session screen is pushed — WalkSessionView
-        // owns its own nav bar from that point forward.
         .overlay(alignment: .bottom) {
             if !navigateToSession {
                 BottomNavBar(
@@ -128,12 +115,8 @@ struct WalkSetUpView: View {
                     onTabChange: { tab in
                         var transaction = Transaction()
                         transaction.disablesAnimations = true
-                        withTransaction(transaction) {
-                            selectedTab = tab
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            onDismiss()
-                        }
+                        withTransaction(transaction) { selectedTab = tab }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { onDismiss() }
                     }
                 )
             }

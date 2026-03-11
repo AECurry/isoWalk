@@ -4,7 +4,7 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: Models/
+//  LOCATION: Shared/Models/
 //
 //  MODEL — represents an active or in-progress walk session.
 //  CompletedSession has been moved to its own file: CompletedSession.swift
@@ -15,7 +15,7 @@ import Foundation
 struct WalkSessionOptions: Identifiable, Codable {
     let id: UUID
     let duration: DurationOptions
-    let music: MusicOptions
+    let music: MusicMode          // was MusicOptions
     let pace: PaceOptions
     let startTime: Date
     var endTime: Date?
@@ -26,7 +26,7 @@ struct WalkSessionOptions: Identifiable, Codable {
     init(
         id: UUID = UUID(),
         duration: DurationOptions,
-        music: MusicOptions,
+        music: MusicMode = .noMusic,  // was MusicOptions / .placeholder
         pace: PaceOptions,
         startTime: Date = Date(),
         endTime: Date? = nil,
@@ -86,7 +86,6 @@ struct WalkSessionOptions: Identifiable, Codable {
     }
 
     // MARK: - Complete Session
-    // Creates a CompletedSession, saves it, and clears the active session.
     @discardableResult
     static func completeSession(_ session: WalkSessionOptions) -> CompletedSession {
         let completedSession = CompletedSession(
@@ -104,7 +103,6 @@ struct WalkSessionOptions: Identifiable, Codable {
         allSessions.append(completedSession)
         CompletedSession.saveAll(allSessions)
 
-        // Pause-free badge trigger
         if !session.wasPaused {
             UserDefaults.standard.set(true, forKey: "hasCompletedPauseFreeSession")
         }
@@ -113,3 +111,4 @@ struct WalkSessionOptions: Identifiable, Codable {
         return completedSession
     }
 }
+

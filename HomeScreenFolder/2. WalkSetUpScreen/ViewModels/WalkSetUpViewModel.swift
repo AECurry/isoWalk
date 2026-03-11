@@ -4,8 +4,12 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  RESPONSIBILITY: All business logic for the WalkSetUp screen.
-//  The View is dumb — it only reads from and calls into this ViewModel.
+//  LOCATION: WalkSetUpScreen/ViewModels/
+//
+//  RESPONSIBILITY: Pace and duration selection only.
+//  Music is owned entirely by MusicViewModel (MusicFolder).
+//  This VM holds a reference to MusicViewModel and reads
+//  canStartWalk and summaryLabel from it.
 //
 
 import SwiftUI
@@ -14,11 +18,19 @@ import Observation
 @Observable
 final class WalkSetUpViewModel {
 
-    var selectedPace: PaceOptions = .steady
+    var selectedPace:     PaceOptions     = .steady
     var selectedDuration: DurationOptions = .recommended
-    var selectedMusic: MusicOptions = .placeholder
 
-    var isReadyToStart: Bool { true }
+    // Music owned by MusicFolder — this VM just holds the reference
+    var musicViewModel: MusicViewModel = MusicViewModel()
+
+    // Convenience passthroughs for WalkSetUpView
+    var selectedMusicMode: MusicMode { musicViewModel.selectedMode }
+    var musicSummary:      String    { musicViewModel.summaryLabel  }
+
+    var isReadyToStart: Bool {
+        musicViewModel.canStartWalk
+    }
 
     init() {
         loadLastPreferences()
@@ -26,9 +38,9 @@ final class WalkSetUpViewModel {
 
     func startWalkingSession() {
         UserDefaults.standard.set(selectedDuration.rawValue, forKey: "lastDuration")
-        UserDefaults.standard.set(selectedPace.rawValue, forKey: "lastPace")
-        UserDefaults.standard.set(selectedMusic.rawValue, forKey: "lastMusic")
-        print("Starting walk: \(selectedDuration.minutes) min, \(selectedPace.displayName)")
+        UserDefaults.standard.set(selectedPace.rawValue,     forKey: "lastPace")
+        musicViewModel.selection.save()
+        print("Starting walk: \(selectedDuration.minutes) min · \(selectedPace.displayName) · \(musicViewModel.summaryLabel)")
     }
 
     private func loadLastPreferences() {
@@ -40,10 +52,6 @@ final class WalkSetUpViewModel {
            let option = PaceOptions(rawValue: raw) {
             selectedPace = option
         }
-        if let raw = UserDefaults.standard.string(forKey: "lastMusic"),
-           let option = MusicOptions(rawValue: raw) {
-            selectedMusic = option
-        }
+        // MusicViewModel loads its own state from UserDefaults in its own init
     }
 }
-

@@ -39,13 +39,18 @@ final class WalkSessionViewModel {
 
     // MARK: - Session Lifecycle
 
-    func initializeSession(duration: DurationOptions, pace: PaceOptions, music: MusicOptions) {
+    func initializeSession(
+        duration: DurationOptions,
+        pace: PaceOptions,
+        musicMode: MusicMode,               // was: music: MusicOptions
+        musicSelection: MusicSelection      // full selection for MusicPlayerService
+    ) {
         WalkSessionOptions.clearActive()
         activeSession = nil
 
         let session = WalkSessionOptions(
             duration: duration,
-            music: music,
+            music: musicMode,               // was: music
             pace: pace,
             startTime: Date(),
             wasPaused: false
@@ -62,6 +67,8 @@ final class WalkSessionViewModel {
 
         updateFormattedTime()
         startAmplitudeLink()
+
+        // TODO: pass musicSelection to MusicPlayerService when wired in next sprint
     }
 
     func playPause() {
@@ -219,3 +226,4 @@ final class WalkSessionViewModel {
         }
     }
 }
+

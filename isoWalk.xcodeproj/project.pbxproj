@@ -26,6 +26,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		49434ABB2F61AFCD00192EB4 /* MusicFolder */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MusicFolder;
+			sourceTree = "<group>";
+		};
 		49FDC65A2F3E2E9A00550D4F /* isoWalk */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -74,6 +79,7 @@
 				49FDC6682F3F63C100550D4F /* HomeScreenFolder */,
 				49FDC6C82F44AE5000550D4F /* ProgressScreenFolder */,
 				49FDC6C62F44AD9D00550D4F /* FeaturesScreenFolder */,
+				49434ABB2F61AFCD00192EB4 /* MusicFolder */,
 				49FDC67A2F43B0F100550D4F /* Shared */,
 				49FDC65A2F3E2E9A00550D4F /* isoWalk */,
 				49FDC6592F3E2E9A00550D4F /* Products */,
@@ -104,6 +110,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				49434ABB2F61AFCD00192EB4 /* MusicFolder */,
 				49FDC65A2F3E2E9A00550D4F /* isoWalk */,
 				49FDC6682F3F63C100550D4F /* HomeScreenFolder */,
 				49FDC67A2F43B0F100550D4F /* Shared */,
