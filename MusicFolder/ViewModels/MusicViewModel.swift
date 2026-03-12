@@ -22,6 +22,10 @@ final class MusicViewModel {
     // MARK: - State
     var selection: MusicSelection = MusicSelection.load()
     var activeTab: MusicMode      = .noMusic
+    
+    // NEW: Track sequence for isoWalk Tracks mode
+    var currentTrackSequence: TrackSequence?
+    var isEditingTrackSequence: Bool = false
 
     // MARK: - Derived: selection summary for collapsed card
     var selectedMode: MusicMode { selection.mode }
@@ -31,9 +35,10 @@ final class MusicViewModel {
         case .noMusic:
             return "No Music"
         case .isoWalkTracks:
-            let n = SunoTrackLibrary.track(byId: selection.selectedNormalTrackId ?? "")?.title ?? "None"
-            let b = SunoTrackLibrary.track(byId: selection.selectedBriskTrackId  ?? "")?.title ?? "None"
-            return "\(n) · \(b)"
+            if let sequence = currentTrackSequence, sequence.isComplete {
+                return "Custom Playlist"
+            }
+            return "isoWalk Tracks"
         case .myMusic:
             if selection.taggedSongs.isEmpty { return "No songs added" }
             return selection.totalSessionDisplay
@@ -45,27 +50,88 @@ final class MusicViewModel {
         case .noMusic:
             return true
         case .isoWalkTracks:
-            return selection.selectedNormalTrackId != nil
-                && selection.selectedBriskTrackId  != nil
+            // Must have valid track sequence
+            guard let sequence = currentTrackSequence else { return false }
+            return sequence.isComplete
         case .myMusic:
             return selection.isValidForMyMusic
         }
     }
 
-    var validationMessage: String? { selection.validationMessage }
+    var validationMessage: String? {
+        switch selection.mode {
+        case .noMusic, .isoWalkTracks:
+            return nil
+        case .myMusic:
+            return selection.validationMessage
+        }
+    }
 
-    // MARK: - isoWalk Tracks
+    // MARK: - isoWalk Tracks (SUNO)
     var normalTracks: [SunoTrack] { SunoTrackLibrary.normalTracks }
     var briskTracks:  [SunoTrack] { SunoTrackLibrary.briskTracks  }
 
-    func selectNormalTrack(_ track: SunoTrack) {
-        selection.selectedNormalTrackId = track.id
-        save()
+    // Load or create track sequence for current pace/duration
+    func loadTrackSequence(pace: PaceOptions, duration: DurationOptions) {
+        currentTrackSequence = TrackSequenceStorage.getOrCreate(pace: pace, duration: duration)
     }
-
-    func selectBriskTrack(_ track: SunoTrack) {
-        selection.selectedBriskTrackId = track.id
-        save()
+    
+    // Save current track sequence
+    func saveTrackSequence() {
+        guard let sequence = currentTrackSequence else { return }
+        TrackSequenceStorage.save(sequence)
+    }
+    
+    // Update a Normal track at specific index
+    func updateNormalTrack(at index: Int, trackId: String) {
+        guard var sequence = currentTrackSequence,
+              index < sequence.normalTrackIds.count else { return }
+        sequence.normalTrackIds[index] = trackId
+        currentTrackSequence = sequence
+        saveTrackSequence()
+    }
+    
+    // Update a Brisk track at specific index
+    func updateBriskTrack(at index: Int, trackId: String) {
+        guard var sequence = currentTrackSequence,
+              index < sequence.briskTrackIds.count else { return }
+        sequence.briskTrackIds[index] = trackId
+        currentTrackSequence = sequence
+        saveTrackSequence()
+    }
+    
+    // Reorder Normal tracks
+    func moveNormalTrack(from source: IndexSet, to destination: Int) {
+        guard var sequence = currentTrackSequence else { return }
+        sequence.normalTrackIds.move(fromOffsets: source, toOffset: destination)
+        currentTrackSequence = sequence
+        saveTrackSequence()
+    }
+    
+    // Reorder Brisk tracks
+    func moveBriskTrack(from source: IndexSet, to destination: Int) {
+        guard var sequence = currentTrackSequence else { return }
+        sequence.briskTrackIds.move(fromOffsets: source, toOffset: destination)
+        currentTrackSequence = sequence
+        saveTrackSequence()
+    }
+    
+    // Shuffle Normal tracks
+    func shuffleNormalTracks() {
+        guard var sequence = currentTrackSequence else { return }
+        let shuffled = normalTracks.shuffled().prefix(sequence.normalTrackIds.count)
+        sequence.normalTrackIds = shuffled.map { $0.id }
+        currentTrackSequence = sequence
+        saveTrackSequence()
+    }
+    
+    // Shuffle Brisk tracks
+    func shuffleBriskTracks() {
+        guard var sequence = currentTrackSequence else { return }
+        let shuffled = briskTracks.shuffled().prefix(sequence.briskTrackIds.count)
+        sequence.briskTrackIds = shuffled.map { $0.id }
+        currentTrackSequence = sequence
+        saveTrackSequence()
     }
 
     // MARK: - My Music

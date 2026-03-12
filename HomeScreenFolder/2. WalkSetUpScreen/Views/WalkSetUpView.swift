@@ -32,7 +32,7 @@ struct WalkSetUpView: View {
             ZStack {
                 // LAYER 1: Background
                 themeBackground
-
+                
                 // LAYER 2: Main Content
                 VStack(spacing: 0) {
                     WalkSetUpHeader(theme: theme, onBack: { onDismiss() })
@@ -104,7 +104,9 @@ struct WalkSetUpView: View {
                 if musicExpanded {
                     MusicPopupModal(
                         viewModel: viewModel.musicViewModel,
-                        isExpanded: $musicExpanded
+                        isExpanded: $musicExpanded,
+                        selectedPace: viewModel.selectedPace,      // NEW: Pass pace
+                        selectedDuration: viewModel.selectedDuration  // NEW: Pass duration
                     )
                     .zIndex(100)  // Above everything
                 }
@@ -145,4 +147,3 @@ struct WalkSetUpView: View {
         onDismiss: { print("Dismiss") }
     )
 }
-

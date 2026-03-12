@@ -4,13 +4,15 @@
 //
 //  Created by AnnElaine on 3/11/26.
 //
+//  Updated 3/12/26: Now receives pace/duration from WalkSetUpViewModel
+//                   and passes them to IsoWalkTracksTab
 //
 //  Matches the Pace and Duration pattern exactly:
 //  — MusicPopUp        : collapsed trigger card shown on WalkSetUpView
 //  — MusicPopupModal   : centered modal matching Pace/Duration style
 //
 //  All music logic lives in MusicViewModel (MusicFolder).
-//  Tab content is in IsoWalkTracksTab.swift and MyMusicTab.swift.
+//  Tab content is in NoMusicTab.swift, IsoWalkTracksTab.swift, and MyMusicTab.swift.
 //
 
 import SwiftUI
@@ -69,6 +71,10 @@ struct MusicPopupModal: View {
 
     @Bindable var viewModel: MusicViewModel
     @Binding var isExpanded: Bool
+    
+    // NEW: Receive pace and duration from WalkSetUpViewModel
+    var selectedPace: PaceOptions
+    var selectedDuration: DurationOptions
 
     var body: some View {
         ZStack {
@@ -104,15 +110,15 @@ struct MusicPopupModal: View {
                     VStack(spacing: 0) {
                         switch viewModel.activeTab {
                         case .noMusic:
-                            noMusicContent
+                            NoMusicTab()
                         case .isoWalkTracks:
-                            IsoWalkTracksTab(viewModel: viewModel)
-                                .padding(.horizontal, 20)
-                                .padding(.top, 16)
+                            IsoWalkTracksTab(
+                                viewModel: viewModel,
+                                selectedPace: selectedPace,
+                                selectedDuration: selectedDuration
+                            )
                         case .myMusic:
                             MyMusicTab(viewModel: viewModel)
-                                .padding(.horizontal, 20)
-                                .padding(.top, 16)
                         }
                     }
                     .padding(.bottom, 20)
@@ -167,28 +173,6 @@ struct MusicPopupModal: View {
             )
         }
         .buttonStyle(.plain)
-    }
-
-    // MARK: - No Music Content
-    private var noMusicContent: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "speaker.slash.fill")
-                .font(.system(size: 48))
-                .foregroundColor(.white.opacity(0.25))
-                .padding(.top, 24)
-
-            Text("No Music Selected")
-                .font(.custom("Inter-Bold", size: 18))
-                .foregroundColor(.white)
-
-            Text("The interval timer will still guide your pace with chimes and voice cues.")
-                .font(.custom("Inter-Regular", size: 15))
-                .foregroundColor(.white.opacity(0.60))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
     }
 }
 
