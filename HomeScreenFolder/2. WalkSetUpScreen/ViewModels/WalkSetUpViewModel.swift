@@ -4,7 +4,8 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: WalkSetUpScreen/ViewModels/
+//  Updated 3/11/26: Now calculates duration cycle info dynamically based on selected pace.
+//
 //
 //  RESPONSIBILITY: Pace and duration selection only.
 //  Music is owned entirely by MusicViewModel (MusicFolder).
@@ -31,6 +32,20 @@ final class WalkSetUpViewModel {
     var isReadyToStart: Bool {
         musicViewModel.canStartWalk
     }
+    
+    // MARK: - Computed Properties for UI Display
+    
+    var currentCycleInfo: CycleInfo {
+        selectedDuration.cycleInfo(for: selectedPace)
+    }
+    
+    var durationDescription: String {
+        selectedDuration.description(for: selectedPace)
+    }
+    
+    var paceRatioDisplay: String {
+        selectedPace.ratioDisplay
+    }
 
     init() {
         loadLastPreferences()
@@ -40,7 +55,12 @@ final class WalkSetUpViewModel {
         UserDefaults.standard.set(selectedDuration.rawValue, forKey: "lastDuration")
         UserDefaults.standard.set(selectedPace.rawValue,     forKey: "lastPace")
         musicViewModel.selection.save()
-        print("Starting walk: \(selectedDuration.minutes) min · \(selectedPace.displayName) · \(musicViewModel.summaryLabel)")
+        
+        let info = currentCycleInfo
+        print("Starting walk: \(selectedDuration.minutes) min · \(selectedPace.displayName)")
+        print("Cycle breakdown: \(info.normalCount)N + \(info.briskCount)B = \(info.totalCycles) total cycles")
+        print("Final Normal cooldown: \(info.finalNormalDuration) min (extension: +\(info.cooldownExtension) min)")
+        print("Music: \(musicViewModel.summaryLabel)")
     }
 
     private func loadLastPreferences() {
@@ -55,3 +75,4 @@ final class WalkSetUpViewModel {
         // MusicViewModel loads its own state from UserDefaults in its own init
     }
 }
+

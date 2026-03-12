@@ -46,3 +46,4 @@ struct GetWalkingView: View {
     GetWalkingView(onStartWalking: {})
         .environment(SessionManager())
 }
+

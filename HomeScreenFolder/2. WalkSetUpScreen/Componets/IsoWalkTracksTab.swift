@@ -116,3 +116,4 @@ struct IsoWalkTracksTab: View {
         .buttonStyle(.plain)
     }
 }
+

@@ -131,7 +131,7 @@ private struct SessionMarkerGroup: View {
             TodayTimelineCard(sessions: [
                 CompletedSession(
                     id: UUID(),
-                    duration: .twentyOne,
+                    duration: .twenty,
                     music: .noMusic,          // was .placeholder
                     pace: .steady,
                     startTime: Calendar.current.date(bySettingHour: 8, minute: 30, second: 0, of: Date())!,
@@ -145,7 +145,7 @@ private struct SessionMarkerGroup: View {
             TodayTimelineCard(sessions: [
                 CompletedSession(
                     id: UUID(),
-                    duration: .twentyOne,
+                    duration: .twenty,
                     music: .noMusic,          // was .placeholder
                     pace: .steady,
                     startTime: Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!,
@@ -155,7 +155,7 @@ private struct SessionMarkerGroup: View {
                 ),
                 CompletedSession(
                     id: UUID(),
-                    duration: .twentyOne,
+                    duration: .twenty,
                     music: .noMusic,          // was .placeholder
                     pace: .steady,
                     startTime: Calendar.current.date(bySettingHour: 17, minute: 0, second: 0, of: Date())!,

@@ -124,3 +124,4 @@ struct PrivacySection: Identifiable {
     var bullets: [String] = []
     var footer: String? = nil
 }
+

@@ -106,3 +106,4 @@ struct BadgeGridCell: View {
         .padding()
     }
 }
+

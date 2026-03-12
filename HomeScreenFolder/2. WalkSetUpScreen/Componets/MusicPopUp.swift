@@ -4,17 +4,13 @@
 //
 //  Created by AnnElaine on 3/11/26.
 //
-//  LOCATION: WalkSetUpScreen/Components/
 //
 //  Matches the Pace and Duration pattern exactly:
 //  — MusicPopUp        : collapsed trigger card shown on WalkSetUpView
-//  — MusicPopupModal   : full picker sheet rendered in WalkSetUpView's ZStack
+//  — MusicPopupModal   : centered modal matching Pace/Duration style
 //
 //  All music logic lives in MusicViewModel (MusicFolder).
 //  Tab content is in IsoWalkTracksTab.swift and MyMusicTab.swift.
-//
-//  FIX: UIScreen.main replaced with GeometryReader — deprecated in iOS 16,
-//  removed in iOS 26.
 //
 
 import SwiftUI
@@ -27,13 +23,18 @@ struct MusicPopUp: View {
 
     @Bindable var viewModel: MusicViewModel
     @Binding var isExpanded: Bool
+    
+    @AppStorage("dropdownWidth") private var width: Double = 320
+    @AppStorage("dropdownHeight") private var height: Double = 52
+    @AppStorage("dropdownCornerRadius") private var cornerRadius: Double = 12
+    @AppStorage("dropdownShadowRadius") private var shadowRadius: Double = 4
 
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
             Text("Select Music")
                 .font(.custom("Inter-SemiBold", size: 18))
                 .foregroundColor(isoWalkColors.adaptiveText)
-                .frame(width: 320, alignment: .leading)
+                .frame(width: width, alignment: .leading)
 
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.2)) { isExpanded = true }
@@ -41,19 +42,18 @@ struct MusicPopUp: View {
                 HStack {
                     Image(systemName: viewModel.selectedMode.iconName)
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.white)
                     Text(viewModel.summaryLabel)
                         .font(.custom("Inter-Medium", size: 16))
-                        .foregroundColor(.white)
                         .lineLimit(1)
                     Spacer()
                 }
-                .frame(width: 320, height: 52)
+                .foregroundColor(.white)
+                .frame(width: width, height: height)
                 .padding(.horizontal, 16)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: cornerRadius)
                         .fill(isoWalkColors.balticBlue)
-                        .shadow(color: .black.opacity(0.25), radius: 4, x: 0, y: 2)
+                        .shadow(color: .black.opacity(0.25), radius: shadowRadius, x: 0, y: 2)
                 )
             }
             .buttonStyle(.plain)
@@ -62,7 +62,7 @@ struct MusicPopUp: View {
 }
 
 // ─────────────────────────────────────────
-// MARK: - MusicPopupModal (full picker sheet)
+// MARK: - MusicPopupModal (centered modal - matches Pace/Duration)
 // ─────────────────────────────────────────
 
 struct MusicPopupModal: View {
@@ -71,83 +71,75 @@ struct MusicPopupModal: View {
     @Binding var isExpanded: Bool
 
     var body: some View {
-        // GeometryReader replaces UIScreen.main — works on iOS 16 through 26+
-        GeometryReader { screen in
-            ZStack(alignment: .bottom) {
+        ZStack {
+            // Dimmed backdrop — tap to dismiss
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
+                }
 
-                // Dimmed backdrop — tap to dismiss
-                Color.black.opacity(0.40)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
-                    }
+            // Centered modal card
+            VStack(spacing: 0) {
+                Text("Select Music")
+                    .font(.custom("Inter-Bold", size: 18))
+                    .foregroundColor(.white)
+                    .padding(.vertical, 16)
 
-                VStack(spacing: 0) {
+                Divider().overlay(Color.white.opacity(0.2))
 
-                    // Handle
-                    Capsule()
-                        .fill(Color.white.opacity(0.50))
-                        .frame(width: 40, height: 5)
-                        .padding(.top, 12)
-                        .padding(.bottom, 16)
-
-                    // Header
-                    HStack {
-                        Text("Select Music")
-                            .font(.custom("Inter-Bold", size: 18))
-                            .foregroundColor(.white)
-                        Spacer()
-                        Button("Done") {
-                            withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
-                        }
-                        .font(.custom("Inter-Medium", size: 16))
-                        .foregroundColor(.white.opacity(0.70))
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 20)
-
-                    // Mode tabs
-                    HStack(spacing: 0) {
-                        ForEach(MusicMode.allCases) { mode in
-                            modeTab(mode)
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 20)
-
-                    Divider().overlay(Color.white.opacity(0.20))
-
-                    // Tab content
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 0) {
-                            switch viewModel.activeTab {
-                            case .noMusic:
-                                noMusicContent
-                            case .isoWalkTracks:
-                                IsoWalkTracksTab(viewModel: viewModel)
-                                    .padding(.horizontal, 24)
-                                    .padding(.top, 20)
-                            case .myMusic:
-                                MyMusicTab(viewModel: viewModel)
-                                    .padding(.horizontal, 24)
-                                    .padding(.top, 20)
-                            }
-                        }
-                        .padding(.bottom, 40)
+                // Mode tabs
+                HStack(spacing: 0) {
+                    ForEach(MusicMode.allCases) { mode in
+                        modeTab(mode)
                     }
                 }
-                .background(
-                    RoundedRectangle(cornerRadius: 28)
-                        .fill(isoWalkColors.balticBlue)
-                        .ignoresSafeArea(edges: .bottom)
-                )
-                // 82% of actual screen height via GeometryReader
-                .frame(maxHeight: screen.size.height * 0.82)
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
+
+                Divider().overlay(Color.white.opacity(0.20))
+
+                // Tab content
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        switch viewModel.activeTab {
+                        case .noMusic:
+                            noMusicContent
+                        case .isoWalkTracks:
+                            IsoWalkTracksTab(viewModel: viewModel)
+                                .padding(.horizontal, 20)
+                                .padding(.top, 16)
+                        case .myMusic:
+                            MyMusicTab(viewModel: viewModel)
+                                .padding(.horizontal, 20)
+                                .padding(.top, 16)
+                        }
+                    }
+                    .padding(.bottom, 20)
+                }
+                .frame(maxHeight: 400)
+
+                Divider().overlay(Color.white.opacity(0.2))
+
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
+                }) {
+                    Text("Done")
+                        .font(.custom("Inter-Medium", size: 16))
+                        .foregroundColor(.white.opacity(0.7))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                }
+                .buttonStyle(.plain)
             }
-            .frame(width: screen.size.width, height: screen.size.height)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(isoWalkColors.balticBlue)
+                    .shadow(color: .black.opacity(0.4), radius: 20, x: 0, y: 8)
+            )
+            .padding(.horizontal, 32)
+            .transition(.opacity.combined(with: .scale(scale: 0.95)))
         }
-        .ignoresSafeArea()
         .onAppear {
             viewModel.activeTab = viewModel.selectedMode
         }
@@ -168,9 +160,9 @@ struct MusicPopupModal: View {
             }
             .foregroundColor(isActive ? .white : .white.opacity(0.40))
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 8)
                     .fill(isActive ? Color.white.opacity(0.20) : Color.clear)
             )
         }
@@ -183,7 +175,7 @@ struct MusicPopupModal: View {
             Image(systemName: "speaker.slash.fill")
                 .font(.system(size: 48))
                 .foregroundColor(.white.opacity(0.25))
-                .padding(.top, 32)
+                .padding(.top, 24)
 
             Text("No Music Selected")
                 .font(.custom("Inter-Bold", size: 18))
@@ -193,9 +185,10 @@ struct MusicPopupModal: View {
                 .font(.custom("Inter-Regular", size: 15))
                 .foregroundColor(.white.opacity(0.60))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, 24)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
     }
 }
 

@@ -98,3 +98,4 @@ struct ThemeCardView: View {
     .padding()
     .background(isoWalkColors.parchment)
 }
+

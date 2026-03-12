@@ -165,3 +165,4 @@ struct AnimatedImageLibrary {
         availableImages.forEach { $0.resetToDefaults() }
     }
 }
+

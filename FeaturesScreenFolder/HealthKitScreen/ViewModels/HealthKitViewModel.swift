@@ -92,3 +92,4 @@ final class HealthKitViewModel {
         UserDefaults.standard.set(false, forKey: enabledKey)
     }
 }
+

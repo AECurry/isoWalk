@@ -97,3 +97,4 @@ final class HealthKitManager {
         }
     }
 }
+

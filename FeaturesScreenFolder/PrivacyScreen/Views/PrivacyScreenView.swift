@@ -167,3 +167,4 @@ private struct PrivacySectionView: View {
         PrivacyScreenView()
     }
 }
+

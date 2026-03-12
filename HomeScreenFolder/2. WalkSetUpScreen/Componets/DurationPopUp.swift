@@ -4,25 +4,24 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
+//  Updated 3/12/26: Match PacePopUp structure exactly
+//
 //  COMPONENT — dumb child.
-//  Trigger button + centered floating popup.
-//  Receives selectedDuration and isExpanded bindings from WalkSetUpView.
+//  Trigger button + modal popup.
+//  Receives selectedDuration, isExpanded, and selectedPace bindings from WalkSetUpView.
+//
 
 import SwiftUI
 
 struct DurationPopUp: View {
     @Binding var selectedDuration: DurationOptions
     @Binding var isExpanded: Bool
-    @AppStorage("lastSelectedDuration") private var lastSelectedDurationId: String = ""
+    var selectedPace: PaceOptions
 
     @AppStorage("dropdownWidth") private var width: Double = 320
     @AppStorage("dropdownHeight") private var height: Double = 52
     @AppStorage("dropdownCornerRadius") private var cornerRadius: Double = 12
     @AppStorage("dropdownShadowRadius") private var shadowRadius: Double = 4
-
-    private var displayText: String {
-        lastSelectedDurationId.isEmpty ? "Tap to select" : selectedDuration.displayName
-    }
 
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
@@ -35,7 +34,7 @@ struct DurationPopUp: View {
                 withAnimation(.easeInOut(duration: 0.2)) { isExpanded = true }
             }) {
                 HStack {
-                    Text(displayText)
+                    Text(selectedDuration.displayName)
                         .font(.custom("Inter-Medium", size: 16))
                         .foregroundColor(.white)
                     Spacer()
@@ -56,7 +55,8 @@ struct DurationPopUp: View {
 struct DurationPopupModal: View {
     @Binding var selectedDuration: DurationOptions
     @Binding var isExpanded: Bool
-    @AppStorage("lastSelectedDuration") private var lastSelectedDurationId: String = ""
+    var selectedPace: PaceOptions
+    
     @AppStorage("dropdownCornerRadius") private var cornerRadius: Double = 12
     @AppStorage("dropdownShadowRadius") private var shadowRadius: Double = 4
 
@@ -77,15 +77,21 @@ struct DurationPopupModal: View {
                     .padding(.vertical, 16)
 
                 Divider().overlay(Color.white.opacity(0.2))
+                
+                // Pace indicator
+                Text("For \(selectedPace.ratioDisplay) pace")
+                    .font(.custom("Inter-Regular", size: 14))
+                    .foregroundColor(.white.opacity(0.6))
+                    .padding(.vertical, 12)
 
                 ScrollView {
                     VStack(spacing: 0) {
-                        ForEach(DurationOptions.allCases, id: \.id) { option in
+                        ForEach(DurationOptions.allCases) { option in
                             Button(action: {
                                 selectedDuration = option
-                                lastSelectedDurationId = option.id
                                 withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
                             }) {
+                                let info = option.cycleInfo(for: selectedPace)
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
                                         Text(option.displayName)
@@ -99,9 +105,15 @@ struct DurationPopupModal: View {
                                                 .foregroundColor(.white)
                                         }
                                     }
-                                    Text(option.description)
+                                    Text("\(info.totalCycles) cycles (\(info.normalCount) Normal · \(info.briskCount) Brisk)")
                                         .font(.custom("Inter-Regular", size: 16))
                                         .foregroundColor(.white.opacity(0.7))
+                                    
+                                    if info.cooldownExtension > 0 {
+                                        Text("Final cooldown: \(info.finalNormalDuration) min (+\(info.cooldownExtension) min)")
+                                            .font(.custom("Inter-Regular", size: 14))
+                                            .foregroundColor(.white.opacity(0.5))
+                                    }
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 14)
@@ -117,7 +129,7 @@ struct DurationPopupModal: View {
                         }
                     }
                 }
-                .frame(maxHeight: 320)
+                .frame(maxHeight: 400)
 
                 Divider().overlay(Color.white.opacity(0.2))
 
@@ -145,8 +157,9 @@ struct DurationPopupModal: View {
 
 #Preview {
     DurationPopUp(
-        selectedDuration: .constant(.twentyOne),
-        isExpanded: .constant(false)
+        selectedDuration: .constant(.thirty),
+        isExpanded: .constant(false),
+        selectedPace: .steady
     )
     .padding()
     .background(isoWalkColors.parchment)

@@ -151,3 +151,4 @@ private struct SparkleView: View {
     private func cos(_ angle: CGFloat) -> CGFloat { Foundation.cos(angle) }
     private func sin(_ angle: CGFloat) -> CGFloat { Foundation.sin(angle) }
 }
+

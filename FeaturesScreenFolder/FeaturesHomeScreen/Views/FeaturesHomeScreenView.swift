@@ -123,3 +123,4 @@ struct FeaturesHomeScreenView: View {
     FeaturesHomeScreenView()
         .environment(SessionManager())
 }
+

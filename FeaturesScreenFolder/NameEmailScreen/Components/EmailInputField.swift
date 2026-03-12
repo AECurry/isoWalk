@@ -110,3 +110,4 @@ struct EmailInputField: View {
     .padding()
     .background(isoWalkColors.parchment)
 }
+

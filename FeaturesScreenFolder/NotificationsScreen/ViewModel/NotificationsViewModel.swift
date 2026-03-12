@@ -183,3 +183,4 @@ final class NotificationsViewModel {
         UIApplication.shared.open(url)
     }
 }
+

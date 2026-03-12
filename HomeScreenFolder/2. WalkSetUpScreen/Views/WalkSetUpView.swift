@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: WalkSetUpScreen/Views/
 //
 //  PARENT VIEW — intentionally dumb.
 //  Owns the ViewModel and all popup expanded states.
@@ -30,10 +29,11 @@ struct WalkSetUpView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
+            ZStack {
+                // LAYER 1: Background
                 themeBackground
 
-                // 1. MAIN CONTENT
+                // LAYER 2: Main Content
                 VStack(spacing: 0) {
                     WalkSetUpHeader(theme: theme, onBack: { onDismiss() })
                         .padding(.top, 16)
@@ -45,7 +45,8 @@ struct WalkSetUpView: View {
                         )
                         DurationPopUp(
                             selectedDuration: $viewModel.selectedDuration,
-                            isExpanded: $durationExpanded
+                            isExpanded: $durationExpanded,
+                            selectedPace: viewModel.selectedPace
                         )
                         MusicPopUp(
                             viewModel: viewModel.musicViewModel,
@@ -65,31 +66,47 @@ struct WalkSetUpView: View {
                     )
                     .padding(.bottom, 124)
                 }
-
-                // 2. POPUP MODALS — float above everything in ZStack
+                
+                // LAYER 3: Bottom Nav Bar (moved INSIDE ZStack)
+                if !navigateToSession {
+                    VStack {
+                        Spacer()
+                        BottomNavBar(
+                            selectedTab: $selectedTab,
+                            onTabReTap: { onDismiss() },
+                            onTabChange: { tab in
+                                var transaction = Transaction()
+                                transaction.disablesAnimations = true
+                                withTransaction(transaction) { selectedTab = tab }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { onDismiss() }
+                            }
+                        )
+                    }
+                    .zIndex(5)  // Above main content
+                }
+                
+                // LAYER 4: POPUP MODALS — highest z-index
                 if paceExpanded {
                     PacePopupModal(
                         selectedPace: $viewModel.selectedPace,
                         isExpanded: $paceExpanded
                     )
-                    .ignoresSafeArea()
-                    .zIndex(10)
+                    .zIndex(100)  // Above everything
                 }
                 if durationExpanded {
                     DurationPopupModal(
                         selectedDuration: $viewModel.selectedDuration,
-                        isExpanded: $durationExpanded
+                        isExpanded: $durationExpanded,
+                        selectedPace: viewModel.selectedPace
                     )
-                    .ignoresSafeArea()
-                    .zIndex(10)
+                    .zIndex(100)  // Above everything
                 }
                 if musicExpanded {
                     MusicPopupModal(
                         viewModel: viewModel.musicViewModel,
                         isExpanded: $musicExpanded
                     )
-                    .ignoresSafeArea()
-                    .zIndex(10)
+                    .zIndex(100)  // Above everything
                 }
             }
             .onChange(of: paceExpanded)     { if paceExpanded     { durationExpanded = false; musicExpanded = false } }
@@ -106,20 +123,6 @@ struct WalkSetUpView: View {
                 )
             }
             .navigationBarHidden(true)
-        }
-        .overlay(alignment: .bottom) {
-            if !navigateToSession {
-                BottomNavBar(
-                    selectedTab: $selectedTab,
-                    onTabReTap: { onDismiss() },
-                    onTabChange: { tab in
-                        var transaction = Transaction()
-                        transaction.disablesAnimations = true
-                        withTransaction(transaction) { selectedTab = tab }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { onDismiss() }
-                    }
-                )
-            }
         }
     }
 
@@ -142,3 +145,4 @@ struct WalkSetUpView: View {
         onDismiss: { print("Dismiss") }
     )
 }
+

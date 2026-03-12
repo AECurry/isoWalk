@@ -196,3 +196,4 @@ struct EarnedBadgeRecord: Codable {
     let badgeId: String
     let earnedDate: Date
 }
+

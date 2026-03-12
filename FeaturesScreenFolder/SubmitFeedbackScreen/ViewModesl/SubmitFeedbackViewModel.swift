@@ -105,3 +105,4 @@ final class SubmitFeedbackViewModel {
         emailError = nil
     }
 }
+

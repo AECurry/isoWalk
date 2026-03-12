@@ -84,3 +84,4 @@ struct BadgesCard: View {
         }
     }
 }
+

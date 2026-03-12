@@ -74,3 +74,4 @@ struct NotificationToggleRow: View {
     .padding()
     .background(isoWalkColors.parchment)
 }
+

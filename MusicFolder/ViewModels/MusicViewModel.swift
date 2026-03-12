@@ -107,3 +107,4 @@ final class MusicViewModel {
     // MARK: - Persistence
     private func save() { selection.save() }
 }
+

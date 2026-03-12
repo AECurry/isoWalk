@@ -153,3 +153,4 @@ struct PacePopupModal: View {
     .padding()
     .background(isoWalkColors.parchment)
 }
+

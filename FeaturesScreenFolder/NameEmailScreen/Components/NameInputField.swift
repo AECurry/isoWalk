@@ -68,3 +68,4 @@ struct NameInputField: View {
     .padding()
     .background(isoWalkColors.parchment)
 }
+

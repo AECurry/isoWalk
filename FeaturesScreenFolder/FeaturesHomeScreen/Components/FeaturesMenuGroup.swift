@@ -106,3 +106,4 @@ struct FeaturesMenuGroup: View {
         .padding()
     }
 }
+

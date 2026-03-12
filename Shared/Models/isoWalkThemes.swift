@@ -94,3 +94,4 @@ struct IsoWalkThemes {
     static let selectedThemeKey = "selectedThemeId"
     static let defaultThemeId   = "koi"
 }
+

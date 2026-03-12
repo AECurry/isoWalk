@@ -127,7 +127,7 @@ struct WalkSessionView: View {
     @Previewable @State var selectedTab = 0
     WalkSessionView(
         selectedTab: $selectedTab,
-        duration: .twentyOne,
+        duration: .twenty,
         pace: .steady,
         musicMode: .noMusic,
         musicSelection: MusicSelection()

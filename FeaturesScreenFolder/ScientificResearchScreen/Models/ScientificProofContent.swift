@@ -113,3 +113,4 @@ struct ProofSection: Identifiable {
     var bullets: [String] = []
     var footer: String? = nil
 }
+

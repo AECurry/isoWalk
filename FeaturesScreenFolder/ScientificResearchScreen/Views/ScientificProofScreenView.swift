@@ -179,3 +179,4 @@ private struct ProofSectionView: View {
         ScientificProofScreenView()
     }
 }
+

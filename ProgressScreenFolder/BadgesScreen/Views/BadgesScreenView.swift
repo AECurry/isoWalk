@@ -130,3 +130,4 @@ struct BadgesScreenView: View {
 #Preview {
     BadgesScreenView(onDismiss: {})
 }
+

@@ -106,3 +106,4 @@ struct ProgressScreenView: View {
     ProgressScreenView(onShowBadges: {})
         .environment(SessionManager())
 }
+

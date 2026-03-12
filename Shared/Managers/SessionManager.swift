@@ -51,3 +51,4 @@ class SessionManager {
         WalkSessionOptions.clearActive()
     }
 }
+
