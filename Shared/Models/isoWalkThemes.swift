@@ -4,6 +4,7 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
+//
 //  SOURCE OF TRUTH for all theme data.
 //  To add a new theme: add ONE entry to AnimatedImageLibrary.availableImages
 //  in AnimatedImageConfig.swift. Nothing else needs to change.
@@ -24,7 +25,15 @@ enum ThemeAnimationType {
     case rotation(speed: Double)
     case pulse(minScale: Double, maxScale: Double, speed: Double)
     case rotatingPulse(rotSpeed: Double, minScale: Double, maxScale: Double, pulseSpeed: Double)
+    case layeredAnimation(backgroundImage: String, overlayImage: String, overlayAnimation: OverlayAnimation)
     case none
+}
+
+// NEW: Overlay animation types for layered themes
+enum OverlayAnimation {
+    case drift(xOffset: CGFloat, yOffset: CGFloat, duration: Double)  // Clouds drifting
+    case pulse(minScale: Double, maxScale: Double, speed: Double)
+    case rotate(speed: Double)
 }
 
 // ==========================================
@@ -41,7 +50,6 @@ struct IsoWalkTheme: Identifiable {
     let animationType: ThemeAnimationType
 
     // Built dynamically from config — no manual wiring needed.
-    // Adding logoImageName here means every future theme gets it for free.
     init(from config: AnimatedImageConfig) {
         self.id                  = config.id
         self.displayName         = config.name
@@ -69,22 +77,40 @@ struct IsoWalkTheme: Identifiable {
             self.animationType = .none
         }
     }
+    
+    // NEW: Custom initializer for layered animations
+    init(
+        id: String,
+        displayName: String,
+        mainImageName: String,
+        logoImageName: String,
+        backgroundImageName: String? = "GoldenTextureBackground",
+        backgroundColor: Color = isoWalkColors.parchment,
+        animationType: ThemeAnimationType
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.mainImageName = mainImageName
+        self.logoImageName = logoImageName
+        self.backgroundImageName = backgroundImageName
+        self.backgroundColor = backgroundColor
+        self.animationType = animationType
+    }
 }
 
 // ==========================================
 // MARK: - ISOWALKSTHEMES (the full catalog)
-//
-// USAGE ANYWHERE IN THE APP:
-//   IsoWalkThemes.all                  → [IsoWalkTheme]
-//   IsoWalkThemes.current(selectedId:) → IsoWalkTheme
-//   IsoWalkThemes.selectedThemeKey     → UserDefaults key String
-//   IsoWalkThemes.defaultThemeId       → "koi"
 // ==========================================
 
 struct IsoWalkThemes {
 
     static var all: [IsoWalkTheme] {
-        AnimatedImageLibrary.availableImages.map { IsoWalkTheme(from: $0) }
+        var themes = AnimatedImageLibrary.availableImages.map { IsoWalkTheme(from: $0) }
+        
+        // Add custom layered theme
+        themes.append(cloudyTreeTheme)
+        
+        return themes
     }
 
     static func current(selectedId: String) -> IsoWalkTheme {
@@ -93,5 +119,17 @@ struct IsoWalkThemes {
 
     static let selectedThemeKey = "selectedThemeId"
     static let defaultThemeId   = "koi"
+    
+    // NEW: Cloudy Tree Theme
+    static let cloudyTreeTheme = IsoWalkTheme(
+        id: "cloudyTree",
+        displayName: "Japanese Tree with Clouds",
+        mainImageName: "JapaneseTreeWithClouds",  // Fixed background
+        logoImageName: "JapaneseTreeWithClouds",
+        animationType: .layeredAnimation(
+            backgroundImage: "JapaneseTreeWithClouds",
+            overlayImage: "CloudSwirls",
+            overlayAnimation: .drift(xOffset: 50, yOffset: 20, duration: 15.0)
+        )
+    )
 }
-
