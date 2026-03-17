@@ -4,25 +4,27 @@
 //
 //  Created by AnnElaine on 3/11/26.
 //
+//  Updated 3/12/26: Added filename property to support duration-specific audio files
 //
-//  Core music model for the entire app.
-//  Three modes: no music, isoWalk SUNO tracks (timer-driven),
-//  My Music via Apple Music or Spotify (song-driven).
-//
-//  Cross-screen: used by WalkSetUpScreen (pick) and
-//  WalkSessionView (play).
+//  Models for music selection in WalkSetUpView.
+//  - MusicMode        : no music | isoWalk tracks | my music
+//  - MusicService     : Apple Music vs Spotify
+//  - WalkPaceTag      : normal vs brisk
+//  - SunoTrack        : ONE track from the isoWalk library
+//  - TaggedSong       : ONE song from user's Apple/Spotify library
+//  - MusicSelection   : the complete music package for a walk session
 //
 
-import Foundation
+import SwiftUI
 
-// ─────────────────────────────────────────
-// MARK: - Music Mode
-// ─────────────────────────────────────────
+// ==========================================
+// MARK: - MUSIC MODE
+// ==========================================
 
-enum MusicMode: String, Codable, CaseIterable, Identifiable {
-    case noMusic
-    case isoWalkTracks
-    case myMusic
+enum MusicMode: String, CaseIterable, Identifiable {
+    case noMusic       = "noMusic"
+    case isoWalkTracks = "isoWalkTracks"
+    case myMusic       = "myMusic"
 
     var id: String { rawValue }
 
@@ -43,13 +45,13 @@ enum MusicMode: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-// ─────────────────────────────────────────
-// MARK: - Streaming Service
-// ─────────────────────────────────────────
+// ==========================================
+// MARK: - MUSIC SERVICE
+// ==========================================
 
-enum MusicService: String, Codable, CaseIterable, Identifiable {
-    case appleMusic
-    case spotify
+enum MusicService: String, CaseIterable, Identifiable {
+    case appleMusic = "appleMusic"
+    case spotify    = "spotify"
 
     var id: String { rawValue }
 
@@ -63,20 +65,18 @@ enum MusicService: String, Codable, CaseIterable, Identifiable {
     var iconName: String {
         switch self {
         case .appleMusic: return "applelogo"
-        case .spotify:    return "music.mic"
+        case .spotify:    return "s.circle.fill"
         }
     }
 }
 
-// ─────────────────────────────────────────
-// MARK: - Walk Pace Tag
-// ─────────────────────────────────────────
+// ==========================================
+// MARK: - WALK PACE TAG
+// ==========================================
 
-enum WalkPaceTag: String, Codable, CaseIterable, Identifiable {
-    case normal
-    case brisk
-
-    var id: String { rawValue }
+enum WalkPaceTag: String, Codable {
+    case normal = "normal"
+    case brisk  = "brisk"
 
     var displayName: String {
         switch self {
@@ -86,124 +86,78 @@ enum WalkPaceTag: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-// ─────────────────────────────────────────
-// MARK: - SUNO Track
-// ─────────────────────────────────────────
+// ==========================================
+// MARK: - SUNO TRACK (isoWalk bundled music)
+// ==========================================
 
-struct SunoTrack: Identifiable, Codable, Hashable {
+struct SunoTrack: Identifiable, Codable {
+    let id: String
+    let title: String           // User-facing name: "Quiet Morning Alone"
+    let baseFilename: String    // Base filename without duration: "Quiet Morning Alone (Jane Austen_Normal_112"
+    let pace: WalkPaceTag
+    let bpm: Int?               // Optional: 112
+    let style: String?          // Optional: "Jane Austen"
+    
+    // Computed property: builds full filename based on duration needed
+    func filename(forDuration minutes: Int) -> String {
+        return "\(baseFilename)_\(minutes)min)"
+    }
+    
+    // Display duration in MM:SS format
+    var durationDisplay: String {
+        return "3:00"  // Base duration, actual duration determined at playback
+    }
+}
+
+// ==========================================
+// MARK: - TAGGED SONG (user's Apple/Spotify music)
+// ==========================================
+
+struct TaggedSong: Identifiable, Codable {
     let id: String
     let title: String
-    let pace: WalkPaceTag
-    let durationSeconds: Int        // exact — no cutoff, timed to interval
-
-    var durationDisplay: String {
-        let m = durationSeconds / 60
-        let s = durationSeconds % 60
-        return String(format: "%d:%02d", m, s)
-    }
-}
-
-// ─────────────────────────────────────────
-// MARK: - Streaming Song
-// ─────────────────────────────────────────
-
-struct TaggedSong: Identifiable, Codable, Hashable {
-    let id: String              // persistent ID from MusicKit or Spotify
-    let title: String
     let artist: String
-    let durationSeconds: Int
-    var paceTag: WalkPaceTag
+    let duration: Int           // in seconds
+    let paceTag: WalkPaceTag
+    let serviceId: String       // Apple Music ID or Spotify URI
 
     var durationDisplay: String {
-        let m = durationSeconds / 60
-        let s = durationSeconds % 60
-        return String(format: "%d:%02d", m, s)
+        let mins = duration / 60
+        let secs = duration % 60
+        return String(format: "%d:%02d", mins, secs)
     }
 }
 
-// ─────────────────────────────────────────
-// MARK: - Full Music Selection (persisted)
-// ─────────────────────────────────────────
+// ==========================================
+// MARK: - MUSIC SELECTION (the complete package)
+// ==========================================
 
 struct MusicSelection: Codable {
-    var mode: MusicMode        = .noMusic
-    var selectedNormalTrackId: String? = nil
-    var selectedBriskTrackId:  String? = nil
-    var musicService: MusicService     = .appleMusic
-    var taggedSongs: [TaggedSong]      = []
+    var musicMode: MusicMode
+    var musicService: MusicService
+    var sunoTracks: [SunoTrack]
+    var taggedSongs: [TaggedSong]
 
-    // Ordered playback: N→B→N→B→...→N (always ends on Normal)
-    var playbackSequence: [TaggedSong] {
-        let normals = taggedSongs.filter { $0.paceTag == .normal }
-        let brisks  = taggedSongs.filter { $0.paceTag == .brisk  }
-        var result: [TaggedSong] = []
-        let cycles = min(normals.count, brisks.count + 1)
-        for i in 0..<cycles {
-            result.append(normals[i])
-            if i < brisks.count { result.append(brisks[i]) }
-        }
-        return result
+    init(
+        musicMode: MusicMode = .noMusic,
+        musicService: MusicService = .appleMusic,
+        sunoTracks: [SunoTrack] = [],
+        taggedSongs: [TaggedSong] = []
+    ) {
+        self.musicMode = musicMode
+        self.musicService = musicService
+        self.sunoTracks = sunoTracks
+        self.taggedSongs = taggedSongs
     }
 
-    // Total session time in seconds (My Music mode only)
-    var totalSessionSeconds: Int {
-        guard mode == .myMusic else { return 0 }
-        return playbackSequence.reduce(0) { $0 + $1.durationSeconds }
+    // Validation helpers
+    var hasValidSunoPlaylist: Bool {
+        !sunoTracks.isEmpty
     }
 
-    var totalSessionDisplay: String {
-        let total = totalSessionSeconds
-        let h = total / 3600
-        let m = (total % 3600) / 60
-        let s = total % 60
-        if h > 0 {
-            return String(format: "%d hr %d min %d sec", h, m, s)
-        } else {
-            return String(format: "%d min %d sec", m, s)
-        }
-    }
-
-    // Minimum: 15 min = 5 cycles = 3 Normal + 2 Brisk, ends on Normal
-    var isValidForMyMusic: Bool {
-        guard mode == .myMusic else { return true }
-        let normals = taggedSongs.filter { $0.paceTag == .normal }.count
-        let brisks  = taggedSongs.filter { $0.paceTag == .brisk  }.count
-        guard normals >= 3, brisks >= 2       else { return false }
-        guard normals == brisks + 1           else { return false }
-        return totalSessionSeconds >= 15 * 60
-    }
-
-    var validationMessage: String? {
-        guard mode == .myMusic else { return nil }
-        let normals = taggedSongs.filter { $0.paceTag == .normal }.count
-        let brisks  = taggedSongs.filter { $0.paceTag == .brisk  }.count
-        if normals < 3 || brisks < 2 {
-            return "Add at least 3 Normal and 2 Brisk songs (5 cycles minimum)."
-        }
-        if normals != brisks + 1 {
-            return "You need one more Normal song than Brisk so the session ends on a cool-down."
-        }
-        if totalSessionSeconds < 15 * 60 {
-            return "Session must be at least 15 minutes."
-        }
-        return nil
-    }
-
-    // ── Persistence ──────────────────────────────────────────────────
-    private static let key = "musicSelection"
-
-    func save() {
-        if let data = try? JSONEncoder().encode(self) {
-            UserDefaults.standard.set(data, forKey: Self.key)
-        }
-    }
-
-    static func load() -> MusicSelection {
-        guard
-            let data = UserDefaults.standard.data(forKey: key),
-            let saved = try? JSONDecoder().decode(MusicSelection.self, from: data)
-        else { return MusicSelection() }
-        return saved
+    var hasValidTaggedPlaylist: Bool {
+        let normalCount = taggedSongs.filter { $0.paceTag == .normal }.count
+        let briskCount = taggedSongs.filter { $0.paceTag == .brisk }.count
+        return normalCount > 0 && briskCount > 0
     }
 }
-

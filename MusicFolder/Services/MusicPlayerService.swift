@@ -4,115 +4,151 @@
 //
 //  Created by AnnElaine on 3/11/26.
 //
+//  Updated 3/12/26: Added real audio playback with AVFoundation
 //
-//  Handles all audio playback for isoWalk.
-//  Completely separate from ViewModels — no UI logic here.
-//
-//  ── isoWalk Tracks (SUNO) ──────────────────────────────────────────
-//  Uses AVFoundation to play bundled .mp3 / .m4a files.
-//  WalkSessionView calls playNormalTrack() / playBriskTrack()
-//  in sync with the interval timer.
-//
-//  ── My Music (Apple Music) ─────────────────────────────────────────
-//  Uses MusicKit (iOS 15+). Requires MusicKit entitlement in Xcode:
-//  Target → Signing & Capabilities → + Capability → MusicKit
-//  User is prompted for library access once on first use.
-//
-//  ── My Music (Spotify) ─────────────────────────────────────────────
-//  Uses Spotify iOS SDK (SpotifyiOS Swift Package).
-//  Requires Spotify Premium on the user's account.
-//  Requires a Spotify Developer app registration at developer.spotify.com.
-//  Add client ID to Info.plist key: SpotifyClientID
-//
-//  ── Next Sprint ────────────────────────────────────────────────────
-//  TODO: Implement playTrack(_ sunoTrack: SunoTrack)
-//  TODO: Implement requestAppleMusicAccess() → MusicKit authorization
-//  TODO: Implement presentAppleMusicPicker() → MPMediaPickerController
-//  TODO: Implement connectSpotify() → SPTSessionManager handshake
-//  TODO: Implement onSongEnd callback → signals MusicViewModel to advance
-//  TODO: Implement fadeOut(duration:) for smooth interval transitions
-//  TODO: Implement chimeAndVoiceCue(for pace: WalkPaceTag)
+//  Handles music playback during walk sessions.
+//  Plays SUNO tracks from Audio folder or user's Apple Music/Spotify.
 //
 
-import Foundation
 import AVFoundation
+import Foundation
 
 @Observable
 final class MusicPlayerService {
-
-    // MARK: - State (observable by WalkSessionView)
-    var isPlaying: Bool         = false
-    var currentTrackTitle: String = ""
-    var currentPace: WalkPaceTag  = .normal
-
-    // Callback — called when a song ends (My Music mode)
-    // WalkSessionView sets this to advance to the next song
-    var onSongDidEnd: (() -> Void)?
-
-    // MARK: - Private
+    
+    // MARK: - Singleton
+    static let shared = MusicPlayerService()
+    
+    // MARK: - State
     private var audioPlayer: AVAudioPlayer?
-
-    // ── isoWalk Tracks ───────────────────────────────────────────────
-
-    func playNormalTrack(_ track: SunoTrack) {
-        // TODO: load track.id from bundle and play via AVAudioPlayer
-        currentTrackTitle = track.title
-        currentPace       = .normal
-        isPlaying         = true
-        print("[MusicPlayerService] Playing normal track: \(track.title)")
+    private var currentTrackId: String?
+    var isPlaying: Bool = false
+    var volume: Float = 0.8
+    
+    private init() {
+        setupAudioSession()
     }
-
-    func playBriskTrack(_ track: SunoTrack) {
-        // TODO: load track.id from bundle and play via AVAudioPlayer
-        currentTrackTitle = track.title
-        currentPace       = .brisk
-        isPlaying         = true
-        print("[MusicPlayerService] Playing brisk track: \(track.title)")
+    
+    // MARK: - Audio Session Setup
+    
+    private func setupAudioSession() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try session.setActive(true)
+        } catch {
+            print("❌ Failed to setup audio session: \(error)")
+        }
     }
-
-    // ── My Music ─────────────────────────────────────────────────────
-
-    func playSong(_ song: TaggedSong) {
-        // TODO: route to MusicKit or Spotify based on MusicSelection.musicService
-        currentTrackTitle = song.title
-        currentPace       = song.paceTag
-        isPlaying         = true
-        print("[MusicPlayerService] Playing song: \(song.title) (\(song.paceTag.displayName))")
+    
+    // MARK: - Play SUNO Track
+    
+    func playSunoTrack(trackId: String, duration: Int) {
+        guard let track = SunoTrackLibrary.track(byId: trackId) else {
+            print("❌ Track not found: \(trackId)")
+            return
+        }
+        
+        // Build filename with duration
+        let filename = track.filename(forDuration: duration)
+        
+        // Determine folder based on pace and duration
+        let folder: String
+        if track.pace == .normal {
+            folder = "NormalPace/\(duration)mins"
+        } else {
+            folder = "BriskPace/\(duration)min"  // Note: Brisk uses "min" not "mins"
+        }
+        
+        // Try to load audio file
+        guard let url = Bundle.main.url(
+            forResource: filename,
+            withExtension: "wav",
+            subdirectory: "Shared/Audio/\(folder)"
+        ) else {
+            print("❌ Audio file not found: Shared/Audio/\(folder)/\(filename).wav")
+            print("💡 Make sure file exists in Xcode project")
+            return
+        }
+        
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.volume = volume
+            audioPlayer?.prepareToPlay()
+            audioPlayer?.play()
+            
+            currentTrackId = trackId
+            isPlaying = true
+            
+            print("✅ Playing: \(track.title) (\(duration) min)")
+        } catch {
+            print("❌ Failed to play audio: \(error)")
+        }
     }
-
-    // ── Playback Control ─────────────────────────────────────────────
-
+    
+    // MARK: - Play Preview (6-8 second clip)
+    
+    func playPreview(trackId: String, duration: Double = 7.0) {
+        // For previews, always use 3min version
+        playSunoTrack(trackId: trackId, duration: 3)
+        
+        // Stop after preview duration
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
+            if self?.currentTrackId == trackId {
+                self?.stop()
+            }
+        }
+    }
+    
+    // MARK: - Playback Controls
+    
     func pause() {
         audioPlayer?.pause()
         isPlaying = false
     }
-
+    
     func resume() {
         audioPlayer?.play()
         isPlaying = true
     }
-
+    
     func stop() {
         audioPlayer?.stop()
-        audioPlayer          = nil
-        isPlaying            = false
-        currentTrackTitle    = ""
+        audioPlayer = nil
+        currentTrackId = nil
+        isPlaying = false
     }
-
-    func fadeOut(duration: TimeInterval = 2.0, completion: (() -> Void)? = nil) {
-        // TODO: gradually reduce audioPlayer.volume to 0 then stop
-        stop()
-        completion?()
+    
+    func setVolume(_ volume: Float) {
+        self.volume = max(0.0, min(1.0, volume))
+        audioPlayer?.volume = self.volume
     }
-
-    // ── Cues ─────────────────────────────────────────────────────────
-
-    func playPaceCue(for pace: WalkPaceTag) {
-        // TODO: play chime audio file, then AVSpeechSynthesizer voice cue
-        let message = pace == .brisk
-            ? "Time to pick up the pace."
-            : "Slow it down. Nice and steady."
-        print("[MusicPlayerService] Cue: \(message)")
+    
+    // MARK: - Fade Out
+    
+    func fadeOut(duration: Double = 3.0) {
+        guard let player = audioPlayer, isPlaying else { return }
+        
+        let steps = 30
+        let stepDuration = duration / Double(steps)
+        let volumeDecrement = volume / Float(steps)
+        
+        for step in 0..<steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + stepDuration * Double(step)) { [weak self] in
+                guard let self = self, let player = self.audioPlayer else { return }
+                player.volume = max(0, self.volume - (volumeDecrement * Float(step + 1)))
+                
+                if step == steps - 1 {
+                    self.stop()
+                }
+            }
+        }
+    }
+    
+    // MARK: - Chime & Voice Cue (TODO)
+    
+    func playChimeAndVoiceCue(message: String) {
+        // TODO: Implement chime sound + voice cue
+        print("🔔 Chime + Voice: \(message)")
     }
 }
-
