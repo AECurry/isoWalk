@@ -11,6 +11,8 @@
 //    This eliminates the visible snap without needing an isAnimating guard.
 //  - rotation = 0 and scale = minSc are set synchronously BEFORE the
 //    async block so the image renders at rest while SwiftUI settles.
+//  - FIXED: Exhaustive switch statements to support .video future-proofing.
+//  - FIXED: Updated OverlayAnimation to use .horizontalDrift.
 //
 
 import SwiftUI
@@ -28,6 +30,13 @@ struct ImageAreaView: View {
             switch theme.animationType {
             case .layeredAnimation(let bgImage, let overlayImage, let overlayAnim):
                 layeredView(backgroundImage: bgImage, overlayImage: overlayImage, overlayAnimation: overlayAnim)
+                
+            case .video(_, let fallback):
+                // If this view ever receives a video theme, it safely falls back to the static image
+                Image(fallback)
+                    .resizable()
+                    .scaledToFit()
+                
             default:
                 singleImageView
             }
@@ -101,8 +110,8 @@ struct ImageAreaView: View {
             case .layeredAnimation(_, _, let overlayAnim):
                 animateOverlay(overlayAnim)
 
-            case .none:
-                break
+            case .video, .none:
+                break // No programmatic @State animation needed for videos or static images
             }
         }
     }
@@ -111,11 +120,11 @@ struct ImageAreaView: View {
     
     private func animateOverlay(_ animation: OverlayAnimation) {
         switch animation {
-        case .drift(let xOff, let yOff, let duration):
-            // Slow drift animation - clouds moving gently
+        case .horizontalDrift(let duration):
+            // Slow horizontal drift animation
+            offsetX = -20 // Start slightly left
             withAnimation(.easeInOut(duration: duration).repeatForever(autoreverses: true)) {
-                offsetX = xOff
-                offsetY = yOff
+                offsetX = 20 // Drift slightly right and back
             }
             
         case .pulse(let minSc, let maxSc, let speed):

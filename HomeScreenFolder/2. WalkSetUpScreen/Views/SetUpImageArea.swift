@@ -6,35 +6,45 @@
 //
 //
 //  COMPONENT — dumb child.
-//  Displays the animated theme image.
-//  Size comes from AnimatedImageSize defined in AnimatedImageConfig.swift.
+//  Displays the theme image in the setup screen.
+//  Receives theme from parent. Owns nothing.
+//  - FIXED: Replaced deprecated UIScreen.main.bounds with GeometryReader
+//  - FIXED: Added exhaustive switch coverage for .video support
 //
 
 import SwiftUI
 
 struct SetUpImageArea: View {
-
+    
     let theme: IsoWalkTheme
-    var size: AnimatedImageSize = .medium
-
+    @State private var offsetX: CGFloat = 0
     @State private var rotation: Double = 0
     @State private var scale: CGFloat = 1.0
-    @State private var offsetX: CGFloat = 0
-    @State private var offsetY: CGFloat = 0
-
+    
     var body: some View {
-        ZStack {
-            switch theme.animationType {
-            case .layeredAnimation(let bgImage, let overlayImage, let overlayAnim):
-                layeredView(backgroundImage: bgImage, overlayImage: overlayImage, overlayAnimation: overlayAnim)
-            default:
-                singleImageView
+        // We use GeometryReader here to get the width without using the deprecated UIScreen.main
+        GeometryReader { geo in
+            ZStack {
+                switch theme.animationType {
+                case .layeredAnimation(let bgImage, let overlayImage, let overlayAnim):
+                    layeredView(backgroundImage: bgImage, overlayImage: overlayImage, overlayAnimation: overlayAnim)
+                    
+                case .video(_, let fallback):
+                    // Fallback to static image for setup preview
+                    Image(fallback)
+                        .resizable()
+                        .scaledToFit()
+                    
+                default:
+                    singleImageView
+                }
             }
+            .frame(height: 200)
+            .frame(maxWidth: .infinity)
+            .id(theme.id)
+            .onAppear { startAnimation(viewWidth: geo.size.width) }
         }
-        .frame(width: size.dimension, height: size.dimension)
-        .id(theme.id)
-        .onAppear { applyThemeAnimation() }
-        .onChange(of: theme.id) { applyThemeAnimation() }
+        .frame(height: 200) // Ensure the GeometryReader takes the proper height
     }
     
     // MARK: - Single Image View
@@ -50,40 +60,45 @@ struct SetUpImageArea: View {
     // MARK: - Layered View
     
     private func layeredView(backgroundImage: String, overlayImage: String, overlayAnimation: OverlayAnimation) -> some View {
-        ZStack {
-            // Fixed background layer
-            Image(backgroundImage)
-                .resizable()
-                .scaledToFit()
-            
-            // Animated overlay layer
-            Image(overlayImage)
-                .resizable()
-                .scaledToFit()
-                .offset(x: offsetX, y: offsetY)
-                .opacity(0.7)  // Slightly transparent for depth
+        GeometryReader { geo in
+            ZStack {
+                // Fixed background
+                Image(backgroundImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: geo.size.width)
+                
+                // Animated overlay
+                Image(overlayImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: geo.size.width)
+                    .offset(x: offsetX)
+                    .opacity(0.7)
+            }
         }
     }
-
-    private func applyThemeAnimation() {
+    
+    // MARK: - Animation
+    
+    private func startAnimation(viewWidth: CGFloat) {
+        offsetX = 0
         rotation = 0
         scale = 1.0
-        offsetX = 0
-        offsetY = 0
-
+        
         DispatchQueue.main.async {
             switch theme.animationType {
             case .rotation(let speed):
                 withAnimation(.linear(duration: speed).repeatForever(autoreverses: false)) {
                     rotation = 360
                 }
-
-            case .pulse(let min, let max, let speed):
-                scale = min
+                
+            case .pulse(let minSc, let maxSc, let speed):
+                scale = minSc
                 withAnimation(.easeInOut(duration: speed).repeatForever(autoreverses: true)) {
-                    scale = max
+                    scale = maxSc
                 }
-
+                
             case .rotatingPulse(let rotSpeed, let minSc, let maxSc, let pulseSpeed):
                 withAnimation(.linear(duration: rotSpeed).repeatForever(autoreverses: false)) {
                     rotation = 360
@@ -94,23 +109,23 @@ struct SetUpImageArea: View {
                 }
                 
             case .layeredAnimation(_, _, let overlayAnim):
-                animateOverlay(overlayAnim)
-
-            case .none:
+                animateOverlay(overlayAnim, viewWidth: viewWidth)
+                
+            case .video, .none:
                 break
             }
         }
     }
     
-    // MARK: - Overlay Animation
-    
-    private func animateOverlay(_ animation: OverlayAnimation) {
+    private func animateOverlay(_ animation: OverlayAnimation, viewWidth: CGFloat) {
         switch animation {
-        case .drift(let xOff, let yOff, let duration):
-            // Slow drift animation - clouds moving gently
-            withAnimation(.easeInOut(duration: duration).repeatForever(autoreverses: true)) {
-                offsetX = xOff
-                offsetY = yOff
+        case .horizontalDrift(let duration):
+            // Start off-screen left (using the GeometryReader width instead of UIScreen)
+            offsetX = -viewWidth
+            
+            // Drift to off-screen right
+            withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
+                offsetX = viewWidth * 2
             }
             
         case .pulse(let minSc, let maxSc, let speed):
@@ -128,14 +143,7 @@ struct SetUpImageArea: View {
 }
 
 #Preview {
-    ZStack {
-        Image("GoldenTextureBackground")
-            .resizable()
-            .ignoresSafeArea()
-        VStack(spacing: 40) {
-            SetUpImageArea(theme: IsoWalkThemes.all[0], size: .extraLarge)
-            SetUpImageArea(theme: IsoWalkThemes.all[0], size: .medium)
-        }
-    }
+    SetUpImageArea(theme: IsoWalkThemes.cloudyTreeTheme)
+        .background(Color.white)
 }
 

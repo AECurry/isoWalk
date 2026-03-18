@@ -4,6 +4,8 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
+//  Updated 3/18/26: Added horizontal drift for cloud animation
+//  - FIXED: Exhaustive switch coverage for .video support
 //
 //  COMPONENT — dumb child.
 //  Receives a theme and displays the large animated preview.
@@ -27,6 +29,13 @@ struct ThemeHeaderPreview: View {
             switch theme.animationType {
             case .layeredAnimation(let bgImage, let overlayImage, let overlayAnim):
                 layeredView(backgroundImage: bgImage, overlayImage: overlayImage, overlayAnimation: overlayAnim)
+                
+            case .video(_, let fallback):
+                // Safe fallback for video themes in this preview component
+                Image(fallback)
+                    .resizable()
+                    .scaledToFit()
+                    
             default:
                 singleImageView
             }
@@ -47,16 +56,16 @@ struct ThemeHeaderPreview: View {
             .scaleEffect(scale)
     }
     
-    // MARK: - Layered View (NEW)
+    // MARK: - Layered View
     
     private func layeredView(backgroundImage: String, overlayImage: String, overlayAnimation: OverlayAnimation) -> some View {
         ZStack {
-            // Fixed background layer
+            // Fixed background layer (tree)
             Image(backgroundImage)
                 .resizable()
                 .scaledToFit()
             
-            // Animated overlay layer
+            // Animated overlay layer (clouds)
             Image(overlayImage)
                 .resizable()
                 .scaledToFit()
@@ -96,8 +105,8 @@ struct ThemeHeaderPreview: View {
             case .layeredAnimation(_, _, let overlayAnim):
                 animateOverlay(overlayAnim)
 
-            case .none:
-                break
+            case .video, .none:
+                break // No programmatic @State animation needed for videos or static images
             }
         }
     }
@@ -106,11 +115,13 @@ struct ThemeHeaderPreview: View {
     
     private func animateOverlay(_ animation: OverlayAnimation) {
         switch animation {
-        case .drift(let xOff, let yOff, let duration):
-            // Slow drift animation - clouds moving gently
-            withAnimation(.easeInOut(duration: duration).repeatForever(autoreverses: true)) {
-                offsetX = xOff
-                offsetY = yOff
+        case .horizontalDrift(let duration):
+            // Start clouds off-screen to the left
+            offsetX = -frameSize
+            
+            // Animate clouds moving from left to right across the screen
+            withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
+                offsetX = frameSize * 2  // Move fully off-screen to the right
             }
             
         case .pulse(let minSc, let maxSc, let speed):

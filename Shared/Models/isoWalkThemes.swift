@@ -9,11 +9,6 @@
 //  To add a new theme: add ONE entry to AnimatedImageLibrary.availableImages
 //  in AnimatedImageConfig.swift. Nothing else needs to change.
 //
-//  CONTAINS:
-//  - ThemeAnimationType    → animation styles a theme can have
-//  - IsoWalkTheme          → model for ONE theme
-//  - IsoWalkThemes         → catalog of ALL themes + helper methods
-//
 
 import SwiftUI
 
@@ -26,12 +21,14 @@ enum ThemeAnimationType {
     case pulse(minScale: Double, maxScale: Double, speed: Double)
     case rotatingPulse(rotSpeed: Double, minScale: Double, maxScale: Double, pulseSpeed: Double)
     case layeredAnimation(backgroundImage: String, overlayImage: String, overlayAnimation: OverlayAnimation)
+    // NEW: Future-proofed for Kling AI videos (.mp4)
+    case video(filename: String, fallbackImageName: String)
     case none
 }
 
-// NEW: Overlay animation types for layered themes
+// Overlay animation types for layered themes
 enum OverlayAnimation {
-    case drift(xOffset: CGFloat, yOffset: CGFloat, duration: Double)  // Clouds drifting
+    case horizontalDrift(duration: Double)  // Clouds scrolling left to right
     case pulse(minScale: Double, maxScale: Double, speed: Double)
     case rotate(speed: Double)
 }
@@ -49,7 +46,7 @@ struct IsoWalkTheme: Identifiable {
     let backgroundColor: Color
     let animationType: ThemeAnimationType
 
-    // Built dynamically from config — no manual wiring needed.
+    // Built dynamically from config — NO MANUAL WIRING NEEDED. (Koi Fish uses this!)
     init(from config: AnimatedImageConfig) {
         self.id                  = config.id
         self.displayName         = config.name
@@ -78,7 +75,7 @@ struct IsoWalkTheme: Identifiable {
         }
     }
     
-    // NEW: Custom initializer for layered animations
+    // Custom initializer for layered animations and videos
     init(
         id: String,
         displayName: String,
@@ -120,16 +117,19 @@ struct IsoWalkThemes {
     static let selectedThemeKey = "selectedThemeId"
     static let defaultThemeId   = "koi"
     
-    // NEW: Cloudy Tree Theme
+    // Cloudy Tree Theme with white background and horizontal drift
     static let cloudyTreeTheme = IsoWalkTheme(
         id: "cloudyTree",
         displayName: "Japanese Tree with Clouds",
-        mainImageName: "JapaneseTreeWithClouds",  // Fixed background
+        mainImageName: "JapaneseTreeWithClouds",
         logoImageName: "JapaneseTreeWithClouds",
+        backgroundImageName: nil,  // No background image
+        backgroundColor: .white,    // White background
         animationType: .layeredAnimation(
             backgroundImage: "JapaneseTreeWithClouds",
             overlayImage: "CloudSwirls",
-            overlayAnimation: .drift(xOffset: 50, yOffset: 20, duration: 15.0)
+            overlayAnimation: .horizontalDrift(duration: 60.0)  // 60 seconds for slow fog-like movement
         )
     )
 }
+

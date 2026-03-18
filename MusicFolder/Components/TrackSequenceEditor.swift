@@ -12,13 +12,20 @@
 
 import SwiftUI
 
+// MARK: - Helper Struct for Sheet Presentation
+struct TrackPickerContext: Identifiable {
+    let id = UUID()
+    let pace: WalkPaceTag
+    let index: Int
+}
+
 struct TrackSequenceEditor: View {
     
     @Bindable var viewModel: MusicViewModel
     @Environment(\.dismiss) private var dismiss
-    @State private var showingPicker: Bool = false
-    @State private var pickerPace: WalkPaceTag = .normal
-    @State private var pickerIndex: Int = 0
+    
+    // Using a single state variable for the sheet context
+    @State private var activePickerContext: TrackPickerContext?
     
     private var sequence: TrackSequence? { viewModel.currentTrackSequence }
     private var cycleInfo: CycleInfo? { sequence?.cycleInfo }
@@ -67,20 +74,21 @@ struct TrackSequenceEditor: View {
                     .fontWeight(.semibold)
                 }
             }
-            .sheet(isPresented: $showingPicker) {
+            // Updated to use .sheet(item:)
+            .sheet(item: $activePickerContext) { context in
                 if let seq = sequence {
-                    let currentTrackId = pickerPace == .normal
-                        ? seq.normalTrackIds[safe: pickerIndex] ?? ""
-                        : seq.briskTrackIds[safe: pickerIndex] ?? ""
+                    let currentTrackId = context.pace == .normal
+                        ? (seq.normalTrackIds.indices.contains(context.index) ? seq.normalTrackIds[context.index] : "")
+                        : (seq.briskTrackIds.indices.contains(context.index) ? seq.briskTrackIds[context.index] : "")
                     
                     TrackSequencePicker(
-                        pace: pickerPace,
+                        pace: context.pace,
                         currentTrackId: currentTrackId,
                         onSelect: { trackId in
-                            if pickerPace == .normal {
-                                viewModel.updateNormalTrack(at: pickerIndex, trackId: trackId)
+                            if context.pace == .normal {
+                                viewModel.updateNormalTrack(at: context.index, trackId: trackId)
                             } else {
-                                viewModel.updateBriskTrack(at: pickerIndex, trackId: trackId)
+                                viewModel.updateBriskTrack(at: context.index, trackId: trackId)
                             }
                         }
                     )
@@ -191,63 +199,52 @@ struct TrackSequenceEditor: View {
         isCooldown: Bool
     ) -> some View {
         HStack(spacing: 12) {
-            HStack(spacing: 12) {
-                // Index number
-                Text("\(index + 1)")
-                    .font(.custom("Inter-SemiBold", size: 16))
-                    .foregroundColor(isoWalkColors.slateGray)
-                    .frame(width: 24)
-                
-                // Track info
-                VStack(alignment: .leading, spacing: 4) {
-                    if let track = SunoTrackLibrary.track(byId: trackId) {
-                        Text(track.title)
-                            .font(.custom("Inter-SemiBold", size: 16))
-                            .foregroundColor(isoWalkColors.jetBlack)
+            // Index number
+            Text("\(index + 1)")
+                .font(.custom("Inter-SemiBold", size: 16))
+                .foregroundColor(isoWalkColors.slateGray)
+                .frame(width: 24)
+            
+            // Track info
+            VStack(alignment: .leading, spacing: 4) {
+                if let track = SunoTrackLibrary.track(byId: trackId) {
+                    Text(track.title)
+                        .font(.custom("Inter-SemiBold", size: 16))
+                        .foregroundColor(isoWalkColors.jetBlack)
+                    
+                    HStack(spacing: 8) {
+                        Text("\(duration) min")
+                            .font(.custom("Inter-Regular", size: 14))
+                            .foregroundColor(isoWalkColors.slateGray)
                         
-                        HStack(spacing: 8) {
-                            Text("\(duration) min")
-                                .font(.custom("Inter-Regular", size: 14))
-                                .foregroundColor(isoWalkColors.slateGray)
-                            
-                            if isCooldown {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "star.fill")
-                                        .font(.system(size: 10))
-                                    Text("cooldown")
-                                        .font(.custom("Inter-Medium", size: 12))
-                                }
-                                .foregroundColor(isoWalkColors.balticBlue)
+                        if isCooldown {
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 10))
+                                Text("cooldown")
+                                    .font(.custom("Inter-Medium", size: 12))
                             }
+                            .foregroundColor(isoWalkColors.balticBlue)
                         }
                     }
                 }
-                
-                Spacer()
-                
-                // Drag handle
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 16))
-                    .foregroundColor(isoWalkColors.slateGray)
             }
-            .padding(16)
-            .background(Color.white)
-            .cornerRadius(12)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                // Set state AND show sheet
-                pickerPace = pace
-                pickerIndex = index
-                showingPicker = true
-            }
-    }
-}
-
-// MARK: - Array Safe Subscript Extension
-
-extension Array {
-    subscript(safe index: Int) -> Element? {
-        return indices.contains(index) ? self[index] : nil
+            
+            Spacer()
+            
+            // Drag handle
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 16))
+                .foregroundColor(isoWalkColors.slateGray)
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(12)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // Updated to immediately set the context, triggering the sheet
+            activePickerContext = TrackPickerContext(pace: pace, index: index)
+        }
     }
 }
 
@@ -256,3 +253,4 @@ extension Array {
     vm.loadTrackSequence(pace: .steady, duration: .thirty)
     return TrackSequenceEditor(viewModel: vm)
 }
+

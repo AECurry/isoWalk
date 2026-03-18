@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 3/11/26.
 //
-//  Updated 3/12/26: Added real SUNO tracks - 2 Normal + 2 Brisk
 //
 //  Library of all bundled isoWalk tracks created by SUNO AI.
 //
@@ -84,3 +83,4 @@ struct SunoTrackLibrary {
         pace == .normal ? normalTracks : briskTracks
     }
 }
+

@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 3/11/26.
 //
-//  Updated 3/12/26: Added filename property to support duration-specific audio files
 //
 //  Models for music selection in WalkSetUpView.
 //  - MusicMode        : no music | isoWalk tracks | my music
@@ -177,3 +176,4 @@ struct MusicSelection: Codable {
         }
     }
 }
+

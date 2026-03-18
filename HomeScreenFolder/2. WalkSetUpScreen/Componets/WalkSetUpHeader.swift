@@ -7,6 +7,7 @@
 //  COMPONENT — dumb child.
 //  Back button, logo, and smaller animated image for the setup screen.
 //  Receives theme and back callback from parent — owns nothing else.
+//  - FIXED: Removed outdated `size` argument to match the updated SetUpImageArea
 //
 
 import SwiftUI
@@ -41,8 +42,8 @@ struct WalkSetUpHeader: View {
                 .frame(height: 40)
                 .padding(.top, -16) // Negative padding pulls the logo up closer to the back button
             
-            // 3. Koi Image — size comes from AnimatedImageSize in AnimatedImageConfig.swift
-            SetUpImageArea(theme: theme, size: .medium)
+            // 3. Theme Image (Fixed: SetUpImageArea now sizes itself)
+            SetUpImageArea(theme: theme)
                 .padding(.top, -12)
         }
     }

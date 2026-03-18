@@ -4,8 +4,6 @@
 //
 //  Created by AnnElaine on 3/11/26.
 //
-//  Updated 3/12/26: Now receives pace/duration from WalkSetUpViewModel
-//                   and passes them to IsoWalkTracksTab
 //
 //  Matches the Pace and Duration pattern exactly:
 //  — MusicPopUp        : collapsed trigger card shown on WalkSetUpView
@@ -186,3 +184,4 @@ struct MusicPopupModal: View {
         .padding()
     }
 }
+
