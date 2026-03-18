@@ -28,6 +28,7 @@ enum ThemeAnimationType {
 
 // Overlay animation types for layered themes
 enum OverlayAnimation {
+    case none // <--- ADDED: Strict "Do Not Animate" option for testing alignment
     case horizontalDrift(duration: Double)  // Clouds scrolling left to right
     case pulse(minScale: Double, maxScale: Double, speed: Double)
     case rotate(speed: Double)
@@ -117,7 +118,7 @@ struct IsoWalkThemes {
     static let selectedThemeKey = "selectedThemeId"
     static let defaultThemeId   = "koi"
     
-    // Cloudy Tree Theme with white background and horizontal drift
+    // Cloudy Tree Theme - CURRENTLY SET TO .none FOR ALIGNMENT TESTING
     static let cloudyTreeTheme = IsoWalkTheme(
         id: "cloudyTree",
         displayName: "Japanese Tree with Clouds",
@@ -128,8 +129,7 @@ struct IsoWalkThemes {
         animationType: .layeredAnimation(
             backgroundImage: "JapaneseTreeWithClouds",
             overlayImage: "CloudSwirls",
-            overlayAnimation: .horizontalDrift(duration: 60.0)  // 60 seconds for slow fog-like movement
+            overlayAnimation: .none  // <--- SET TO .none FOR PURE ALIGNMENT TEST
         )
     )
 }
-

@@ -8,201 +8,172 @@
 //  This view automatically reads the current theme and renders the exact right
 //  background type (Static, Legacy Koi Fish, Layered Fog, or Kling AI Video).
 //
-//  USAGE:
-//  - Drop this view into the ZStack of any screen that needs the background.
-//  - Pass `isAnimated: true` for standard screens (ThemeOptions, Privacy, etc.).
-//  - Pass `isAnimated: false` for busy screens (WalkSessionScreen) to force a static image.
-//
-//  NOTE: You do NOT need to edit this file when adding new themes to the app,
-//  unless you are inventing a completely new `ThemeAnimationType`.
-//
 
 import SwiftUI
 import AVKit
 
 struct ThemeMediaView: View {
     let theme: IsoWalkTheme
-    let isAnimated: Bool // Pass 'false' on WalkSessionScreen to disable movement
+    let isAnimated: Bool
     
     var body: some View {
         ZStack {
-            // 1. Draw the Base Background (White for tree, Parchment for others)
+            // 1. BASE BACKGROUND
             if let bgName = theme.backgroundImageName {
-                Image(bgName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .ignoresSafeArea()
+                Image(bgName).resizable().aspectRatio(contentMode: .fill).ignoresSafeArea()
             } else {
-                theme.backgroundColor
-                    .ignoresSafeArea()
+                theme.backgroundColor.ignoresSafeArea()
             }
             
-            // 2. Draw the Content/Animation
-            if !isAnimated {
-                // WALK SESSION SCREEN: Static image only, no animations
-                Image(theme.mainImageName)
-                    .resizable()
-                    .scaledToFit()
-                    .ignoresSafeArea()
-            } else {
-                // ALL OTHER SCREENS: Route to the correct animation type
+            // 2. ISOLATED CONTENT ROUTING
+            if isAnimated {
                 switch theme.animationType {
                     
-                case .layeredAnimation(let bgImage, let overlayImage, let overlayAnim):
-                    LayeredFogView(bgImage: bgImage, overlayImage: overlayImage, animation: overlayAnim)
+                // --- LAYERED THEME (JAPANESE TREE) ---
+                case .layeredAnimation(let bgImage, let overlayImage, _):
+                    // STRICTLY ISOLATED: The Japanese Tree Test View (NO ANIMATION)
+                    LayeredAlignmentTestView(bgImage: bgImage, overlayImage: overlayImage)
                     
+                // --- KOI FISH THEMES (FULLY WORKING & ISOLATED) ---
+                case .rotation(let speed):
+                    Image(theme.mainImageName).resizable().scaledToFit()
+                        .modifier(RotateModifier(speed: speed))
+                        
+                case .pulse(let minSc, let maxSc, let speed):
+                    Image(theme.mainImageName).resizable().scaledToFit()
+                        .modifier(PulseModifier(minScale: minSc, maxScale: maxSc, speed: speed))
+                        
+                case .rotatingPulse(let rotSpeed, let minSc, let maxSc, let pulseSpeed):
+                    Image(theme.mainImageName).resizable().scaledToFit()
+                        .modifier(RotateModifier(speed: rotSpeed))
+                        .modifier(PulseModifier(minScale: minSc, maxScale: maxSc, speed: pulseSpeed))
+                        
+                // --- VIDEO THEMES ---
                 case .video(let filename, let fallback):
-                    // Future proofed for Kling AI!
                     LoopingVideoView(videoName: filename, fallbackImage: fallback)
                     
+                // --- STATIC FALLBACK ---
                 case .none:
-                    Image(theme.mainImageName)
-                        .resizable()
-                        .scaledToFit()
-                        .ignoresSafeArea()
-                    
+                    Image(theme.mainImageName).resizable().scaledToFit()
+                }
+                
+            } else {
+                // WALK SESSION SCREEN (ALWAYS STATIC)
+                switch theme.animationType {
+                case .layeredAnimation(let bgImage, let overlayImage, _):
+                    LayeredAlignmentTestView(bgImage: bgImage, overlayImage: overlayImage)
                 default:
-                    // KOI FISH & LEGACY CONFIGS:
-                    // We display the image safely to ensure it doesn't break,
-                    // relying on the parent view to apply the legacy rotatingPulse animations.
-                    Image(theme.mainImageName)
-                        .resizable()
-                        .scaledToFit()
-                        .ignoresSafeArea()
+                    Image(theme.mainImageName).resizable().scaledToFit()
                 }
             }
         }
+        .ignoresSafeArea()
     }
 }
 
-// MARK: - Layered Fog Animation
-// This struct handles the Japanese Tree + Clouds layered setup.
-// It uses a classic side-by-side looping trick to create a seamless,
-// continuous scroll from right to left.
-struct LayeredFogView: View {
+// MARK: - THE TEST VIEW (Zero Animation, Pure Stacking)
+struct LayeredAlignmentTestView: View {
     let bgImage: String
     let overlayImage: String
-    let animation: OverlayAnimation
-    
-    // We use a specific animation speed, independent of the variable duration parameter.
-    private let continuousSpeed: Double = 30.0 // LOWER = FASTER (Seconds to cross screen once)
-    
-    @State private var scrollOffset: CGFloat = 0
-    @State private var isAnimating = false
     
     var body: some View {
         ZStack {
-            // 1. Fixed Japanese Tree Background
             Image(bgImage)
                 .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
+                .scaledToFit()
             
-            // 2. Continuous Looping Fog Overlay (Slides Right to Left)
-            GeometryReader { geo in
-                // Using an HStack with two identical images side-by-side allows us to create
-                // a perfectly seamless loop with no gaps.
-                HStack(spacing: 0) {
-                    // Image A (starts centered)
-                    Image(overlayImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geo.size.width)
-                    
-                    // Image B (starts off-screen right)
-                    Image(overlayImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geo.size.width)
-                }
-                .frame(width: geo.size.width * 2, alignment: .leading) // Full width of the two-image strip
-                
-                // --- THE ANIMATION LOGIC ---
-                // Start: centered (offset 0).
-                // End: shifted left by exactly one screen width (offset -width).
-                // Then repeat without autoreversing to instantly snap back to 0.
-                .offset(x: isAnimating ? -geo.size.width : 0)
-                .animation(
-                    .linear(duration: continuousSpeed).repeatForever(autoreverses: false),
-                    value: isAnimating
-                )
-                .onAppear {
-                    // Start the animation as soon as the view is rendered.
-                    // The image is already centered by default.
-                    isAnimating = true
-                }
-                .onDisappear {
-                    // Turn off animation to save CPU when off-screen.
-                    isAnimating = false
-                }
-            }
-            .ignoresSafeArea()
-            .opacity(0.8) // Slightly transparent for better blending
+            Image(overlayImage)
+                .resizable()
+                .scaledToFit()
+                .opacity(0.7) // Keeping opacity at 0.7 so we can clearly see the overlap
         }
     }
 }
 
-// MARK: - Kling AI Video Future-Proofing
-// Uses UIViewRepresentable so we can hide playback controls (VideoPlayer shows them)
+// MARK: - ISOLATED ANIMATION MODIFIERS FOR KOI FISH
+// Because these are ViewModifiers, they only apply to the exact image they are attached to.
+
+struct RotateModifier: ViewModifier {
+    let speed: Double
+    @State private var rotation: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .rotationEffect(.degrees(rotation))
+            .onAppear {
+                withAnimation(.linear(duration: speed).repeatForever(autoreverses: false)) {
+                    rotation = 360
+                }
+            }
+    }
+}
+
+struct PulseModifier: ViewModifier {
+    let minScale: Double
+    let maxScale: Double
+    let speed: Double
+    @State private var scale: Double = 1.0
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(scale)
+            .onAppear {
+                scale = minScale
+                withAnimation(.easeInOut(duration: speed).repeatForever(autoreverses: true)) {
+                    scale = maxScale
+                }
+            }
+    }
+}
+
+// MARK: - LOOPING VIDEO VIEW (iOS 26 Compliant)
 struct LoopingVideoView: UIViewRepresentable {
     let videoName: String
     let fallbackImage: String
     
     func makeUIView(context: Context) -> UIView {
         let view = UIView(frame: .zero)
-        view.backgroundColor = .clear
-        
-        // 1. Check if the video file exists in the bundle
         guard let url = Bundle.main.url(forResource: videoName, withExtension: "mp4") else {
-            // If video isn't added yet, show the fallback image safely without crashing
             let imageView = UIImageView(image: UIImage(named: fallbackImage))
             imageView.contentMode = .scaleAspectFill
+            imageView.clipsToBounds = true
             imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             view.addSubview(imageView)
             return view
         }
-        
-        // 2. Set up seamless looping player
         let playerItem = AVPlayerItem(url: url)
         let queuePlayer = AVQueuePlayer(playerItem: playerItem)
         context.coordinator.looper = AVPlayerLooper(player: queuePlayer, templateItem: playerItem)
-        
         let playerLayer = AVPlayerLayer(player: queuePlayer)
         playerLayer.videoGravity = .resizeAspectFill
-        
-        // Use a sublayer so it resizes correctly
-        let layerView = VideoLayerView()
-        layerView.layer.addSublayer(playerLayer)
-        context.coordinator.playerLayer = playerLayer
-        
-        view.addSubview(layerView)
-        layerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        
+        let videoContainer = VideoContainerView(playerLayer: playerLayer)
+        view.addSubview(videoContainer)
+        videoContainer.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            videoContainer.topAnchor.constraint(equalTo: view.topAnchor),
+            videoContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            videoContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            videoContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
         queuePlayer.play()
-        queuePlayer.isMuted = true // Background videos should always be muted
-        
+        queuePlayer.isMuted = true
         return view
     }
-    
-    func updateUIView(_ uiView: UIView, context: Context) {
-        // Handle resizing if the screen rotates
-        context.coordinator.playerLayer?.frame = uiView.bounds
+    func updateUIView(_ uiView: UIView, context: Context) {}
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    class Coordinator { var looper: AVPlayerLooper? }
+}
+
+class VideoContainerView: UIView {
+    var playerLayer: AVPlayerLayer
+    init(playerLayer: AVPlayerLayer) {
+        self.playerLayer = playerLayer
+        super.init(frame: .zero)
+        self.layer.addSublayer(playerLayer)
     }
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-    
-    class Coordinator {
-        var looper: AVPlayerLooper?
-        var playerLayer: AVPlayerLayer?
-    }
-    
-    // Helper view to force the layer to resize with SwiftUI
-    class VideoLayerView: UIView {
-        override func layoutSubviews() {
-            super.layoutSubviews()
-            layer.sublayers?.first?.frame = bounds
-        }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        playerLayer.frame = self.bounds
     }
 }

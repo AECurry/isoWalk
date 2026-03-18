@@ -9,7 +9,7 @@
 //  Displays the theme image in the setup screen.
 //  Receives theme from parent. Owns nothing.
 //  - FIXED: Replaced deprecated UIScreen.main.bounds with GeometryReader
-//  - FIXED: Added exhaustive switch coverage for .video support
+//  - FIXED: Added exhaustive switch coverage for .video and .none support
 //
 
 import SwiftUI
@@ -119,6 +119,10 @@ struct SetUpImageArea: View {
     
     private func animateOverlay(_ animation: OverlayAnimation, viewWidth: CGFloat) {
         switch animation {
+        case .none:
+            // ADDED: Explicitly tell it to do nothing
+            break
+            
         case .horizontalDrift(let duration):
             // Start off-screen left (using the GeometryReader width instead of UIScreen)
             offsetX = -viewWidth
@@ -146,4 +150,3 @@ struct SetUpImageArea: View {
     SetUpImageArea(theme: IsoWalkThemes.cloudyTreeTheme)
         .background(Color.white)
 }
-

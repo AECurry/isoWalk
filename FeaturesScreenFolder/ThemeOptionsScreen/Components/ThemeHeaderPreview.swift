@@ -5,7 +5,7 @@
 //  Created by AnnElaine on 2/17/26.
 //
 //  Updated 3/18/26: Added horizontal drift for cloud animation
-//  - FIXED: Exhaustive switch coverage for .video support
+//  - FIXED: Exhaustive switch coverage for .video support and .none
 //
 //  COMPONENT — dumb child.
 //  Receives a theme and displays the large animated preview.
@@ -115,6 +115,10 @@ struct ThemeHeaderPreview: View {
     
     private func animateOverlay(_ animation: OverlayAnimation) {
         switch animation {
+        case .none:
+            // ADDED THIS CASE: Do absolutely nothing so the images just sit still.
+            break
+            
         case .horizontalDrift(let duration):
             // Start clouds off-screen to the left
             offsetX = -frameSize

@@ -5,15 +5,6 @@
 //  Created by AnnElaine on 2/17/26.
 //
 //
-//  FIX: Animation jump and erratic speed resolved.
-//  - DispatchQueue.main.async defers animation start by one run loop tick
-//    so SwiftUI finishes its render pass before animation begins.
-//    This eliminates the visible snap without needing an isAnimating guard.
-//  - rotation = 0 and scale = minSc are set synchronously BEFORE the
-//    async block so the image renders at rest while SwiftUI settles.
-//  - FIXED: Exhaustive switch statements to support .video future-proofing.
-//  - FIXED: Updated OverlayAnimation to use .horizontalDrift.
-//
 
 import SwiftUI
 
@@ -120,6 +111,10 @@ struct ImageAreaView: View {
     
     private func animateOverlay(_ animation: OverlayAnimation) {
         switch animation {
+        case .none:
+            // ADDED THIS CASE: Do absolutely nothing so the images sit still
+            break
+            
         case .horizontalDrift(let duration):
             // Slow horizontal drift animation
             offsetX = -20 // Start slightly left
@@ -144,4 +139,3 @@ struct ImageAreaView: View {
 #Preview {
     ImageAreaView(theme: IsoWalkThemes.all[0])
 }
-
