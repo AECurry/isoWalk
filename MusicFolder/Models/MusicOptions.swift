@@ -21,7 +21,7 @@ import SwiftUI
 // MARK: - MUSIC MODE
 // ==========================================
 
-enum MusicMode: String, CaseIterable, Identifiable {
+enum MusicMode: String, CaseIterable, Identifiable, Codable {
     case noMusic       = "noMusic"
     case isoWalkTracks = "isoWalkTracks"
     case myMusic       = "myMusic"
@@ -49,7 +49,7 @@ enum MusicMode: String, CaseIterable, Identifiable {
 // MARK: - MUSIC SERVICE
 // ==========================================
 
-enum MusicService: String, CaseIterable, Identifiable {
+enum MusicService: String, CaseIterable, Identifiable, Codable {
     case appleMusic = "appleMusic"
     case spotify    = "spotify"
 
@@ -118,7 +118,7 @@ struct TaggedSong: Identifiable, Codable {
     let title: String
     let artist: String
     let duration: Int           // in seconds
-    let paceTag: WalkPaceTag
+    var paceTag: WalkPaceTag    // Changed to var so it can be toggled
     let serviceId: String       // Apple Music ID or Spotify URI
 
     var durationDisplay: String {
@@ -159,5 +159,21 @@ struct MusicSelection: Codable {
         let normalCount = taggedSongs.filter { $0.paceTag == .normal }.count
         let briskCount = taggedSongs.filter { $0.paceTag == .brisk }.count
         return normalCount > 0 && briskCount > 0
+    }
+    
+    // MARK: - Persistence
+    
+    static func load() -> MusicSelection {
+        guard let data = UserDefaults.standard.data(forKey: "musicSelection"),
+              let decoded = try? JSONDecoder().decode(MusicSelection.self, from: data) else {
+            return MusicSelection()
+        }
+        return decoded
+    }
+    
+    func save() {
+        if let encoded = try? JSONEncoder().encode(self) {
+            UserDefaults.standard.set(encoded, forKey: "musicSelection")
+        }
     }
 }

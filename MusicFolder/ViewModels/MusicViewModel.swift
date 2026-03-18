@@ -28,10 +28,10 @@ final class MusicViewModel {
     var isEditingTrackSequence: Bool = false
 
     // MARK: - Derived: selection summary for collapsed card
-    var selectedMode: MusicMode { selection.mode }
+    var selectedMode: MusicMode { selection.musicMode }
 
     var summaryLabel: String {
-        switch selection.mode {
+        switch selection.musicMode {
         case .noMusic:
             return "No Music"
         case .isoWalkTracks:
@@ -41,12 +41,12 @@ final class MusicViewModel {
             return "isoWalk Tracks"
         case .myMusic:
             if selection.taggedSongs.isEmpty { return "No songs added" }
-            return selection.totalSessionDisplay
+            return "\(selection.taggedSongs.count) songs"
         }
     }
 
     var canStartWalk: Bool {
-        switch selection.mode {
+        switch selection.musicMode {
         case .noMusic:
             return true
         case .isoWalkTracks:
@@ -54,16 +54,20 @@ final class MusicViewModel {
             guard let sequence = currentTrackSequence else { return false }
             return sequence.isComplete
         case .myMusic:
-            return selection.isValidForMyMusic
+            return selection.hasValidTaggedPlaylist
         }
     }
 
     var validationMessage: String? {
-        switch selection.mode {
+        switch selection.musicMode {
         case .noMusic, .isoWalkTracks:
             return nil
         case .myMusic:
-            return selection.validationMessage
+            let normalCount = selection.taggedSongs.filter { $0.paceTag == .normal }.count
+            let briskCount = selection.taggedSongs.filter { $0.paceTag == .brisk }.count
+            if normalCount == 0 { return "Add at least one Normal pace song" }
+            if briskCount == 0 { return "Add at least one Brisk pace song" }
+            return nil
         }
     }
 
@@ -73,6 +77,10 @@ final class MusicViewModel {
 
     // Load or create track sequence for current pace/duration
     func loadTrackSequence(pace: PaceOptions, duration: DurationOptions) {
+        // TEMPORARY: Clear this specific sequence to force regeneration with correct slot count
+        // Remove this line after running once!
+        TrackSequenceStorage.delete(pace: pace, duration: duration)
+        
         currentTrackSequence = TrackSequenceStorage.getOrCreate(pace: pace, duration: duration)
     }
     
@@ -165,7 +173,7 @@ final class MusicViewModel {
 
     // MARK: - Mode
     func setMode(_ mode: MusicMode) {
-        selection.mode = mode
+        selection.musicMode = mode
         activeTab = mode
         save()
     }
@@ -173,4 +181,3 @@ final class MusicViewModel {
     // MARK: - Persistence
     private func save() { selection.save() }
 }
-

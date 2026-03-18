@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 3/11/26.
 //
-//  Updated 3/12/26: Added real audio playback with AVFoundation
 //
 //  Handles music playback during walk sessions.
 //  Plays SUNO tracks from Audio folder or user's Apple Music/Spotify.
@@ -36,6 +35,7 @@ final class MusicPlayerService {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try session.setActive(true)
+            print("✅ Audio session activated successfully")
         } catch {
             print("❌ Failed to setup audio session: \(error)")
         }
@@ -52,22 +52,23 @@ final class MusicPlayerService {
         // Build filename with duration
         let filename = track.filename(forDuration: duration)
         
-        // Determine folder based on pace and duration
-        let folder: String
-        if track.pace == .normal {
-            folder = "NormalPace/\(duration)mins"
-        } else {
-            folder = "BriskPace/\(duration)min"  // Note: Brisk uses "min" not "mins"
-        }
+        // Debug output
+        print("🎵 DEBUG: Looking for file: \(filename).wav")
+        print("🎵 DEBUG: Track title: \(track.title)")
         
-        // Try to load audio file
+        // Try to load audio file - search entire bundle
         guard let url = Bundle.main.url(
             forResource: filename,
-            withExtension: "wav",
-            subdirectory: "Shared/Audio/\(folder)"
+            withExtension: "wav"
         ) else {
-            print("❌ Audio file not found: Shared/Audio/\(folder)/\(filename).wav")
-            print("💡 Make sure file exists in Xcode project")
+            print("❌ Audio file not found: \(filename).wav")
+            print("💡 Searching bundle for any .wav files...")
+            
+            // Debug: Print all .wav files in bundle
+            if let allWavs = Bundle.main.urls(forResourcesWithExtension: "wav", subdirectory: nil) {
+                print("📁 Found \(allWavs.count) .wav files in bundle:")
+                allWavs.forEach { print("   - \($0.lastPathComponent)") }
+            }
             return
         }
         
@@ -81,6 +82,7 @@ final class MusicPlayerService {
             isPlaying = true
             
             print("✅ Playing: \(track.title) (\(duration) min)")
+            print("✅ Audio player started! Volume: \(audioPlayer?.volume ?? 0), isPlaying: \(audioPlayer?.isPlaying ?? false)")
         } catch {
             print("❌ Failed to play audio: \(error)")
         }
@@ -89,8 +91,14 @@ final class MusicPlayerService {
     // MARK: - Play Preview (6-8 second clip)
     
     func playPreview(trackId: String, duration: Double = 7.0) {
-        // For previews, always use 3min version
-        playSunoTrack(trackId: trackId, duration: 3)
+        guard let track = SunoTrackLibrary.track(byId: trackId) else {
+            print("❌ Track not found for preview: \(trackId)")
+            return
+        }
+        
+        // For previews, use 3min for Normal, 1min for Brisk
+        let previewDuration = track.pace == .normal ? 3 : 1
+        playSunoTrack(trackId: trackId, duration: previewDuration)
         
         // Stop after preview duration
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
@@ -127,7 +135,7 @@ final class MusicPlayerService {
     // MARK: - Fade Out
     
     func fadeOut(duration: Double = 3.0) {
-        guard let player = audioPlayer, isPlaying else { return }
+        guard audioPlayer != nil, isPlaying else { return }
         
         let steps = 30
         let stepDuration = duration / Double(steps)
@@ -135,8 +143,8 @@ final class MusicPlayerService {
         
         for step in 0..<steps {
             DispatchQueue.main.asyncAfter(deadline: .now() + stepDuration * Double(step)) { [weak self] in
-                guard let self = self, let player = self.audioPlayer else { return }
-                player.volume = max(0, self.volume - (volumeDecrement * Float(step + 1)))
+                guard let self = self else { return }
+                self.audioPlayer?.volume = max(0, self.volume - (volumeDecrement * Float(step + 1)))
                 
                 if step == steps - 1 {
                     self.stop()

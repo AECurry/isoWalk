@@ -4,6 +4,8 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
+//  Updated 3/17/26: Integrated with MusicSessionManager for music playback
+//
 //  VIEWMODEL — all business logic for the walk session screen.
 //  The View is dumb — it only reads from and calls into this ViewModel.
 //
@@ -31,10 +33,13 @@ final class WalkSessionViewModel {
     private var amplitudeLink: CADisplayLink?
     private var backgroundTime: Date?
     private var wasRunningBeforeAlert = false
+    private var musicManager = MusicSessionManager()
+    private var currentMusicMode: MusicMode = .noMusic
 
     deinit {
         stopTimer()
         stopAmplitudeLink()
+        musicManager.stop()
     }
 
     // MARK: - Session Lifecycle
@@ -42,15 +47,15 @@ final class WalkSessionViewModel {
     func initializeSession(
         duration: DurationOptions,
         pace: PaceOptions,
-        musicMode: MusicMode,               // was: music: MusicOptions
-        musicSelection: MusicSelection      // full selection for MusicPlayerService
+        musicMode: MusicMode,
+        musicSelection: MusicSelection
     ) {
         WalkSessionOptions.clearActive()
         activeSession = nil
 
         let session = WalkSessionOptions(
             duration: duration,
-            music: musicMode,               // was: music
+            music: musicMode,
             pace: pace,
             startTime: Date(),
             wasPaused: false
@@ -64,23 +69,27 @@ final class WalkSessionViewModel {
         progress = 0
         timerState = .stopped
         isAudioPlaying = false
+        currentMusicMode = musicMode
+        
+        // Configure music
+        musicManager.configure(musicMode: musicMode, pace: pace, duration: duration)
 
         updateFormattedTime()
         startAmplitudeLink()
-
-        // TODO: pass musicSelection to MusicPlayerService when wired in next sprint
     }
 
     func playPause() {
         switch timerState {
         case .stopped:
             timerState = .running
-            isAudioPlaying = true
+            isAudioPlaying = currentMusicMode != .noMusic
             startTimer()
+            musicManager.start(remainingTime: remainingTime)
         case .running:
             timerState = .paused
             isAudioPlaying = false
             stopTimer()
+            musicManager.pause()
             if var session = activeSession {
                 session.wasPaused = true
                 activeSession = session
@@ -88,14 +97,16 @@ final class WalkSessionViewModel {
             }
         case .paused:
             timerState = .running
-            isAudioPlaying = true
+            isAudioPlaying = currentMusicMode != .noMusic
             startTimer()
+            musicManager.resume()
         }
     }
 
     func stopSession() {
         stopTimer()
         stopAmplitudeLink()
+        musicManager.stop()
 
         if let session = activeSession {
             remainingTime = session.durationInSeconds
@@ -114,6 +125,7 @@ final class WalkSessionViewModel {
         wasRunningBeforeAlert = timerState == .running
         if timerState == .running {
             stopTimer()
+            musicManager.pause()
             isAudioPlaying = false
         }
     }
@@ -121,7 +133,8 @@ final class WalkSessionViewModel {
     func resumeAfterAlert() {
         if wasRunningBeforeAlert {
             startTimer()
-            isAudioPlaying = true
+            musicManager.resume()
+            isAudioPlaying = currentMusicMode != .noMusic
         }
         wasRunningBeforeAlert = false
     }
@@ -139,6 +152,7 @@ final class WalkSessionViewModel {
             if timerState == .running {
                 backgroundTime = Date()
                 stopTimer()
+                musicManager.pause()
             }
         case .active:
             if let bg = backgroundTime {
@@ -150,6 +164,7 @@ final class WalkSessionViewModel {
                         completeSession()
                     } else {
                         startTimer()
+                        musicManager.resume()
                     }
                 }
             }
@@ -177,6 +192,9 @@ final class WalkSessionViewModel {
         remainingTime -= 1
         progress = 1 - (remainingTime / totalDuration)
         updateFormattedTime()
+        
+        // Check if we need to switch tracks
+        musicManager.checkIntervalChange(remainingTime: remainingTime)
     }
 
     private func completeSession() {
@@ -188,6 +206,7 @@ final class WalkSessionViewModel {
         progress = 1.0
         isAudioPlaying = false
         stopTimer()
+        musicManager.stop()
         updateFormattedTime()
 
         // Cancel today's pending reminders — user has now walked
@@ -226,4 +245,3 @@ final class WalkSessionViewModel {
         }
     }
 }
-

@@ -42,8 +42,7 @@ struct TrackSequenceEditor: View {
                         // Brisk tracks section
                         briskTracksSection
                         
-                        // Preview button
-                        previewButton
+                        Spacer(minLength: 40)  // Extra padding at bottom
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 16)
@@ -126,17 +125,6 @@ struct TrackSequenceEditor: View {
                 }
                 
                 Spacer()
-                
-                Button(action: {
-                    viewModel.shuffleNormalTracks()
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "shuffle")
-                        Text("Shuffle")
-                    }
-                    .font(.custom("Inter-Medium", size: 14))
-                    .foregroundColor(isoWalkColors.balticBlue)
-                }
             }
             .padding(.horizontal, 4)
             
@@ -174,17 +162,6 @@ struct TrackSequenceEditor: View {
                 }
                 
                 Spacer()
-                
-                Button(action: {
-                    viewModel.shuffleBriskTracks()
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "shuffle")
-                        Text("Shuffle")
-                    }
-                    .font(.custom("Inter-Medium", size: 14))
-                    .foregroundColor(isoWalkColors.balticBlue)
-                }
             }
             .padding(.horizontal, 4)
             
@@ -213,11 +190,7 @@ struct TrackSequenceEditor: View {
         duration: Int,
         isCooldown: Bool
     ) -> some View {
-        Button(action: {
-            pickerPace = pace
-            pickerIndex = index
-            showingPicker = true
-        }) {
+        HStack(spacing: 12) {
             HStack(spacing: 12) {
                 // Index number
                 Text("\(index + 1)")
@@ -260,30 +233,13 @@ struct TrackSequenceEditor: View {
             .padding(16)
             .background(Color.white)
             .cornerRadius(12)
-        }
-        .buttonStyle(.plain)
-    }
-    
-    // MARK: - Preview Button
-    
-    private var previewButton: some View {
-        Button(action: {
-            // TODO: Show preview screen
-            print("Preview walk sequence")
-        }) {
-            HStack {
-                Image(systemName: "play.circle.fill")
-                    .font(.system(size: 20))
-                Text("Preview Walk Sequence")
-                    .font(.custom("Inter-SemiBold", size: 16))
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // Set state AND show sheet
+                pickerPace = pace
+                pickerIndex = index
+                showingPicker = true
             }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(isoWalkColors.gradientBlue)
-            .cornerRadius(12)
-        }
-        .buttonStyle(.plain)
     }
 }
 
@@ -300,4 +256,3 @@ extension Array {
     vm.loadTrackSequence(pace: .steady, duration: .thirty)
     return TrackSequenceEditor(viewModel: vm)
 }
-

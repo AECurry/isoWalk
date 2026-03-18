@@ -27,53 +27,63 @@ struct TrackSequencePicker: View {
     
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(tracks) { track in
-                    Button(action: {
-                        onSelect(track.id)
-                        dismiss()
-                    }) {
-                        HStack(spacing: 12) {
-                            // Play button
-                            Button(action: {
-                                playPreview(track)
-                            }) {
-                                Image(systemName: playingTrackId == track.id ? "stop.circle.fill" : "play.circle.fill")
-                                    .font(.system(size: 28))
-                                    .foregroundColor(isoWalkColors.balticBlue)
-                            }
-                            .buttonStyle(.plain)
-                            
-                            // Track info
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(track.title)
-                                    .font(.system(
-                                        size: 16,
-                                        weight: track.id == currentTrackId ? .heavy : .regular
-                                    ))
-                                    .foregroundColor(
-                                        track.id == currentTrackId
-                                            ? isoWalkColors.forestGreen
-                                            : isoWalkColors.jetBlack
-                                    )
+            ZStack {
+                // Background color
+                isoWalkColors.parchment.ignoresSafeArea()
+                
+                List {
+                    ForEach(tracks) { track in
+                        Button(action: {
+                            onSelect(track.id)
+                            dismiss()
+                        }) {
+                            HStack(spacing: 12) {
+                                // Play button
+                                Button(action: {
+                                    playPreview(track)
+                                }) {
+                                    Image(systemName: playingTrackId == track.id ? "stop.circle.fill" : "play.circle.fill")
+                                        .font(.system(size: 28))
+                                        .foregroundColor(isoWalkColors.balticBlue)
+                                }
+                                .buttonStyle(.plain)
                                 
-                                Text(track.durationDisplay)
-                                    .font(.custom("Inter-Regular", size: 14))
-                                    .foregroundColor(isoWalkColors.slateGray)
+                                // Track info
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(track.title)
+                                        .font(.system(
+                                            size: 16,
+                                            weight: track.id == currentTrackId ? .heavy : .regular
+                                        ))
+                                        .foregroundColor(
+                                            track.id == currentTrackId
+                                                ? isoWalkColors.forestGreen
+                                                : isoWalkColors.jetBlack
+                                        )
+                                    
+                                    Text(track.durationDisplay)
+                                        .font(.custom("Inter-Regular", size: 14))
+                                        .foregroundColor(isoWalkColors.slateGray)
+                                }
+                                
+                                Spacer()
                             }
-                            
-                            Spacer()
+                            .padding(.vertical, 8)
+                            .contentShape(Rectangle())  // Makes entire row tappable
                         }
-                        .padding(.vertical, 8)
-                        .contentShape(Rectangle())  // Makes entire row tappable
+                        .buttonStyle(.plain)
+                        .listRowBackground(Color.white)  // White row background
                     }
-                    .buttonStyle(.plain)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)  // Hide default list background
+                .contentMargins(.leading, 16)  // Add padding to prevent cutoff on left
             }
-            .listStyle(.plain)
-            .contentMargins(.leading, 16)  // Add padding to prevent cutoff on left
             .navigationTitle("Select \(pace.displayName) Track")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(isoWalkColors.parchment, for: .navigationBar)  // Theme color for nav bar
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.light, for: .navigationBar)  // Force light mode
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -96,25 +106,22 @@ struct TrackSequencePicker: View {
             // Stop if already playing
             stopPlayback()
         } else {
-            // Play 6-8 second preview
+            // Play 7-second preview using MusicPlayerService
             playingTrackId = track.id
+            MusicPlayerService.shared.playPreview(trackId: track.id, duration: 7.0)
             
-            // TODO: Implement actual audio playback via MusicPlayerService
-            // For now, just simulate with a timer
+            // Auto-stop after 7 seconds
             DispatchQueue.main.asyncAfter(deadline: .now() + 7.0) {
                 if playingTrackId == track.id {
                     stopPlayback()
                 }
             }
-            
-            print("Playing preview: \(track.title) for 7 seconds")
         }
     }
     
     private func stopPlayback() {
         playingTrackId = nil
-        // TODO: Stop actual audio playback
-        print("Stopped preview playback")
+        MusicPlayerService.shared.stop()
     }
 }
 
@@ -125,4 +132,3 @@ struct TrackSequencePicker: View {
         onSelect: { _ in }
     )
 }
-
