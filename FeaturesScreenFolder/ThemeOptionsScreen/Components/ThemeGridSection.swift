@@ -51,10 +51,10 @@ struct ThemeGridSection: View {
 
 #Preview {
     ThemeGridSection(
-        themes: IsoWalkThemes.all,
-        selectedThemeId: "koi",
-        onSelect: { _ in }
-    )
-    .padding()
+        themes: IsoWalkThemeLibrary.availableThemes,
+                selectedThemeId: "koi",
+                onSelect: { _ in }
+            )
+            .padding()
 }
 

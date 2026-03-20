@@ -16,9 +16,12 @@ struct BadgesCard: View {
     let badgesEarned: Int
     let onShowBadges: () -> Void
 
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
+
     // MARK: - Design Constants
-    private let cardCornerRadius: CGFloat = 14
-    private let cardHeight: CGFloat = 90
+    private let cardCornerRadius: CGFloat = 16
+    private let cardHeight: CGFloat = 96
     private let maxCardWidth: CGFloat = 340
     private let trophyCircleSize: CGFloat = 48
     private let trophyIconSize: CGFloat = 32
@@ -31,12 +34,12 @@ struct BadgesCard: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Badges Earned")
-                        .font(.custom("Inter-Regular", size: labelFontSize))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.8))
+                        .font(.custom(theme.bodyFontName, size: labelFontSize))
+                        .foregroundColor(theme.secondaryTextColor)
 
                     Text("\(badgesEarned)")
-                        .font(.custom("Inter-Bold", size: valueFontSize))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .font(.custom(theme.titleFontName, size: valueFontSize))
+                        .foregroundColor(theme.primaryTextColor)
                         .contentTransition(.numericText())
                 }
 
@@ -66,22 +69,10 @@ struct BadgesCard: View {
             .frame(height: cardHeight)
             .background(
                 RoundedRectangle(cornerRadius: cardCornerRadius)
-                    .fill(isoWalkColors.ivory)
+                    .fill(theme.cardColor)
             )
         }
         .buttonStyle(.plain)
-    }
-}
-
-#Preview {
-    ZStack {
-        Image("GoldenTextureBackground")
-            .resizable()
-            .ignoresSafeArea()
-        VStack(spacing: 12) {
-            BadgesCard(badgesEarned: 8, onShowBadges: {})
-            BadgesCard(badgesEarned: 0, onShowBadges: {})
-        }
     }
 }
 

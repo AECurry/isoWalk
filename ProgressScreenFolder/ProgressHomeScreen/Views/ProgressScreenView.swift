@@ -18,8 +18,8 @@ struct ProgressScreenView: View {
 
     @State private var viewModel = ProgressViewModel()
     @AppStorage("userName") private var userName: String = ""
-    @AppStorage(IsoWalkThemes.selectedThemeKey) private var selectedThemeId: String = IsoWalkThemes.defaultThemeId
-    private var theme: IsoWalkTheme { IsoWalkThemes.current(selectedId: selectedThemeId) }
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
 
     private let navBarHeight: CGFloat = 115
     private let maxCardWidth: CGFloat = 340

@@ -19,7 +19,10 @@ struct FeaturesMenuGroup: View {
     let onScientificProof: () -> Void
     let onSubmitFeedback:  () -> Void
 
-    private let cardCornerRadius: CGFloat = 14
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
+
+    private let cardCornerRadius: CGFloat = 16
     private let maxCardWidth: CGFloat = 340
 
     var body: some View {
@@ -57,7 +60,7 @@ struct FeaturesMenuGroup: View {
         .frame(maxWidth: maxCardWidth)
         .background(
             RoundedRectangle(cornerRadius: cardCornerRadius)
-                .fill(isoWalkColors.ivory)
+                .fill(theme.cardColor)
         )
     }
 
@@ -66,44 +69,30 @@ struct FeaturesMenuGroup: View {
         Button(action: onTap) {
             HStack(spacing: 16) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .regular))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue)
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundColor(theme.primaryIconColor)
                     .frame(width: 24, height: 24)
 
                 Text(title)
-                    .font(.custom("Inter-SemiBold", size: 16))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue)
+                    .font(.custom(theme.bodyFontName, size: 16))
+                    .foregroundColor(theme.primaryTextColor)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.5))
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(theme.primaryIconColor.opacity(0.5))
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 18)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
         }
         .buttonStyle(.plain)
     }
 
     private var divider: some View {
         Divider()
-            .background(isoWalkColors.deepSpaceBlue.opacity(0.15))
-            .padding(.horizontal, 20)
-    }
-}
-
-#Preview {
-    ZStack {
-        Color.gray.opacity(0.2).ignoresSafeArea()
-        FeaturesMenuGroup(
-            onNameEmail: {},
-            onNotifications: {},
-            onPrivacy: {},
-            onScientificProof: {},
-            onSubmitFeedback: {}
-        )
-        .padding()
+            .background(theme.primaryTextColor.opacity(0.16))
+            .padding(.horizontal, 24)
     }
 }
 

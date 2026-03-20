@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: ProgressScreenFolder/Components/
 //
 //  COMPONENT — dumb child.
 //  Always shows: Active Time, Sessions.
@@ -23,9 +22,13 @@ struct TodayStatsCard: View {
     let isHealthKitEnabled: Bool
     let miles: Double
 
+    
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
+
     // MARK: - Design Constants
-    private let cardCornerRadius: CGFloat = 14
-    private let cardHeight: CGFloat = 90
+    private let cardCornerRadius: CGFloat = 16
+    private let cardHeight: CGFloat = 96
     private let maxCardWidth: CGFloat = 340
     private let valueFontSize: CGFloat = 32
     private let labelFontSize: CGFloat = 16
@@ -49,8 +52,8 @@ struct TodayStatsCard: View {
             )
 
             Divider()
-                .frame(height: 44)
-                .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.6))
+                .frame(height: 48)
+                .foregroundColor(theme.primaryTextColor.opacity(0.6))
 
             StatCell(
                 label: sessionCount == 1 ? "Session" : "Sessions",
@@ -62,8 +65,8 @@ struct TodayStatsCard: View {
 
             if isHealthKitEnabled {
                 Divider()
-                    .frame(height: 44)
-                    .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.6))
+                    .frame(height: 48)
+                    .foregroundColor(theme.primaryTextColor.opacity(0.6))
 
                 StatCell(
                     label: "Miles",
@@ -78,15 +81,11 @@ struct TodayStatsCard: View {
         .frame(height: cardHeight)
         .background(
             RoundedRectangle(cornerRadius: cardCornerRadius)
-                .fill(isoWalkColors.ivory)
+                .fill(theme.cardColor)
         )
     }
 }
 
-// MARK: - Stat Cell
-// Exact same pattern as StreakCard:
-// label above in Regular/16pt, then HStack with number Bold/32pt
-// and unit Regular/16pt, default center alignment, no padding tricks.
 private struct StatCell: View {
     let label: String
     let value: String
@@ -94,49 +93,30 @@ private struct StatCell: View {
     let valueFontSize: CGFloat
     let labelFontSize: CGFloat
 
+ 
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
+
     var body: some View {
         VStack(spacing: 4) {
             Text(label)
-                .font(.custom("Inter-Regular", size: labelFontSize))
-                .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.8))
+                .font(.custom(theme.bodyFontName, size: labelFontSize))
+                .foregroundColor(theme.secondaryTextColor) // 👈 Theme
 
             HStack(spacing: 4) {
                 Text(value)
-                    .font(.custom("Inter-Bold", size: valueFontSize))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue)
+                    .font(.custom(theme.titleFontName, size: valueFontSize))
+                    .foregroundColor(theme.primaryTextColor)
                     .minimumScaleFactor(0.8)
                     .lineLimit(1)
 
                 if !unit.isEmpty {
                     Text(unit)
-                        .font(.custom("Inter-Regular", size: labelFontSize))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .font(.custom(theme.bodyFontName, size: labelFontSize))
+                        .foregroundColor(theme.primaryTextColor) 
                 }
             }
         }
         .frame(maxWidth: .infinity)
     }
 }
-
-#Preview {
-    ZStack {
-        Image("GoldenTextureBackground")
-            .resizable()
-            .ignoresSafeArea()
-        VStack(spacing: 12) {
-            TodayStatsCard(
-                formattedActiveTime: "33 min",
-                sessionCount: 1,
-                isHealthKitEnabled: false,
-                miles: 0
-            )
-            TodayStatsCard(
-                formattedActiveTime: "54 min",
-                sessionCount: 2,
-                isHealthKitEnabled: true,
-                miles: 4.2
-            )
-        }
-    }
-}
-

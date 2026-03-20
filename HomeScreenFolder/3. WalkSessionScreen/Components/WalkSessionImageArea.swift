@@ -19,7 +19,6 @@ struct WalkSessionImageArea: View {
         ZStack {
             switch theme.animationType {
             case .layeredAnimation(let bgImage, let overlayImage, _):
-                // Layered view, strictly static (no animation logic here)
                 ZStack {
                     Image(bgImage)
                         .resizable()
@@ -28,17 +27,15 @@ struct WalkSessionImageArea: View {
                     Image(overlayImage)
                         .resizable()
                         .scaledToFit()
-                        .opacity(0.7) // Keeping the same opacity for consistency
+                        .opacity(0.7)
                 }
                 
             case .video(_, let fallback):
-                // Safe static fallback for video themes
                 Image(fallback)
                     .resizable()
                     .scaledToFit()
                 
             default:
-                // Original single image logic
                 Image(theme.mainImageName)
                     .resizable()
                     .scaledToFit()
@@ -46,14 +43,10 @@ struct WalkSessionImageArea: View {
         }
         .frame(width: AnimatedImageSize.medium.dimension,
                height: AnimatedImageSize.medium.dimension)
-        .padding(.vertical, 8)
+        // Using -12 top padding to pull it up toward the back button,
+        // matching the "Set Up" screen's tight vertical spacing.
+        .padding(.top, 0)
+        .padding(.bottom, 8)
     }
 }
 
-#Preview {
-    ZStack {
-        Color.white // Using white to match your screenshot
-            .ignoresSafeArea()
-        WalkSessionImageArea(theme: IsoWalkThemes.cloudyTreeTheme)
-    }
-}

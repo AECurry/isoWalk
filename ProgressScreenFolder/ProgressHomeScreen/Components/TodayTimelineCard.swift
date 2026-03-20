@@ -18,11 +18,15 @@ struct TodayTimelineCard: View {
 
     let sessions: [CompletedSession]
 
+   
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
+
     // MARK: - Design Constants
-    private let cardHeight: CGFloat = 90
+    private let cardHeight: CGFloat = 96
     private let maxCardWidth: CGFloat = 340
-    private let cornerRadius: CGFloat = 14
-    private let labelFontSize: CGFloat = 14
+    private let cornerRadius: CGFloat = 16
+    private let labelFontSize: CGFloat = 16
     private let bottomPadding: CGFloat = -16
     private let barHeights: [CGFloat] = [28, 38, 28]
 
@@ -30,34 +34,31 @@ struct TodayTimelineCard: View {
         ZStack(alignment: .bottomLeading) {
             // Card background
             RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(isoWalkColors.ivory)
+                .fill(theme.cardColor)
 
-            // Timeline row — labels + dashed line on same baseline
+            // Timeline row
             GeometryReader { geo in
                 let totalWidth = geo.size.width
-                let labelWidth: CGFloat = 44
+                let labelWidth: CGFloat = 48
 
                 ZStack(alignment: .bottomLeading) {
 
                     HStack(alignment: .bottom, spacing: 0) {
                         Text("12 AM")
-                            .font(.custom("Inter-Regular", size: labelFontSize))
-                            .foregroundColor(isoWalkColors.deepSpaceBlue)
+                            .font(.custom(theme.bodyFontName, size: labelFontSize))
+                            .foregroundColor(theme.primaryTextColor)
                             .frame(width: labelWidth, alignment: .leading)
 
-                        // Dashed line stretches to fill remaining space
                         TimelineDashLine()
 
                         Text("12 AM")
-                            .font(.custom("Inter-Regular", size: labelFontSize))
-                            .foregroundColor(isoWalkColors.deepSpaceBlue)
+                            .font(.custom(theme.bodyFontName, size: labelFontSize))
+                            .foregroundColor(theme.primaryTextColor)
                             .frame(width: labelWidth, alignment: .trailing)
                     }
                     .frame(width: totalWidth)
                     .offset(y: -bottomPadding)
 
-                    // Session bars — positioned horizontally by time,
-                    // sitting directly above the dashed line
                     ForEach(Array(sessions.prefix(3).enumerated()), id: \.offset) { _, session in
                         let trackWidth = totalWidth - (labelWidth * 2)
                         let xPos = labelWidth + trackWidth * timeFraction(for: session.startTime)
@@ -87,6 +88,9 @@ struct TodayTimelineCard: View {
 
 // MARK: - Dashed Line
 private struct TimelineDashLine: View {
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
+
     var body: some View {
         GeometryReader { geo in
             Path { path in
@@ -94,7 +98,7 @@ private struct TimelineDashLine: View {
                 path.addLine(to: CGPoint(x: geo.size.width, y: 0))
             }
             .stroke(
-                isoWalkColors.deepSpaceBlue,
+                theme.primaryTextColor, 
                 style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
             )
         }
@@ -104,7 +108,7 @@ private struct TimelineDashLine: View {
 }
 
 // MARK: - Session Marker Group
-private struct SessionMarkerGroup: View {
+struct SessionMarkerGroup: View {
     let barHeights: [CGFloat]
 
     var body: some View {
@@ -117,55 +121,3 @@ private struct SessionMarkerGroup: View {
         }
     }
 }
-
-#Preview {
-    ZStack {
-        Image("GoldenTextureBackground")
-            .resizable()
-            .ignoresSafeArea()
-        VStack(spacing: 12) {
-            // No sessions
-            TodayTimelineCard(sessions: [])
-
-            // One session — morning
-            TodayTimelineCard(sessions: [
-                CompletedSession(
-                    id: UUID(),
-                    duration: .twenty,
-                    music: .noMusic,          // was .placeholder
-                    pace: .steady,
-                    startTime: Calendar.current.date(bySettingHour: 8, minute: 30, second: 0, of: Date())!,
-                    endTime: Date(),
-                    totalDuration: 21 * 60,
-                    wasPaused: false
-                )
-            ])
-
-            // Two sessions
-            TodayTimelineCard(sessions: [
-                CompletedSession(
-                    id: UUID(),
-                    duration: .twenty,
-                    music: .noMusic,          // was .placeholder
-                    pace: .steady,
-                    startTime: Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!,
-                    endTime: Date(),
-                    totalDuration: 21 * 60,
-                    wasPaused: false
-                ),
-                CompletedSession(
-                    id: UUID(),
-                    duration: .twenty,
-                    music: .noMusic,          // was .placeholder
-                    pace: .steady,
-                    startTime: Calendar.current.date(bySettingHour: 17, minute: 0, second: 0, of: Date())!,
-                    endTime: Date(),
-                    totalDuration: 21 * 60,
-                    wasPaused: false
-                )
-            ])
-        }
-        .padding()
-    }
-}
-

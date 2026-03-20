@@ -1,135 +1,151 @@
 //
-//  IsoWalkThemes.swift
+//  isoWalkThemes.swift
 //  isoWalk
 //
 //  Created by AnnElaine on 2/17/26.
 //
+//  isoWalk Design System
 //
-//  SOURCE OF TRUTH for all theme data.
-//  To add a new theme: add ONE entry to AnimatedImageLibrary.availableImages
-//  in AnimatedImageConfig.swift. Nothing else needs to change.
+//  TO ADD A NEW THEME: add ONE AnimatedImageConfig entry to availableImages below.
+//  Everything else picks it up automatically.
 //
 
 import SwiftUI
 
 // ==========================================
-// MARK: - ANIMATION TYPE
+// MARK: - SIZE ENUM
 // ==========================================
 
-enum ThemeAnimationType {
-    case rotation(speed: Double)
-    case pulse(minScale: Double, maxScale: Double, speed: Double)
-    case rotatingPulse(rotSpeed: Double, minScale: Double, maxScale: Double, pulseSpeed: Double)
-    case layeredAnimation(backgroundImage: String, overlayImage: String, overlayAnimation: OverlayAnimation)
-    // NEW: Future-proofed for Kling AI videos (.mp4)
-    case video(filename: String, fallbackImageName: String)
-    case none
+enum AnimatedImageSize {
+    case extraLarge  // 335x335 — Get Walking screen
+    case medium      // 188x188 — Walk Set Up screen
+
+    var dimension: CGFloat {
+        switch self {
+        case .extraLarge: return 335
+        case .medium:     return 188
+        }
+    }
 }
 
-// Overlay animation types for layered themes
+// ==========================================
+// MARK: - ANIMATION ENUMS
+// These tell your Engine exactly how to move!
+// ==========================================
+
 enum OverlayAnimation {
-    case none // <--- ADDED: Strict "Do Not Animate" option for testing alignment
-    case horizontalDrift(duration: Double)  // Clouds scrolling left to right
-    case pulse(minScale: Double, maxScale: Double, speed: Double)
+    case none
+    case horizontalDrift(duration: Double)
+    case pulse(minScale: CGFloat, maxScale: CGFloat, speed: Double)
     case rotate(speed: Double)
 }
 
+enum AnimationType {
+    case none
+    case rotation(speed: Double)
+    case pulse(minScale: CGFloat, maxScale: CGFloat, speed: Double)
+    case rotatingPulse(rotationSpeed: Double, minScale: CGFloat, maxScale: CGFloat, pulseSpeed: Double)
+    case layeredAnimation(backgroundImage: String, overlayImage: String, overlayAnimation: OverlayAnimation)
+    case video(name: String, fallbackImage: String)
+}
+
 // ==========================================
-// MARK: - THEME MODEL (one theme)
+// MARK: - THEME MODEL (The Blueprint)
 // ==========================================
 
 struct IsoWalkTheme: Identifiable {
+
     let id: String
-    let displayName: String
-    let mainImageName: String
-    let logoImageName: String          // Hero image shown on FeaturesHomeScreen
-    let backgroundImageName: String?
-    let backgroundColor: Color
-    let animationType: ThemeAnimationType
-
-    // Built dynamically from config — NO MANUAL WIRING NEEDED. (Koi Fish uses this!)
-    init(from config: AnimatedImageConfig) {
-        self.id                  = config.id
-        self.displayName         = config.name
-        self.mainImageName       = config.imageName
-        self.logoImageName       = config.logoImageName
-        self.backgroundImageName = "GoldenTextureBackground"
-        self.backgroundColor     = isoWalkColors.parchment
-
-        if config.isRotationEnabled && config.isScaleEnabled {
-            self.animationType = .rotatingPulse(
-                rotSpeed:   config.rotationSpeed,
-                minScale:   config.minScale,
-                maxScale:   config.maxScale,
-                pulseSpeed: config.scaleSpeed
-            )
-        } else if config.isRotationEnabled {
-            self.animationType = .rotation(speed: config.rotationSpeed)
-        } else if config.isScaleEnabled {
-            self.animationType = .pulse(
-                minScale: config.minScale,
-                maxScale: config.maxScale,
-                speed:    config.scaleSpeed
-            )
-        } else {
-            self.animationType = .none
-        }
-    }
+    let name: String
+    let description: String
     
-    // Custom initializer for layered animations and videos
-    init(
-        id: String,
-        displayName: String,
-        mainImageName: String,
-        logoImageName: String,
-        backgroundImageName: String? = "GoldenTextureBackground",
-        backgroundColor: Color = isoWalkColors.parchment,
-        animationType: ThemeAnimationType
-    ) {
-        self.id = id
-        self.displayName = displayName
-        self.mainImageName = mainImageName
-        self.logoImageName = logoImageName
-        self.backgroundImageName = backgroundImageName
-        self.backgroundColor = backgroundColor
-        self.animationType = animationType
-    }
-}
+    var backgroundImageName: String?
+    var backgroundColor: Color?
+    var cardColor: Color
+    
+    
+    var primaryTextColor: Color
+    var secondaryTextColor: Color
+    var titleFontName: String
+    var bodyFontName: String
+    
+    var primaryIconColor: Color
+    
+    var logoImageName: String
 
-// ==========================================
-// MARK: - ISOWALKSTHEMES (the full catalog)
-// ==========================================
-
-struct IsoWalkThemes {
-
-    static var all: [IsoWalkTheme] {
-        var themes = AnimatedImageLibrary.availableImages.map { IsoWalkTheme(from: $0) }
-        
-        // Add custom layered theme
-        themes.append(cloudyTreeTheme)
-        
-        return themes
-    }
-
-    static func current(selectedId: String) -> IsoWalkTheme {
-        all.first { $0.id == selectedId } ?? all[0]
-    }
+    
+    let mainImageName: String
+    let animationType: AnimationType
 
     static let selectedThemeKey = "selectedThemeId"
-    static let defaultThemeId   = "koi"
+    static let defaultThemeId = "koi"
     
-    // Cloudy Tree Theme - CURRENTLY SET TO .none FOR ALIGNMENT TESTING
-    static let cloudyTreeTheme = IsoWalkTheme(
-        id: "cloudyTree",
-        displayName: "Japanese Tree with Clouds",
-        mainImageName: "JapaneseTreeWithClouds",
-        logoImageName: "JapaneseTreeWithClouds",
-        backgroundImageName: nil,  // No background image
-        backgroundColor: .white,    // White background
-        animationType: .layeredAnimation(
-            backgroundImage: "JapaneseTreeWithClouds",
-            overlayImage: "CloudSwirls",
-            overlayAnimation: .none  // <--- SET TO .none FOR PURE ALIGNMENT TEST
-        )
-    )
+    static func current(selectedId: String) -> IsoWalkTheme {
+        return IsoWalkThemeLibrary.getTheme(byId: selectedId) ?? IsoWalkThemeLibrary.availableThemes[0]
+    }
 }
+
+// ==========================================
+// MARK: - LIBRARY (The Master List)
+// ==========================================
+
+struct IsoWalkThemeLibrary {
+
+    static let availableThemes: [IsoWalkTheme] = [
+
+        // ── Theme 1: Japanese Koi ──────────────────────────────────────
+        IsoWalkTheme(
+            id: "koi",
+            name: "Japanese Koi",
+            description: "Two koi swimming in harmony",
+            
+            backgroundImageName: "Themes/GoldenTextureBackground",
+            backgroundColor: nil,
+            cardColor: isoWalkColors.ivory,
+            
+            primaryTextColor: isoWalkColors.deepSpaceBlue,
+            secondaryTextColor: isoWalkColors.slateGray,
+            titleFontName: "Inter-Bold",
+            bodyFontName: "Inter-SemiBold",
+            
+            primaryIconColor: isoWalkColors.deepSpaceBlue,
+            
+            logoImageName: "Logos/isoWalkLogo1",
+            
+            mainImageName: "Themes/JapaneseKoi",
+            animationType: .rotatingPulse(rotationSpeed: 88.0, minScale: 1.0, maxScale: 1.08, pulseSpeed: 8.0)
+        ),
+
+        // ── Theme 2: Japanese Tree with Clouds ──────────────────────────
+        IsoWalkTheme(
+            id: "japaneseTree",
+            name: "Japanese Tree",
+            description: "A peaceful tree with drifting clouds",
+            
+            backgroundImageName: nil,
+            backgroundColor: isoWalkColors.white,
+            cardColor: isoWalkColors.silverMist,
+            
+            primaryTextColor: isoWalkColors.jetBlack,
+            secondaryTextColor: isoWalkColors.slateGray,
+            titleFontName: "Inter-Bold",
+            bodyFontName: "Inter-SemiBold",
+            
+            primaryIconColor: isoWalkColors.deepSpaceBlue,
+            
+            logoImageName: "Logos/isoWalkLogo1",
+            
+            mainImageName: "Themes/JapaneseTreeWithClouds", // Fallback for screens without animation
+            animationType: .layeredAnimation(
+                backgroundImage: "Themes/JapaneseTreeWithClouds",
+                overlayImage: "Themes/CloudSwirls",
+                overlayAnimation: .horizontalDrift(duration: 72.0) // Your perfect slow drift!
+            )
+        ),
+    ]
+
+    static func getTheme(byId id: String) -> IsoWalkTheme? {
+        availableThemes.first { $0.id == id }
+    }
+}
+

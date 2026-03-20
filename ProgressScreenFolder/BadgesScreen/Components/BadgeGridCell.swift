@@ -13,20 +13,22 @@
 import SwiftUI
 
 struct BadgeGridCell: View {
-
     let badge: Badge
     let themeId: String
     let onTap: () -> Void
 
     // MARK: - Design Constants
     private let circleSize: CGFloat = 88
-    private let iconSize: CGFloat = 44
+    // FIXED SIZING: Icon size is much closer to circle size so it fills the space.
+    // The asset must have transparent alpha background.
+    private let iconSize: CGFloat = 82
     private let nameFontSize: CGFloat = 14
 
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 8) {
                 ZStack {
+                    // This green circle serves as a border/locked state
                     Circle()
                         .fill(circleColor)
                         .frame(width: circleSize, height: circleSize)
@@ -48,34 +50,26 @@ struct BadgeGridCell: View {
 
     @ViewBuilder
     private var badgeImage: some View {
+        // Find the correct asset path in the JapaneseBadges folder
+        let assetName = badge.id.imageName(themeId: themeId)
+        
         if badge.isUnlocked {
-            let assetName = badge.id.imageName(themeId: themeId)
             if UIImage(named: assetName) != nil {
                 Image(assetName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: iconSize, height: iconSize)
             } else {
-                // SF Symbol fallback until real assets exist
                 Image(systemName: "trophy.fill")
                     .font(.system(size: iconSize * 0.55))
                     .foregroundColor(.white)
             }
         } else {
-            // Locked — show theme-matched placeholder
-            let lockedAsset = BadgeID.lockedImageName(themeId: themeId)
-            if UIImage(named: lockedAsset) != nil {
-                Image(lockedAsset)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: iconSize, height: iconSize)
-            } else {
-                // SF Symbol fallback
-                Image(systemName: "trophy.fill")
-                    .font(.system(size: iconSize * 0.55))
-                    .foregroundColor(.white)
-                    .opacity(0.7)
-            }
+            // Locked — generic placeholder (muted look)
+            Image(systemName: "trophy.fill")
+                .font(.system(size: iconSize * 0.55))
+                .foregroundColor(.white)
+                .opacity(0.4)
         }
     }
 
@@ -85,25 +79,3 @@ struct BadgeGridCell: View {
             : isoWalkColors.forestGreen.opacity(0.55)
     }
 }
-
-#Preview {
-    ZStack {
-        Image("GoldenTextureBackground")
-            .resizable()
-            .ignoresSafeArea()
-        HStack(spacing: 24) {
-            BadgeGridCell(
-                badge: Badge(id: .firstSteps, unlockedDate: Date()),
-                themeId: "Golden",
-                onTap: {}
-            )
-            BadgeGridCell(
-                badge: Badge(id: .rhythmFinder, unlockedDate: nil),
-                themeId: "Golden",
-                onTap: {}
-            )
-        }
-        .padding()
-    }
-}
-

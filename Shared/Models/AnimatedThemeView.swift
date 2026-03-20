@@ -1,50 +1,49 @@
 //
-//  SetUpImageArea.swift
+//  AnimatedThemeView.swift
 //  isoWalk
 //
-//  Created by AnnElaine on 2/17/26.
+//  Created by AnnElaine on 3/19/26.
 //
-//
-//  COMPONENT — dumb child.
-//  Displays the theme image in the setup screen.
-//  Receives theme from parent. Owns nothing.
-//  - FIXED: Replaced deprecated UIScreen.main.bounds with GeometryReader
-//  - FIXED: Added exhaustive switch coverage for .video and .none support
+//  THE CORE RENDERING ENGINE FOR SQUARE IMAGE AREAS.
+//  This is the single source of truth for animating the square theme images
+//  (like in the Header, Setup, and Features screens).
 //
 
 import SwiftUI
 
-struct SetUpImageArea: View {
-    
+struct SquareThemeEngineView: View {
     let theme: IsoWalkTheme
-    @State private var offsetX: CGFloat = 0
+    let frameWidth: CGFloat
+
+    // ALL animation state lives exclusively here
     @State private var rotation: Double = 0
     @State private var scale: CGFloat = 1.0
+    @State private var offsetX: CGFloat = 0
+    @State private var offsetY: CGFloat = 0
     
+    // Conveyor Belt Math adapts to whatever width is passed in
+    private var cloudGap: CGFloat { frameWidth * 0.60 }
+    private var shiftAmount: CGFloat { frameWidth + cloudGap }
+
     var body: some View {
-        // We use GeometryReader here to get the width without using the deprecated UIScreen.main
-        GeometryReader { geo in
-            ZStack {
-                switch theme.animationType {
-                case .layeredAnimation(let bgImage, let overlayImage, let overlayAnim):
-                    layeredView(backgroundImage: bgImage, overlayImage: overlayImage, overlayAnimation: overlayAnim)
-                    
-                case .video(_, let fallback):
-                    // Fallback to static image for setup preview
-                    Image(fallback)
-                        .resizable()
-                        .scaledToFit()
-                    
-                default:
-                    singleImageView
-                }
+        ZStack {
+            switch theme.animationType {
+            case .layeredAnimation(let bgImage, let overlayImage, let overlayAnim):
+                layeredView(backgroundImage: bgImage, overlayImage: overlayImage, overlayAnimation: overlayAnim)
+                
+            case .video(_, let fallback):
+                Image(fallback)
+                    .resizable()
+                    .scaledToFit()
+                
+            default:
+                singleImageView
             }
-            .frame(height: 200)
-            .frame(maxWidth: .infinity)
-            .id(theme.id)
-            .onAppear { startAnimation(viewWidth: geo.size.width) }
         }
-        .frame(height: 200) // Ensure the GeometryReader takes the proper height
+        .frame(width: frameWidth, height: frameWidth) // Enforces a perfect square
+        .id(theme.id)
+        .onAppear { applyThemeAnimation() }
+        .onChange(of: theme.id) { applyThemeAnimation() }
     }
     
     // MARK: - Single Image View
@@ -60,45 +59,51 @@ struct SetUpImageArea: View {
     // MARK: - Layered View
     
     private func layeredView(backgroundImage: String, overlayImage: String, overlayAnimation: OverlayAnimation) -> some View {
-        GeometryReader { geo in
+        ZStack {
+            // Fixed background layer
+            Image(backgroundImage)
+                .resizable()
+                .scaledToFit()
+            
+            // Animated overlay layer (Conveyor Belt)
             ZStack {
-                // Fixed background
-                Image(backgroundImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: geo.size.width)
-                
-                // Animated overlay
+                // IMAGE 2: Waiting off-screen left
                 Image(overlayImage)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: geo.size.width)
-                    .offset(x: offsetX)
-                    .opacity(0.7)
+                    .offset(x: offsetX - shiftAmount, y: offsetY)
+                
+                // IMAGE 1: Starting centered
+                Image(overlayImage)
+                    .resizable()
+                    .scaledToFit()
+                    .offset(x: offsetX, y: offsetY)
             }
+            .opacity(0.7)
         }
     }
+
+    // MARK: - Animation Logic
     
-    // MARK: - Animation
-    
-    private func startAnimation(viewWidth: CGFloat) {
-        offsetX = 0
+    private func applyThemeAnimation() {
         rotation = 0
         scale = 1.0
-        
+        offsetX = 0
+        offsetY = 0
+
         DispatchQueue.main.async {
             switch theme.animationType {
             case .rotation(let speed):
                 withAnimation(.linear(duration: speed).repeatForever(autoreverses: false)) {
                     rotation = 360
                 }
-                
-            case .pulse(let minSc, let maxSc, let speed):
-                scale = minSc
+
+            case .pulse(let min, let max, let speed):
+                scale = min
                 withAnimation(.easeInOut(duration: speed).repeatForever(autoreverses: true)) {
-                    scale = maxSc
+                    scale = max
                 }
-                
+
             case .rotatingPulse(let rotSpeed, let minSc, let maxSc, let pulseSpeed):
                 withAnimation(.linear(duration: rotSpeed).repeatForever(autoreverses: false)) {
                     rotation = 360
@@ -109,27 +114,26 @@ struct SetUpImageArea: View {
                 }
                 
             case .layeredAnimation(_, _, let overlayAnim):
-                animateOverlay(overlayAnim, viewWidth: viewWidth)
-                
+                // EXACTLY ONE SECOND PAUSE BEFORE WIND BLOWS
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    animateOverlay(overlayAnim)
+                }
+
             case .video, .none:
                 break
             }
         }
     }
     
-    private func animateOverlay(_ animation: OverlayAnimation, viewWidth: CGFloat) {
+    private func animateOverlay(_ animation: OverlayAnimation) {
         switch animation {
         case .none:
-            // ADDED: Explicitly tell it to do nothing
             break
             
         case .horizontalDrift(let duration):
-            // Start off-screen left (using the GeometryReader width instead of UIScreen)
-            offsetX = -viewWidth
-            
-            // Drift to off-screen right
+            // The magic looping conveyor belt
             withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
-                offsetX = viewWidth * 2
+                offsetX = shiftAmount
             }
             
         case .pulse(let minSc, let maxSc, let speed):
@@ -146,7 +150,3 @@ struct SetUpImageArea: View {
     }
 }
 
-#Preview {
-    SetUpImageArea(theme: IsoWalkThemes.cloudyTreeTheme)
-        .background(Color.white)
-}

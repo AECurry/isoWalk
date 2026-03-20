@@ -7,7 +7,7 @@
 //  COMPONENT — dumb child.
 //  Displays a single selectable theme card.
 //  Fixed size square — image fills most of card, title below.
-//  Background uses theme.backgroundColor so each theme looks different.
+//  Background uses theme.backgroundColor OR theme.backgroundImageName.
 //  Receives all data and callbacks from parent — owns nothing.
 //
 
@@ -55,7 +55,7 @@ struct ThemeCardView: View {
                 .frame(width: cardWidth, height: imageSize + 12)
 
                 // MARK: - Title Area
-                Text(theme.displayName)
+                Text(theme.name)
                     .font(.custom("Inter-SemiBold", size: titleFontSize))
                     .foregroundStyle(isoWalkColors.deepSpaceBlue)
                     .multilineTextAlignment(.center)
@@ -66,8 +66,20 @@ struct ThemeCardView: View {
                     .frame(width: cardWidth)
             }
             .frame(width: cardWidth)
-            // Dynamic background — each theme uses its own color
-            .background(theme.backgroundColor)
+            // 👇 FIXED: Dynamic background supporting BOTH images and colors!
+            .background(
+                Group {
+                    if let bgName = theme.backgroundImageName {
+                        Image(bgName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } else if let bgColor = theme.backgroundColor {
+                        bgColor
+                    } else {
+                        Color.clear
+                    }
+                }
+            )
             .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
             .overlay(
                 RoundedRectangle(cornerRadius: cardCornerRadius)
@@ -90,7 +102,7 @@ struct ThemeCardView: View {
 }
 
 #Preview {
-    let theme = IsoWalkThemes.all[0]
+    let theme = IsoWalkThemeLibrary.availableThemes[0]
     HStack(spacing: 16) {
         ThemeCardView(theme: theme, isSelected: true, onSelect: {})
         ThemeCardView(theme: theme, isSelected: false, onSelect: {})
@@ -98,4 +110,3 @@ struct ThemeCardView: View {
     .padding()
     .background(isoWalkColors.parchment)
 }
-

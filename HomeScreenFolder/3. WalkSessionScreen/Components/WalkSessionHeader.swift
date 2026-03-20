@@ -12,41 +12,29 @@
 import SwiftUI
 
 struct WalkSessionHeader: View {
+    // 1. Match the parameter setup of WalkSetUpHeader
+    let theme: IsoWalkTheme
     let onBack: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            // 1. Back Button Row
+            // Back Button Row
             HStack {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .foregroundColor(theme.primaryIconColor)
+                        // Standardize padding for better hit target
                         .padding(12)
                 }
                 .buttonStyle(.plain)
-                .padding(.leading, 56)
-
+                .padding(.leading, 16) // Solid 8-point grid alignment
+                
                 Spacer()
             }
-            .padding(.top, -8)
-
-            // 2. Logo — centered below back button, same as WalkSetUpHeader
-            Image("isoWalkLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(height: 40)
-                .padding(.top, -2)
+            // Pull it up into the notch area exactly like Setup
+            .padding(.top, -24)
+            
         }
     }
 }
-
-#Preview {
-    ZStack {
-        Image("GoldenTextureBackground")
-            .resizable()
-            .ignoresSafeArea()
-        WalkSessionHeader(onBack: {})
-    }
-}
-

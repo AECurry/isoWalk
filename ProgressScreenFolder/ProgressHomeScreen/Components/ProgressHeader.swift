@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 2/26/26.
 //
-//  LOCATION: ProgressScreenFolder/Components/
 //
 //  COMPONENT — dumb child.
 //  Displays greeting, current badge, and total walk count.
@@ -19,6 +18,10 @@ struct ProgressHeader: View {
     let totalWalkCount: Int
     let mostRecentBadgeId: String?
 
+    
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
+
     // MARK: - Design Constants
     private let badgeCircleSize: CGFloat = 152
     private let sideColumnWidth: CGFloat = 96
@@ -29,20 +32,20 @@ struct ProgressHeader: View {
 
             // LEFT: Greeting
             VStack(spacing: 8) {
-                Image("HandWavingIcon")
+                Image("Icons/HandWavingIcon")
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
                     .frame(width: iconSize, height: iconSize)
-                    .foregroundColor(isoWalkColors.deepSpaceBlue)
+                    .foregroundColor(theme.primaryTextColor)
 
                 VStack(spacing: 4) {
                     Text("Hello")
                     Text(userName.isEmpty ? "Friend" : userName)
                         .fixedSize(horizontal: true, vertical: false)
                 }
-                .font(.custom("Inter-Regular", size: 16))
-                .foregroundColor(isoWalkColors.deepSpaceBlue)
+                .font(.custom(theme.bodyFontName, size: 16))
+                .foregroundColor(theme.primaryTextColor)
             }
             .frame(width: sideColumnWidth)
 
@@ -61,18 +64,18 @@ struct ProgressHeader: View {
                 }
             }
 
-            // RIGHT: Total Walks — no icon, number + two-line label centered
+            // RIGHT: Total Walks
             VStack(spacing: 4) {
                 Text("\(totalWalkCount)")
-                    .font(.custom("Inter-Bold", size: 32))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue)
+                    .font(.custom(theme.titleFontName, size: 32))
+                    .foregroundColor(theme.primaryTextColor)
 
                 Text("Total")
-                    .font(.custom("Inter-Regular", size: 16))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue)
+                    .font(.custom(theme.bodyFontName, size: 16))
+                    .foregroundColor(theme.primaryTextColor)
                 Text("Walks")
-                    .font(.custom("Inter-Regular", size: 16))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue)
+                    .font(.custom(theme.bodyFontName, size: 16))
+                    .foregroundColor(theme.primaryTextColor)     
             }
             .multilineTextAlignment(.center)
             .frame(width: sideColumnWidth)
@@ -103,26 +106,6 @@ struct BadgeIconView: View {
         case "walks_50":      return "trophy.fill"
         case "walks_100":     return "medal.fill"
         default:              return "figure.walk.circle"
-        }
-    }
-}
-
-#Preview {
-    ZStack {
-        Image("GoldenTextureBackground")
-            .resizable()
-            .ignoresSafeArea()
-        VStack(spacing: 32) {
-            ProgressHeader(
-                userName: "AnnElaine",
-                totalWalkCount: 142,
-                mostRecentBadgeId: "streak_7"
-            )
-            ProgressHeader(
-                userName: "",
-                totalWalkCount: 0,
-                mostRecentBadgeId: nil
-            )
         }
     }
 }

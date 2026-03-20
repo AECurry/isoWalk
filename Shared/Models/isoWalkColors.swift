@@ -4,43 +4,53 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
+//
+//  Central color palette for the entire app.
+//  All colors should be defined here for consistency.
+//
 
 import SwiftUI
 
 struct isoWalkColors {
-
-    // Brand colors
-    static let balticBlue    = Color(hex: "1665A1")
+    
+    // MARK: - Brand Colors
+    
+    static let balticBlue = Color(hex: "1665A1")
     static let deepSpaceBlue = Color(hex: "08263D")
-
-    // Text and Gray Scale
-    static let jetBlack   = Color(hex: "082830")
-    static let white      = Color(hex: "FFFEFE")
+    
+    // MARK: - Text and Gray Scale
+    
+    static let jetBlack = Color(hex: "082830")
+    static let white = Color(hex: "FFFEFE")
     static let silverMist = Color(hex: "E0E0E0")
-    static let slateGray  = Color(hex: "707070")
-    static let ivory      = Color(hex: "FFFFEE")
-
-    // Background colors
+    static let slateGray = Color(hex: "707070")
+    static let ivory = Color(hex: "FFFFEE")
+    
+    // MARK: - Background
+    
     static let parchment = Color(hex: "F5F0E8")
     
-    // Stop, Play, Pause colors
-    static let brandy = Color(hex: "912216")
-    static let forestGreen = Color(hex: "238732")
-
-    // MARK: - Gradient (top: balticBlue → bottom: deepSpaceBlue)
+    // MARK: - Action Colors
+    
+    static let brandy = Color(hex: "912216")        // Red for stop
+    static let forestGreen = Color(hex: "238732")   // Green for play/selected
+    
+    // MARK: - Gradient
+    
     static let gradientBlue = LinearGradient(
         colors: [balticBlue, deepSpaceBlue],
         startPoint: .top,
         endPoint: .bottom
     )
-
+    
     // MARK: - Adaptive Colors
+    
     static var adaptiveBackground: Color {
         Color(UIColor { trait in
             trait.userInterfaceStyle == .dark ? UIColor(jetBlack) : UIColor.white
         })
     }
-
+    
     static var adaptiveText: Color {
         Color(UIColor { trait in
             trait.userInterfaceStyle == .dark ? UIColor.white : UIColor.black
@@ -49,6 +59,7 @@ struct isoWalkColors {
 }
 
 // MARK: - Hex Color Extension
+
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

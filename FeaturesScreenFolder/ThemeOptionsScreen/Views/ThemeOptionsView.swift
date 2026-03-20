@@ -15,8 +15,8 @@ struct ThemeOptionsView: View {
 
     @State private var viewModel = ThemeOptionsViewModel()
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(IsoWalkThemes.selectedThemeKey) private var selectedThemeId: String = IsoWalkThemes.defaultThemeId
-    private var theme: IsoWalkTheme { IsoWalkThemes.current(selectedId: selectedThemeId) }
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
 
     private let navBarHeight: CGFloat = 115
 

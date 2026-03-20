@@ -1,5 +1,5 @@
 //
-//  HealthKitManager.swift
+//  HealthKitManagerView.swift
 //  isoWalk
 //
 //  Created by AnnElaine on 3/9/26.

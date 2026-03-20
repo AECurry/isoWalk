@@ -22,24 +22,23 @@ struct BadgeDetailSheet: View {
 
     // MARK: - Design Constants
     private let popupWidth: CGFloat = 320
-    private let popupHeight: CGFloat = 400
+    private let popupHeight: CGFloat = 440 // Increased slightly to fit the Share button nicely
     private let cornerRadius: CGFloat = 24
-    private let circleSize: CGFloat = 100
-    private let iconSize: CGFloat = 50
+    private let circleSize: CGFloat = 120
+    private let iconSize: CGFloat = 60
     private let titleFontSize: CGFloat = 22
     private let bodyFontSize: CGFloat = 15
     private let labelFontSize: CGFloat = 13
 
     var body: some View {
         ZStack {
-            // Dim background — tapping it dismisses
+            // Dim background
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
                 .onTapGesture { onDismiss() }
 
             // Popup card
             VStack(spacing: 16) {
-
                 // Close button top right
                 HStack {
                     Spacer()
@@ -48,8 +47,7 @@ struct BadgeDetailSheet: View {
                             .font(.system(size: 24))
                             .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.5))
                     }
-                    .padding(.top, 16)
-                    .padding(.trailing, 16)
+                    .padding([.top, .trailing], 16)
                 }
 
                 // Badge circle
@@ -57,10 +55,10 @@ struct BadgeDetailSheet: View {
                     Circle()
                         .fill(badge.isUnlocked
                               ? isoWalkColors.forestGreen
-                              : isoWalkColors.forestGreen.opacity(0.55))
+                              : isoWalkColors.forestGreen.opacity(0.3)) // Muted if locked
                         .frame(width: circleSize, height: circleSize)
 
-                    badgeImage
+                    badgeImageContent
                 }
 
                 // Badge name
@@ -72,17 +70,19 @@ struct BadgeDetailSheet: View {
 
                 // Status pill
                 if badge.isUnlocked {
-                    Text("Badge Earned")
-                        .font(.custom("Inter-SemiBold", size: labelFontSize))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                        .background(Capsule().fill(isoWalkColors.forestGreen))
+                    VStack(spacing: 4) {
+                        Text("Badge Earned")
+                            .font(.custom("Inter-SemiBold", size: labelFontSize))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 6)
+                            .background(Capsule().fill(isoWalkColors.forestGreen))
 
-                    if let dateString = badge.formattedUnlockDate {
-                        Text(dateString)
-                            .font(.custom("Inter-Regular", size: labelFontSize))
-                            .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.7))
+                        if let dateString = badge.formattedUnlockDate {
+                            Text(dateString)
+                                .font(.custom("Inter-Regular", size: labelFontSize))
+                                .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.7))
+                        }
                     }
                 } else {
                     Text("Keep Walking to Unlock")
@@ -90,9 +90,7 @@ struct BadgeDetailSheet: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 6)
-                        .background(
-                            Capsule().fill(isoWalkColors.deepSpaceBlue.opacity(0.5))
-                        )
+                        .background(Capsule().fill(isoWalkColors.deepSpaceBlue.opacity(0.4)))
                 }
 
                 // Requirement
@@ -105,10 +103,34 @@ struct BadgeDetailSheet: View {
                         .font(.custom("Inter-Regular", size: bodyFontSize))
                         .foregroundColor(isoWalkColors.deepSpaceBlue)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, 32)
                 }
 
                 Spacer()
+                
+                // MARK: - Share Button
+                // Only show the share button if they actually earned it!
+                if badge.isUnlocked {
+                    ShareLink(
+                        item: "I just earned the \(badge.id.displayName) badge in isoWalk! 🚶‍♂️✨ Time to keep the streak alive."
+                    ) {
+                        HStack {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 16, weight: .bold))
+                            Text("Share Badge")
+                                .font(.custom("Inter-SemiBold", size: 16))
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(isoWalkColors.forestGreen))
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 20)
+                    }
+                } else {
+                    // Just a little bottom padding if locked
+                    Spacer().frame(height: 20)
+                }
             }
             .frame(width: popupWidth, height: popupHeight)
             .background(
@@ -117,8 +139,6 @@ struct BadgeDetailSheet: View {
                         Image(bgName)
                             .resizable()
                             .scaledToFill()
-                            // Scale up so the texture center covers the card edges —
-                            // eliminates the light cream line at the card boundary
                             .scaleEffect(1.2)
                     } else {
                         isoWalkColors.ivory
@@ -131,9 +151,10 @@ struct BadgeDetailSheet: View {
     }
 
     @ViewBuilder
-    private var badgeImage: some View {
+    private var badgeImageContent: some View {
+        let assetName = badge.id.imageName(themeId: themeId)
+        
         if badge.isUnlocked {
-            let assetName = badge.id.imageName(themeId: themeId)
             if UIImage(named: assetName) != nil {
                 Image(assetName)
                     .resizable()
@@ -141,30 +162,26 @@ struct BadgeDetailSheet: View {
                     .frame(width: iconSize, height: iconSize)
             } else {
                 Image(systemName: "trophy.fill")
-                    .font(.system(size: iconSize * 0.6))
+                    .font(.system(size: iconSize * 0.7))
                     .foregroundColor(.white)
             }
         } else {
-            Image(systemName: "trophy.fill")
-                .font(.system(size: iconSize * 0.6))
-                .foregroundColor(.white)
-                .opacity(0.7)
+            if UIImage(named: assetName) != nil {
+                Image(assetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: iconSize, height: iconSize)
+                    .saturation(0) // Grayscale
+                    .opacity(0.2)  // Very faint
+            } else {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: iconSize * 0.6))
+                    .foregroundColor(.white.opacity(0.6))
+            }
         }
     }
 
     private var currentThemeBackground: String? {
-        IsoWalkThemes.current(selectedId: themeId).backgroundImageName
+        IsoWalkTheme.current(selectedId: themeId).backgroundImageName
     }
 }
-
-#Preview {
-    ZStack {
-        Color.gray.ignoresSafeArea()
-        BadgeDetailSheet(
-            badge: Badge(id: .firstSteps, unlockedDate: nil),
-            themeId: "Golden",
-            onDismiss: {}
-        )
-    }
-}
-

@@ -33,7 +33,7 @@ struct BottomNavBar: View {
             // Progress Tab
             TabBarItem(
                 icon: "trophy.fill",
-                customIconName: "TrophyIcon",
+                customIconName: "Icons/TrophyIcon",
                 title: "Progress",
                 isSelected: selectedTab == 1
             ) {

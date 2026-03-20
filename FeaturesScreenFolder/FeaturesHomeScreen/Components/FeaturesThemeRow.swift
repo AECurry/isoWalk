@@ -17,7 +17,10 @@ struct FeaturesThemeRow: View {
 
     let onTap: () -> Void
 
-    private let cardCornerRadius: CGFloat = 14
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
+
+    private let cardCornerRadius: CGFloat = 16
     private let maxCardWidth: CGFloat = 340
     private let iconSize: CGFloat = 28
 
@@ -28,35 +31,28 @@ struct FeaturesThemeRow: View {
                 // Icon
                 Image(systemName: "photo.on.rectangle.angled")
                     .font(.system(size: iconSize * 0.7, weight: .regular))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue)
+                    .foregroundColor(theme.primaryIconColor)
                     .frame(width: iconSize, height: iconSize)
 
                 Text("Change Your Apps' Theme")
-                    .font(.custom("Inter-SemiBold", size: 16))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue)
+                    .font(.custom(theme.bodyFontName, size: 16))
+                    .foregroundColor(theme.primaryTextColor)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.5))
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(theme.primaryIconColor.opacity(0.5))
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 18)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
             .frame(maxWidth: maxCardWidth)
             .background(
                 RoundedRectangle(cornerRadius: cardCornerRadius)
-                    .fill(isoWalkColors.ivory)
+                    .fill(theme.cardColor)
             )
         }
         .buttonStyle(.plain)
-    }
-}
-
-#Preview {
-    ZStack {
-        Color.gray.opacity(0.2).ignoresSafeArea()
-        FeaturesThemeRow(onTap: {})
     }
 }
 

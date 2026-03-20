@@ -19,7 +19,7 @@ struct BadgesScreenView: View {
     let onDismiss: () -> Void
 
     @State private var viewModel = BadgesViewModel()
-    @AppStorage(IsoWalkThemes.selectedThemeKey) private var selectedThemeId: String = IsoWalkThemes.defaultThemeId
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
     @State private var selectedTab: Int = 1
 
     private let navBarHeight: CGFloat = 115
@@ -60,7 +60,7 @@ struct BadgesScreenView: View {
                                 themeId: selectedThemeId,
                                 showReveal: viewModel.showRevealAnimation,
                                 newlyUnlockedBadge: viewModel.newlyUnlockedBadge,
-                                onRevealComplete: { viewModel.didShowReveal() }
+                                onRevealComplete: { viewModel.dismissReveal() } // FIXED
                             )
 
                             LazyVGrid(columns: columns, spacing: 32) {
@@ -68,7 +68,7 @@ struct BadgesScreenView: View {
                                     BadgeGridCell(
                                         badge: badge,
                                         themeId: selectedThemeId,
-                                        onTap: { viewModel.didTapBadge(badge) }
+                                        onTap: { viewModel.handleBadgeTap(badge) } // FIXED
                                     )
                                 }
                             }
@@ -84,7 +84,7 @@ struct BadgesScreenView: View {
                     BadgeDetailSheet(
                         badge: badge,
                         themeId: selectedThemeId,
-                        onDismiss: { viewModel.showDetailSheet = false }
+                        onDismiss: { viewModel.dismissDetailSheet() } // FIXED
                     )
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.showDetailSheet)
@@ -115,7 +115,7 @@ struct BadgesScreenView: View {
 
     @ViewBuilder
     private var themeBackground: some View {
-        let theme = IsoWalkThemes.current(selectedId: selectedThemeId)
+        let theme = IsoWalkTheme.current(selectedId: selectedThemeId)
         if let bgName = theme.backgroundImageName {
             Image(bgName)
                 .resizable()
@@ -130,4 +130,3 @@ struct BadgesScreenView: View {
 #Preview {
     BadgesScreenView(onDismiss: {})
 }
-

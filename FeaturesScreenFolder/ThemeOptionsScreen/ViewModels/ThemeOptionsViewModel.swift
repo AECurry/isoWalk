@@ -7,10 +7,7 @@
 //  RESPONSIBILITY: All business logic for the Theme Options screen.
 //  The View is dumb — it only reads from and calls into this ViewModel.
 //
-//  ADDING A NEW THEME:
-//  → Add ONE AnimatedImageConfig entry to AnimatedImageLibrary.availableImages
-//  → Done. The grid picks it up automatically.
-//
+
 
 import SwiftUI
 import Observation
@@ -24,23 +21,28 @@ final class ThemeOptionsViewModel {
 
     // MARK: - Init
     init() {
-        let savedId = UserDefaults.standard.string(forKey: IsoWalkThemes.selectedThemeKey)
-                      ?? IsoWalkThemes.defaultThemeId
+        let savedId = UserDefaults.standard.string(forKey: IsoWalkTheme.selectedThemeKey)
+                      ?? IsoWalkTheme.defaultThemeId
         self.selectedThemeId = savedId
-        self.themes = IsoWalkThemes.all
+        
+        // FIX 1: Replaced .all with our new Library!
+        self.themes = IsoWalkThemeLibrary.availableThemes
     }
 
     // MARK: - Computed
     var selectedTheme: IsoWalkTheme {
-        IsoWalkThemes.current(selectedId: selectedThemeId)
+        IsoWalkTheme.current(selectedId: selectedThemeId)
     }
 
     // MARK: - Intent
     func select(theme: IsoWalkTheme) {
         guard theme.id != selectedThemeId else { return }
         selectedThemeId = theme.id
+        
+        // This handles the save!
         persist()
-        AnimatedImageLibrary.setCurrentImage(id: theme.id)
+        
+        // FIX 2: We removed the old AnimatedImageLibrary line here because persist() already does the work.
     }
 
     func isSelected(_ theme: IsoWalkTheme) -> Bool {
@@ -49,7 +51,7 @@ final class ThemeOptionsViewModel {
 
     // MARK: - Private
     private func persist() {
-        UserDefaults.standard.set(selectedThemeId, forKey: IsoWalkThemes.selectedThemeKey)
+        UserDefaults.standard.set(selectedThemeId, forKey: IsoWalkTheme.selectedThemeKey)
     }
 }
 

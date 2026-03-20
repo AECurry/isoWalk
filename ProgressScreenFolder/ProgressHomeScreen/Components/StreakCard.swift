@@ -17,9 +17,13 @@ struct StreakCard: View {
     let walksThisMonth: Int
     let longestStreak: Int
 
+    
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
+
     // MARK: - Design Constants
-    private let cardCornerRadius: CGFloat = 14
-    private let cardHeight: CGFloat = 90
+    private let cardCornerRadius: CGFloat = 16
+    private let cardHeight: CGFloat = 96
     private let maxCardWidth: CGFloat = 340
     private let valueFontSize: CGFloat = 32
     private let labelFontSize: CGFloat = 16
@@ -30,39 +34,39 @@ struct StreakCard: View {
             // Walks This Month
             VStack(spacing: 4) {
                 Text("Walks This Month")
-                    .font(.custom("Inter-Regular", size: labelFontSize))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.8))
+                    .font(.custom(theme.bodyFontName, size: labelFontSize))
+                    .foregroundColor(theme.secondaryTextColor)
 
                 HStack(spacing: 4) {
                     Text("\(walksThisMonth)")
-                        .font(.custom("Inter-Bold", size: valueFontSize))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .font(.custom(theme.titleFontName, size: valueFontSize))
+                        .foregroundColor(theme.primaryTextColor)
                         .contentTransition(.numericText())
                     Text("days")
-                        .font(.custom("Inter-Regular", size: labelFontSize))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .font(.custom(theme.bodyFontName, size: labelFontSize))
+                        .foregroundColor(theme.primaryTextColor)
                 }
             }
             .frame(maxWidth: .infinity)
 
             Divider()
-                .frame(height: 44)
-                .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.2))
+                .frame(height: 48)
+                .foregroundColor(theme.primaryTextColor.opacity(0.2))
 
             // Longest Streak
             VStack(spacing: 4) {
                 Text("Longest Streak")
-                    .font(.custom("Inter-Regular", size: labelFontSize))
-                    .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.8))
+                    .font(.custom(theme.bodyFontName, size: labelFontSize))
+                    .foregroundColor(theme.secondaryTextColor)
 
                 HStack(spacing: 4) {
                     Text("\(longestStreak)")
-                        .font(.custom("Inter-Bold", size: valueFontSize))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .font(.custom(theme.titleFontName, size: valueFontSize))
+                        .foregroundColor(theme.primaryTextColor)
                         .contentTransition(.numericText())
                     Text("days")
-                        .font(.custom("Inter-Regular", size: labelFontSize))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .font(.custom(theme.bodyFontName, size: labelFontSize))
+                        .foregroundColor(theme.primaryTextColor)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -71,20 +75,8 @@ struct StreakCard: View {
         .frame(height: cardHeight)
         .background(
             RoundedRectangle(cornerRadius: cardCornerRadius)
-                .fill(isoWalkColors.ivory)
+                .fill(theme.cardColor) 
         )
-    }
-}
-
-#Preview {
-    ZStack {
-        Image("GoldenTextureBackground")
-            .resizable()
-            .ignoresSafeArea()
-        VStack(spacing: 12) {
-            StreakCard(walksThisMonth: 42, longestStreak: 108)
-            StreakCard(walksThisMonth: 0, longestStreak: 0)
-        }
     }
 }
 

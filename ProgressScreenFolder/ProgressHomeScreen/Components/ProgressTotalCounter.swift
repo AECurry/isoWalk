@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: ProgressScreenFolder/Components/
 //
 //  COMPONENT — dumb child.
 //  Big all-time number. Total Time (HealthKit OFF) or Miles (HealthKit ON).
@@ -21,8 +20,8 @@ struct ProgressTotalCounter: View {
     var formattedTotalMiles: String = "0"
 
     // MARK: - Design Constants
-    private let numberFontSize: CGFloat = 60
-    private let subtitleFontSize: CGFloat = 18
+    private let numberFontSize: CGFloat = 64
+    private let subtitleFontSize: CGFloat = 16
 
     var body: some View {
         VStack(spacing: 4) {
@@ -49,7 +48,7 @@ struct ProgressTotalCounter: View {
         Image("GoldenTextureBackground")
             .resizable()
             .ignoresSafeArea()
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             ProgressTotalCounter(
                 formattedTotalTime: "14h 22m",
                 isHealthKitEnabled: false

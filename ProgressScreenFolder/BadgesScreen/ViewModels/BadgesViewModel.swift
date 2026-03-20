@@ -27,6 +27,7 @@ final class BadgesViewModel {
     private let persistenceKey = "earnedBadgeRecords"
 
     // MARK: - Computed
+    // The Progress card will eventually read directly from this.
     var earnedCount: Int {
         badges.filter { $0.isUnlocked }.count
     }
@@ -34,101 +35,112 @@ final class BadgesViewModel {
     var mostRecentBadge: Badge? {
         badges
             .filter { $0.isUnlocked }
-            .sorted {
-                ($0.unlockedDate ?? .distantPast) > ($1.unlockedDate ?? .distantPast)
-            }
+            .sorted { ($0.unlockedDate ?? .distantPast) > ($1.unlockedDate ?? .distantPast) }
             .first
     }
 
-    // MARK: - Load
+    // MARK: - Public API
     func loadBadges() {
         let sessions = CompletedSession.loadAll()
-        let earned = loadEarnedRecords()
-        let earnedIds = Set(earned.map { $0.badgeId })
+        let earnedRecords = loadEarnedRecords()
+        let alreadyEarnedIds = Set(earnedRecords.map { $0.badgeId })
 
-        // Build badge list in fixed order 1-38
+        // 1. Build initial list
         badges = BadgeID.allCases.map { badgeId in
-            let record = earned.first { $0.badgeId == badgeId.rawValue }
+            let record = earnedRecords.first { $0.badgeId == badgeId.rawValue }
             return Badge(id: badgeId, unlockedDate: record?.earnedDate)
         }
 
-        checkForNewBadges(sessions: sessions, alreadyEarned: earnedIds)
+        // 2. RUN DYNAMIC SYNC against session history
+        syncWithSessionHistory(sessions: sessions, alreadyEarned: alreadyEarnedIds, earnedRecords: earnedRecords)
     }
 
-    // MARK: - Badge Tap
-    func didTapBadge(_ badge: Badge) {
+    // MARK: - User Interactions
+    func handleBadgeTap(_ badge: Badge) {
         selectedBadge = badge
         showDetailSheet = true
     }
 
-    // MARK: - Reveal
-    func didShowReveal() {
+    func dismissDetailSheet() {
+        showDetailSheet = false
+        selectedBadge = nil
+    }
+
+    func dismissReveal() {
         showRevealAnimation = false
         newlyUnlockedBadge = nil
     }
 
-    // MARK: - Check for New Badges
-    private func checkForNewBadges(
+    // MARK: - Dynamic Logic & Sync
+    private func syncWithSessionHistory(
         sessions: [CompletedSession],
-        alreadyEarned: Set<String>
+        alreadyEarned: Set<String>,
+        earnedRecords: [EarnedBadgeRecord]
     ) {
-        let hasSecondWind = UserDefaults.standard.bool(forKey: "hasSecondWindBadge")
-        let hasPauseFree = UserDefaults.standard.bool(forKey: "hasCompletedPauseFreeSession")
+        // Run the dynamic logic checker
+        let nowEarnedFromHistory = checker.check(sessions: sessions)
 
-        // Delegate all logic to BadgeEarnedChecker
-        let nowEarned = checker.check(
-            sessions: sessions,
-            hasSecondWind: hasSecondWind,
-            hasPauseFreeSession: hasPauseFree
-        )
-
-        let newlyEarned = nowEarned
+        let newlyEarnedInThisSession = nowEarnedFromHistory
             .filter { !alreadyEarned.contains($0.rawValue) }
             .map { EarnedBadgeRecord(badgeId: $0.rawValue, earnedDate: Date()) }
 
-        guard !newlyEarned.isEmpty else { return }
+        guard !newlyEarnedInThisSession.isEmpty else {
+            // Even if no new badges found, we still need to ensure the count is correct.
+            saveEarnedCountToUserDefaults(earnedRecords.count)
+            return
+        }
 
-        // Persist
-        var all = loadEarnedRecords()
-        all.append(contentsOf: newlyEarned)
-        saveEarnedRecords(all)
+        // --- NEW BADGES DETECTED ---
+        var allRecords = earnedRecords
+        allRecords.append(contentsOf: newlyEarnedInThisSession)
+        
+        // Persist the full record set
+        saveEarnedRecords(allRecords)
+        
+        // UNIFY TRUTH: Save the true count to UserDefaults for the Progress screen
+        saveEarnedCountToUserDefaults(allRecords.count)
 
-        // Rebuild badge list with new unlock dates
+        // Update local badges array so UI refreshes immediately
         badges = BadgeID.allCases.map { badgeId in
-            let record = all.first { $0.badgeId == badgeId.rawValue }
+            let record = allRecords.first { $0.badgeId == badgeId.rawValue }
             return Badge(id: badgeId, unlockedDate: record?.earnedDate)
         }
 
-        // Trigger reveal for most recently earned badge
-        if let latest = newlyEarned.last,
-           let badgeId = BadgeID(rawValue: latest.badgeId) {
-            newlyUnlockedBadge = Badge(id: badgeId, unlockedDate: latest.earnedDate)
+        // Trigger reveal animation for the first newly earned badge
+        if let firstNew = newlyEarnedInThisSession.first,
+           let matchedBadge = badges.first(where: { $0.id.rawValue == firstNew.badgeId }) {
+            
+            // Save this as the most recent badge id for the progress screen icon
+            UserDefaults.standard.set(matchedBadge.id.rawValue, forKey: "mostRecentBadgeId")
+            
+            // Show the full screen reveal
+            newlyUnlockedBadge = matchedBadge
             showRevealAnimation = true
         }
-
-        // Update ProgressHeader badge state
-        updateProgressHeaderState(from: all)
     }
 
-    // MARK: - Update Progress Header
-    private func updateProgressHeaderState(from records: [EarnedBadgeRecord]) {
-        UserDefaults.standard.set(records.count, forKey: "badgesEarned")
-        if let latest = records.sorted(by: { $0.earnedDate > $1.earnedDate }).first {
-            UserDefaults.standard.set(latest.badgeId, forKey: "mostRecentBadgeId")
-        }
+    private func saveEarnedCountToUserDefaults(_ count: Int) {
+        // This is the number that the Progress card reads.
+        UserDefaults.standard.set(count, forKey: "isoWalkBadgesEarnedTotal")
     }
 
-    // MARK: - Persistence
+    // MARK: - Persistence Helpers
     private func loadEarnedRecords() -> [EarnedBadgeRecord] {
-        guard let data = UserDefaults.standard.data(forKey: persistenceKey)
-        else { return [] }
-        return (try? JSONDecoder().decode([EarnedBadgeRecord].self, from: data)) ?? []
+        guard let data = UserDefaults.standard.data(forKey: persistenceKey) else { return [] }
+        do {
+            return try JSONDecoder().decode([EarnedBadgeRecord].self, from: data)
+        } catch {
+            print("Failed to decode badge records: \(error)")
+            return []
+        }
     }
 
     private func saveEarnedRecords(_ records: [EarnedBadgeRecord]) {
-        if let encoded = try? JSONEncoder().encode(records) {
-            UserDefaults.standard.set(encoded, forKey: persistenceKey)
+        do {
+            let data = try JSONEncoder().encode(records)
+            UserDefaults.standard.set(data, forKey: persistenceKey)
+        } catch {
+            print("Failed to encode badge records: \(error)")
         }
     }
 }
-

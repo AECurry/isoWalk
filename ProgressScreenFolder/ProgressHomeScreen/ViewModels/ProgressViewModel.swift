@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: ProgressScreenFolder/ViewModels/
 //
 //  RESPONSIBILITY: All data logic for the Progress screen.
 //  Reads directly from CompletedSession.loadAll() — no repository layer needed.
@@ -23,11 +22,17 @@ final class ProgressViewModel {
     var todaySessions: [CompletedSession] = []
     var walksThisMonth: Int = 0
     var longestStreak: Int = 0
-    var badgesEarned: Int = 0
+    // REMOVED: var badgesEarned: Int = 0 (This was the duplicate!)
     var mostRecentBadgeId: String? = nil
     var isHealthKitEnabled: Bool = false
 
-    // MARK: - Computed
+    // MARK: - Computed Properties
+    
+    // This connects directly to the count saved by BadgesViewModel
+    var badgesEarned: Int {
+        UserDefaults.standard.integer(forKey: "isoWalkBadgesEarnedTotal")
+    }
+
     var totalWalkCountDisplay: Int { totalWalkCount }
 
     var formattedTotalTime: String {
@@ -40,7 +45,6 @@ final class ProgressViewModel {
 
     var todaySessionCount: Int { todaySessions.count }
 
-    // Up to 3 shown on timeline — total still tracked
     var timelineSessions: [CompletedSession] {
         Array(todaySessions.prefix(3))
     }
@@ -69,10 +73,23 @@ final class ProgressViewModel {
 
         walksThisMonth = countWalksThisMonth(from: all)
         longestStreak = calculateLongestStreak(from: all)
-        loadBadgeState()
+        
+        // We still load the mostRecentBadgeId from storage
+        mostRecentBadgeId = UserDefaults.standard.string(forKey: "mostRecentBadgeId")
+        
+        // IMPORTANT: We need to trigger the Badge calculation here
+        // to make sure the "isoWalkBadgesEarnedTotal" is updated!
+        syncBadgesSilently()
     }
 
-    // MARK: - Walks This Month
+    /// This runs the badge checker in the background to ensure the count is current
+    private func syncBadgesSilently() {
+        let badgesVM = BadgesViewModel()
+        badgesVM.loadBadges()
+        // This call updates "isoWalkBadgesEarnedTotal" internally
+    }
+
+    // MARK: - Helper Logic
     private func countWalksThisMonth(from sessions: [CompletedSession]) -> Int {
         let calendar = Calendar.current
         let now = Date()
@@ -82,8 +99,6 @@ final class ProgressViewModel {
         return sessions.filter { $0.startTime >= monthStart }.count
     }
 
-    // MARK: - Longest Streak
-    // A streak day requires ≥15 min walked (per master plan).
     private func calculateLongestStreak(from sessions: [CompletedSession]) -> Int {
         let calendar = Calendar.current
         let qualifyingDays = Set(
@@ -107,11 +122,4 @@ final class ProgressViewModel {
         }
         return best
     }
-
-    // MARK: - Badge State
-    private func loadBadgeState() {
-        badgesEarned = UserDefaults.standard.integer(forKey: "badgesEarned")
-        mostRecentBadgeId = UserDefaults.standard.string(forKey: "mostRecentBadgeId")
-    }
 }
-

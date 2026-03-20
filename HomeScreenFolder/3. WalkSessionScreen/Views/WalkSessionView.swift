@@ -17,46 +17,58 @@ struct WalkSessionView: View {
     @State private var viewModel = WalkSessionViewModel()
     @State private var coordinator = WalkSessionCoordinator()
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage(IsoWalkThemes.selectedThemeKey) private var selectedThemeId: String = IsoWalkThemes.defaultThemeId
-    private var theme: IsoWalkTheme { IsoWalkThemes.current(selectedId: selectedThemeId) }
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
 
     let duration: DurationOptions
     let pace: PaceOptions
-    let musicMode: MusicMode              // was: music: MusicOptions
-    let musicSelection: MusicSelection    // full selection for playback
+    let musicMode: MusicMode
+    let musicSelection: MusicSelection
     var onDismissAll: (() -> Void)?
 
     var body: some View {
         ZStack(alignment: .bottom) {
+            // LAYER 1: Background
             themeBackground
 
+            // LAYER 2: Main Content
             VStack(spacing: 0) {
-                WalkSessionHeader(onBack: {
+                // FIXED: Added the 16pt padding to match WalkSetUpView exactly
+                WalkSessionHeader(theme: theme, onBack: {
                     coordinator.handleBackButtonTap()
                 })
+                .padding(.top, 16)
 
+                // FIXED: Added the -12pt padding to match the ImageArea placement
                 WalkSessionImageArea(theme: theme)
+                    .padding(.top, -12)
+                
+                VStack(spacing: 24) {
+                    TimerDisplay(
+                        timeString: viewModel.formattedTime,
+                        isActive: viewModel.timerState == .running
+                    )
 
-                TimerDisplay(
-                    timeString: viewModel.formattedTime,
-                    isActive: viewModel.timerState == .running
-                )
+                    AudioVisualizer(
+                        amplitudes: viewModel.amplitudes,
+                        isActive: viewModel.isAudioPlaying
+                    )
 
-                AudioVisualizer(
-                    amplitudes: viewModel.amplitudes,
-                    isActive: viewModel.isAudioPlaying
-                )
-
-                PlaybackControls(
-                    timerState: viewModel.timerState,
-                    onPlayPause: { viewModel.playPause() },
-                    onStop: { coordinator.handleStopButtonTap() }
-                )
+                    PlaybackControls(
+                        timerState: viewModel.timerState,
+                        onPlayPause: { viewModel.playPause() },
+                        onStop: { coordinator.handleStopButtonTap() }
+                    )
+                }
+                .padding(.top, 8)
 
                 Spacer()
             }
+            // Removed the "hack" padding from before;
+            // the 16pt on the header is the proper fix.
             .padding(.bottom, 100)
 
+            // LAYER 3: Bottom Nav Bar
             BottomNavBar(
                 selectedTab: $selectedTab,
                 onTabReTap: {
@@ -121,15 +133,4 @@ struct WalkSessionView: View {
             theme.backgroundColor.ignoresSafeArea()
         }
     }
-}
-
-#Preview {
-    @Previewable @State var selectedTab = 0
-    WalkSessionView(
-        selectedTab: $selectedTab,
-        duration: .twenty,
-        pace: .steady,
-        musicMode: .noMusic,
-        musicSelection: MusicSelection()
-    )
 }

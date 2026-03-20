@@ -22,8 +22,8 @@ struct WalkSetUpView: View {
     @State private var musicExpanded:    Bool = false
     @State private var navigateToSession: Bool = false
 
-    @AppStorage(IsoWalkThemes.selectedThemeKey) private var selectedThemeId: String = IsoWalkThemes.defaultThemeId
-    private var theme: IsoWalkTheme { IsoWalkThemes.current(selectedId: selectedThemeId) }
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
 
     let onDismiss: () -> Void
 
