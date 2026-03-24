@@ -24,7 +24,6 @@ struct BadgeFeaturedView: View {
 
     // MARK: - Design Constants
     private let circleSize: CGFloat = 160
-    private let iconSize: CGFloat = 80
     private let countFontSize: CGFloat = 48
     private let labelFontSize: CGFloat = 18
 
@@ -36,10 +35,13 @@ struct BadgeFeaturedView: View {
         VStack(spacing: 12) {
 
             ZStack {
-                // Badge circle
-                Circle()
-                    .fill(isoWalkColors.forestGreen)
-                    .frame(width: circleSize, height: circleSize)
+                // If the user hasn't earned a badge, we show a green circle with a trophy.
+                // If they HAVE earned a badge, we skip the green circle entirely so the image can fill the space.
+                if mostRecentBadge?.isUnlocked != true {
+                    Circle()
+                        .fill(isoWalkColors.forestGreen)
+                        .frame(width: circleSize, height: circleSize)
+                }
 
                 badgeImage
                     .scaleEffect(revealScale)
@@ -67,26 +69,59 @@ struct BadgeFeaturedView: View {
     }
 
     @ViewBuilder
-    private var badgeImage: some View {
-        if let badge = mostRecentBadge, badge.isUnlocked {
-            let assetName = badge.id.imageName(themeId: themeId)
-            if UIImage(named: assetName) != nil {
-                Image(assetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: iconSize, height: iconSize)
+        private var badgeImage: some View {
+            if let badge = mostRecentBadge, badge.isUnlocked {
+                
+                // 1. BULLETPROOF FIX: Check the direct asset name first
+                if UIImage(named: exactAssetName(for: badge)) != nil {
+                    Image(exactAssetName(for: badge))
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: circleSize, height: circleSize)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
+                        
+                // 2. Original Fallback (Checks the theme folder)
+                } else {
+                    // FIXED: Removed "if let" because it's already a guaranteed String
+                    let folderPath = badge.id.imageName(themeId: themeId)
+                    
+                    if UIImage(named: folderPath) != nil {
+                        Image(folderPath)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: circleSize, height: circleSize)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
+                            
+                    // 3. Fallback Trophy
+                    } else {
+                        Image(systemName: "trophy.fill")
+                            .font(.system(size: circleSize * 0.5))
+                            .foregroundColor(.white)
+                    }
+                }
             } else {
-                // SF Symbol fallback until real assets exist
+                // No badge earned yet
                 Image(systemName: "trophy.fill")
-                    .font(.system(size: iconSize * 0.6))
+                    .font(.system(size: circleSize * 0.5))
                     .foregroundColor(.white)
             }
-        } else {
-            // No badge earned yet
-            Image(systemName: "trophy.fill")
-                .font(.system(size: iconSize * 0.6))
-                .foregroundColor(.white)
         }
+    
+    // MARK: - Direct Mapping Function
+    private func exactAssetName(for badge: Badge) -> String {
+        let idString = String(describing: badge.id)
+        
+        if idString.contains("firstSteps") { return "FirstSteps" }
+        if idString.contains("habitWalker") { return "HabitWalker" }
+        if idString.contains("eveningUnwinder") { return "EveningUnWinder" }
+        if idString.contains("morningMover") { return "MorningMover" }
+        if idString.contains("perfectPace") { return "PerfectPace" }
+        if idString.contains("rhythmFinder") { return "RhythmFinder" }
+        if idString.contains("momentumMaker") { return "MomentumMaker" }
+        
+        return ""
     }
 
     private func startRevealAnimation() {

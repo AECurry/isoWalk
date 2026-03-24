@@ -66,7 +66,14 @@ final class ProgressViewModel {
         walksThisMonth = countWalksThisMonth(from: all)
         longestStreak = calculateLongestStreak(from: all)
         
-        mostRecentBadgeId = UserDefaults.standard.string(forKey: "mostRecentBadgeId")
+        // MARK: - FIXED: Clears out ghost badges if there are 0 walks
+        if totalWalkCount == 0 {
+            mostRecentBadgeId = nil
+            UserDefaults.standard.removeObject(forKey: "mostRecentBadgeId")
+        } else {
+            mostRecentBadgeId = UserDefaults.standard.string(forKey: "mostRecentBadgeId")
+        }
+        
         syncBadgesSilently(context: context)
     }
 
