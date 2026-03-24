@@ -18,80 +18,87 @@ struct SubmitFeedbackScreenView: View {
     private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
     @FocusState private var focusedField: FeedbackField?
 
+    private let navBarHeight: CGFloat = 115
     private let maxContentWidth: CGFloat = 340
 
     enum FeedbackField { case name, email, message }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            themeBackground
+        GeometryReader { geo in
+            ZStack(alignment: .top) {
+                
+                // LAYER 1: Floating Navigation
+                IsoWalkBackButton(theme: theme, onBack: { dismiss() })
+                    .zIndex(10)
 
-            GeometryReader { geo in
-                ZStack(alignment: .top) {
+                // LAYER 2: Main Content
+                VStack(spacing: 0) {
                     
-                    // Main layout: Fixed header on top, scrollable form below
-                    VStack(spacing: 0) {
-                        
-                        // MARK: - Fixed Header (Image Area)
-                        isoWalkThemeImageArea(theme: theme, isAnimated: true)
-                            .padding(.top, 56)
-                            .padding(.bottom, 16)
-                            .frame(maxWidth: .infinity)
+                    // MARK: - Shared Theme Image Area (Fixed)
+                    isoWalkThemeImageArea(theme: theme, isAnimated: true)
+                        .frame(maxWidth: .infinity)
 
-                        // MARK: - Scrollable Content
-                        ScrollViewReader { proxy in
-                            ScrollView(.vertical, showsIndicators: false) {
-                                VStack(spacing: 0) {
+                    // MARK: - Scrollable Content
+                    ScrollViewReader { proxy in
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 0) {
 
-                                    HStack {
-                                        Text("Submit Feedback")
-                                            .font(.custom("Inter-Bold", size: 34))
-                                            .foregroundColor(isoWalkColors.deepSpaceBlue)
-                                        Spacer()
-                                    }
-                                    .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
-                                    .padding(.bottom, 8)
-
-                                    HStack {
-                                        Text("Your feedback helps us make isoWalk better for everyone.")
-                                            .font(.custom("Inter-Regular", size: 15))
-                                            .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.70))
-                                            .fixedSize(horizontal: false, vertical: true)
-                                        Spacer()
-                                    }
-                                    .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
-                                    .padding(.bottom, 28)
-
-                                    // MARK: - Form Card (child)
-                                    FeedbackFormCard(
-                                        viewModel: viewModel,
-                                        focusedField: $focusedField,
-                                        scrollProxy: proxy
-                                    )
-                                    .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
-                                    .padding(.bottom, 20)
-
-                                    // MARK: - Send Button (child)
-                                    FeedbackSendButton {
-                                        focusedField = nil
-                                        viewModel.submit()
-                                    }
-                                    .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
-                                    .padding(.bottom, 40)
-                                    .id("sendButton")
+                                HStack {
+                                    Text("Submit Feedback")
+                                        .font(.custom("Inter-Bold", size: 34))
+                                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                                    Spacer()
                                 }
-                                .frame(maxWidth: .infinity)
-                            }
-                            // Removed .ignoresSafeArea(edges: .top) so it stops overlapping the notch
-                            .scrollDismissesKeyboard(.interactively)
-                        }
-                    }
+                                .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
+                                .padding(.top, 16) // Compensates for removed image padding
+                                .padding(.bottom, 8)
 
-                    // MARK: - Back Button (floats over everything)
-                    IsoWalkBackButton(theme: theme, onBack: { dismiss() })
+                                HStack {
+                                    Text("Your feedback helps us make isoWalk better for everyone.")
+                                        .font(.custom("Inter-Regular", size: 15))
+                                        .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.70))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
+                                .padding(.bottom, 28)
+
+                                // MARK: - Form Card (child)
+                                FeedbackFormCard(
+                                    viewModel: viewModel,
+                                    focusedField: $focusedField,
+                                    scrollProxy: proxy
+                                )
+                                .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
+                                .padding(.bottom, 20)
+
+                                // MARK: - Send Button (child)
+                                FeedbackSendButton {
+                                    focusedField = nil
+                                    viewModel.submit()
+                                }
+                                .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
+                                .padding(.bottom, 40)
+                                .id("sendButton")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Color.clear
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { hideKeyboard() }
+                            )
+                        }
+                        .scrollDismissesKeyboard(.interactively)
+                    }
                 }
+                .frame(width: geo.size.width, height: max(0, geo.size.height - navBarHeight))
             }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
+        .background {
+            themeBackground
+        }
+        .ignoresSafeArea(.keyboard)
         .navigationBarHidden(true)
 
         .alert("No Email App Found", isPresented: $viewModel.showNoEmailAppAlert) {
@@ -108,6 +115,13 @@ struct SubmitFeedbackScreenView: View {
         } message: {
             Text("Please write a message before sending.")
         }
+    }
+
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil, from: nil, for: nil
+        )
     }
 
     @ViewBuilder

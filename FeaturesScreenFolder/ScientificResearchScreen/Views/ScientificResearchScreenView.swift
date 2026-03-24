@@ -25,14 +25,11 @@ struct ScientificResearchScreenView: View {
         GeometryReader { geo in
             ZStack(alignment: .top) {
                 
-                // LAYER 1: Background
-                themeBackground
-
-                // LAYER 2: Floating Navigation
+                // LAYER 1: Floating Navigation
                 IsoWalkBackButton(theme: theme, onBack: { dismiss() })
                     .zIndex(10)
 
-                // LAYER 3: Main Content
+                // LAYER 2: Main Content
                 VStack(spacing: 0) {
                     
                     // MARK: - Shared Theme Image Area (Fixed)
@@ -102,6 +99,9 @@ struct ScientificResearchScreenView: View {
                 .frame(width: geo.size.width, height: max(0, geo.size.height - navBarHeight))
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+        }
+        .background {
+            themeBackground
         }
         .navigationBarHidden(true)
     }

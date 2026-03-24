@@ -1,8 +1,8 @@
 //
-//  AnimatedThemeView.swift
+//  SquareThemeEngineView.swift
 //  isoWalk
 //
-//  Created by AnnElaine on 3/19/26.
+//  Created by AnnElaine on 3/24/26.
 //
 //  THE CORE RENDERING ENGINE FOR SQUARE IMAGE AREAS.
 //  This is the single source of truth for animating the square theme images

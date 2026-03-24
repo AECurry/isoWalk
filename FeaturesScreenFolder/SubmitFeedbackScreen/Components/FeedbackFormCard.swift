@@ -18,6 +18,10 @@ struct FeedbackFormCard: View {
     @Bindable var viewModel: SubmitFeedbackViewModel
     @FocusState.Binding var focusedField: SubmitFeedbackScreenView.FeedbackField?
     let scrollProxy: ScrollViewProxy
+    
+    // MARK: - Theme Integration
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
 
     var body: some View {
         VStack(spacing: 20) {
@@ -26,15 +30,15 @@ struct FeedbackFormCard: View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "envelope.fill")
                     .font(.system(size: 16))
-                    .foregroundStyle(isoWalkColors.balticBlue)
+                    .foregroundStyle(theme.primaryIconColor)
                     .frame(width: 24)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("To")
                         .font(.custom("Inter-SemiBold", size: 14))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.55))
+                        .foregroundColor(theme.primaryTextColor.opacity(0.55))
                     Text(viewModel.companyEmail)
                         .font(.custom("Inter-Regular", size: 15))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .foregroundColor(theme.primaryTextColor)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
@@ -46,15 +50,15 @@ struct FeedbackFormCard: View {
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: "person.fill")
                     .font(.system(size: 16))
-                    .foregroundStyle(isoWalkColors.balticBlue)
+                    .foregroundStyle(theme.primaryIconColor)
                     .frame(width: 24)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Your Name")
                         .font(.custom("Inter-SemiBold", size: 14))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.55))
+                        .foregroundColor(theme.primaryTextColor.opacity(0.55))
                     TextField("Optional", text: $viewModel.name)
                         .font(.custom("Inter-Regular", size: 15))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .foregroundColor(theme.primaryTextColor)
                         .focused($focusedField, equals: .name)
                         .submitLabel(.next)
                         .onSubmit { focusedField = .email }
@@ -64,7 +68,7 @@ struct FeedbackFormCard: View {
                                 Button(action: { focusedField = nil }) {
                                     Image(systemName: "chevron.down")
                                         .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(isoWalkColors.balticBlue)
+                                        .foregroundColor(theme.primaryIconColor)
                                 }
                             }
                         }
@@ -79,18 +83,18 @@ struct FeedbackFormCard: View {
                 HStack(alignment: .center, spacing: 12) {
                     Image(systemName: "at")
                         .font(.system(size: 16))
-                        .foregroundStyle(isoWalkColors.balticBlue)
+                        .foregroundStyle(theme.primaryIconColor)
                         .frame(width: 24)
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Your Email")
                             .font(.custom("Inter-SemiBold", size: 14))
-                            .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.55))
+                            .foregroundColor(theme.primaryTextColor.opacity(0.55))
                         TextField("So we can reply to you", text: Binding(
                             get: { viewModel.email },
                             set: { viewModel.email = $0; viewModel.emailDidChange() }
                         ))
                         .font(.custom("Inter-Regular", size: 15))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .foregroundColor(theme.primaryTextColor)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
@@ -115,11 +119,11 @@ struct FeedbackFormCard: View {
                 HStack(spacing: 12) {
                     Image(systemName: "text.alignleft")
                         .font(.system(size: 16))
-                        .foregroundStyle(isoWalkColors.balticBlue)
+                        .foregroundStyle(theme.primaryIconColor)
                         .frame(width: 24)
                     Text("Message")
                         .font(.custom("Inter-SemiBold", size: 14))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.55))
+                        .foregroundColor(theme.primaryTextColor.opacity(0.55))
                     Spacer()
                 }
 
@@ -127,14 +131,14 @@ struct FeedbackFormCard: View {
                     if viewModel.message.isEmpty {
                         Text("Write your message here…")
                             .font(.custom("Inter-Regular", size: 15))
-                            .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.30))
+                            .foregroundColor(theme.primaryTextColor.opacity(0.30))
                             .padding(.top, 8)
                             .padding(.leading, 5)
                             .allowsHitTesting(false)
                     }
                     TextEditor(text: $viewModel.message)
                         .font(.custom("Inter-Regular", size: 15))
-                        .foregroundColor(isoWalkColors.deepSpaceBlue)
+                        .foregroundColor(theme.primaryTextColor)
                         .frame(minHeight: 120)
                         .scrollContentBackground(.hidden)
                         .background(Color.clear)
@@ -155,9 +159,8 @@ struct FeedbackFormCard: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(isoWalkColors.ivory)
+                .fill(theme.cardColor) // <-- This now changes dynamically!
                 .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 3)
         )
     }
 }
-

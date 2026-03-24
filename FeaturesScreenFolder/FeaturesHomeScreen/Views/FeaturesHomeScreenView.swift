@@ -23,10 +23,7 @@ struct FeaturesHomeScreenView: View {
             GeometryReader { geo in
                 ZStack(alignment: .top) {
                     
-                    // LAYER 1: Background
-                    themeBackground
-
-                    // LAYER 2: Main Content (Header fixed, Content scrolls)
+                    // LAYER 1: Main Content (Header fixed, Content scrolls)
                     VStack(spacing: 0) {
 
                         // MARK: - Shared Theme Image Area (Fixed)
@@ -65,6 +62,9 @@ struct FeaturesHomeScreenView: View {
                     .frame(width: geo.size.width, height: max(0, geo.size.height - navBarHeight))
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+            }
+            .background {
+                themeBackground
             }
             .navigationDestination(isPresented: $viewModel.navigateToTheme) {
                 ThemeOptionsView()
@@ -106,3 +106,4 @@ struct FeaturesHomeScreenView: View {
     FeaturesHomeScreenView()
         .environment(SessionManager())
 }
+

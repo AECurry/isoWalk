@@ -23,13 +23,18 @@ struct IsoWalkBackButton: View {
                     .foregroundColor(theme.primaryIconColor)
                     // Generous padding for a better thumb hit-target
                     .padding(12)
+                    // Ensures the invisible padded area is fully tapable
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(.leading, 24) // Exact placement from the leading side
+            // 12pt here + 12pt padding on the button = exact 24pt placement from the edge
+            .padding(.leading, 12)
             
             Spacer()
         }
-        // Exact placement from the top
+        // Forces the HStack to fill the width, anchoring the button firmly to the left
+        .frame(maxWidth: .infinity)
+        // Optical adjustment to align perfectly with the safe area
         .padding(.top, -8)
     }
 }

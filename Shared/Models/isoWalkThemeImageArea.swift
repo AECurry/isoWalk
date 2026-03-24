@@ -21,7 +21,8 @@ struct isoWalkThemeImageArea: View {
     var bottomPadding: CGFloat = 16
     
     var body: some View {
-        Group {
+        // Use a ZStack to create a rigid bounding box
+        ZStack(alignment: .center) {
             if isAnimated {
                 // MARK: - Animated Version
                 SquareThemeEngineView(
@@ -31,10 +32,11 @@ struct isoWalkThemeImageArea: View {
             } else {
                 // MARK: - Static Version (for WalkSession)
                 staticImageView
-                    .frame(width: size, height: size)
             }
         }
-        // Apply the padding directly to the component wrapper
+        // THE FIX: Lock the container to a perfect square.
+        // It will never collapse or expand, keeping your layout identical across themes.
+        .frame(width: size, height: size)
         .padding(.top, topPadding)
         .padding(.bottom, bottomPadding)
     }
@@ -59,7 +61,7 @@ struct isoWalkThemeImageArea: View {
             case .video(_, let fallback):
                 Image(fallback)
                     .resizable()
-                        .scaledToFit()
+                    .scaledToFit()
                 
             default:
                 Image(theme.mainImageName)
@@ -69,3 +71,4 @@ struct isoWalkThemeImageArea: View {
         }
     }
 }
+

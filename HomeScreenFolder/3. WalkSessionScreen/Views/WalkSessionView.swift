@@ -31,16 +31,13 @@ struct WalkSessionView: View {
         // 1. ZStack top alignment anchors everything to the top safe area
         ZStack(alignment: .top) {
             
-            // LAYER 1: Background
-            themeBackground
-            
-            // LAYER 2: Floating Navigation (Matches WalkSetUpView)
+            // LAYER 1: Floating Navigation (Matches WalkSetUpView)
             IsoWalkBackButton(theme: theme, onBack: {
                 coordinator.handleBackButtonTap()
             })
             .zIndex(10)
 
-            // LAYER 3: Main Content
+            // LAYER 2: Main Content
             VStack(spacing: 0) {
                 
                 // Shared Theme Image
@@ -71,7 +68,7 @@ struct WalkSessionView: View {
             }
             .padding(.bottom, 100) // Preserves clearance for the BottomNavBar
 
-            // LAYER 4: Bottom Nav Bar
+            // LAYER 3: Bottom Nav Bar
             // Wrapped in a VStack with a Spacer to push it to the bottom
             VStack {
                 Spacer()
@@ -86,6 +83,9 @@ struct WalkSessionView: View {
                 )
             }
             .zIndex(5)
+        }
+        .background {
+            themeBackground
         }
         .navigationBarHidden(true)
         .onAppear {

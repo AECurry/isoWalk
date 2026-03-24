@@ -18,42 +18,46 @@ struct ThemeOptionsView: View {
     
     var body: some View {
         GeometryReader { geo in
-            // 1. ZStack top alignment anchors everything to the top safe area
             ZStack(alignment: .top) {
                 
-                themeBackground
+                // LAYER 1: Floating Navigation
+                IsoWalkBackButton(theme: theme, onBack: { dismiss() })
+                    .zIndex(10)
                 
-                // 2. Scrollable Layer: Respects safe area so the image starts at the exact same Y-axis
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 24) {
-                        
-                        // MARK: - Theme Preview
-                        isoWalkThemeImageArea(theme: viewModel.selectedTheme, isAnimated: true)
-                            .frame(maxWidth: .infinity)
-                        
-                        ThemeGridSection(
-                            themes: viewModel.themes,
-                            selectedThemeId: viewModel.selectedThemeId,
-                            onSelect: { theme in
-                                viewModel.select(theme: theme)
-                            }
-                        )
+                // LAYER 2: Main Content
+                VStack(spacing: 0) {
+                    
+                    // MARK: - Shared Theme Image Area (Fixed)
+                    // Note: We use viewModel.selectedTheme here so the preview changes instantly when tapping the grid
+                    isoWalkThemeImageArea(theme: viewModel.selectedTheme, isAnimated: true)
                         .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 20)
-                        
-                        Spacer(minLength: 24)
+                    
+                    // MARK: - Scrollable Content
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 0) {
+                            
+                            ThemeGridSection(
+                                themes: viewModel.themes,
+                                selectedThemeId: viewModel.selectedThemeId,
+                                onSelect: { selectedTheme in
+                                    viewModel.select(theme: selectedTheme)
+                                }
+                            )
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 16) // Added to compensate for removed image padding
+                            
+                            Spacer(minLength: 24)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
                 }
                 .frame(width: geo.size.width, height: max(0, geo.size.height - navBarHeight))
-                
-                // 3. Navigation Layer: Floats independently
-                IsoWalkBackButton(theme: theme) {
-                    dismiss()
-                }
-                
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+        }
+        .background {
+            themeBackground
         }
         .navigationBarHidden(true)
     }
@@ -68,6 +72,12 @@ struct ThemeOptionsView: View {
         } else {
             theme.backgroundColor.ignoresSafeArea()
         }
+    }
+}
+
+#Preview {
+    NavigationStack {
+        ThemeOptionsView()
     }
 }
 

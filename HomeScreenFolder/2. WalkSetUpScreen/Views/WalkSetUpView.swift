@@ -32,14 +32,12 @@ struct WalkSetUpView: View {
         NavigationStack {
             // 1. ZStack top alignment
             ZStack(alignment: .top) {
-                // LAYER 1: Background
-                themeBackground
                 
-                // LAYER 2: Navigation (Floating)
+                // LAYER 1: Navigation (Floating)
                 IsoWalkBackButton(theme: theme, onBack: { onDismiss() })
                     .zIndex(10)
                 
-                // LAYER 3: Main Content (Fixed)
+                // LAYER 2: Main Content (Fixed)
                 VStack(spacing: 0) {
                     
                     // Because this is the first item in a top-aligned VStack,
@@ -65,7 +63,7 @@ struct WalkSetUpView: View {
                     .padding(.bottom, 124)
                 }
                 
-                // LAYER 4: Bottom Nav Bar
+                // LAYER 3: Bottom Nav Bar
                 if !navigateToSession {
                     VStack {
                         Spacer()
@@ -83,10 +81,13 @@ struct WalkSetUpView: View {
                     .zIndex(5)
                 }
                 
-                // LAYER 5: POPUP MODALS
+                // LAYER 4: POPUP MODALS
                 if paceExpanded { PacePopupModal(selectedPace: $viewModel.selectedPace, isExpanded: $paceExpanded).zIndex(100) }
                 if durationExpanded { DurationPopupModal(selectedDuration: $viewModel.selectedDuration, isExpanded: $durationExpanded, selectedPace: viewModel.selectedPace).zIndex(100) }
                 if musicExpanded { MusicPopupModal(viewModel: viewModel.musicViewModel, isExpanded: $musicExpanded, selectedPace: viewModel.selectedPace, selectedDuration: viewModel.selectedDuration).zIndex(100) }
+            }
+            .background {
+                themeBackground
             }
             .onChange(of: paceExpanded)     { if paceExpanded     { durationExpanded = false; musicExpanded = false } }
             .onChange(of: durationExpanded) { if durationExpanded { paceExpanded     = false; musicExpanded = false } }
