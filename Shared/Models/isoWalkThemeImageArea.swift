@@ -17,8 +17,8 @@ struct isoWalkThemeImageArea: View {
     var size: CGFloat = 200 // Default size, but overridable
     
     // Configurable padding with safe default values
-    var topPadding: CGFloat = 8
-    var bottomPadding: CGFloat = 24
+    var topPadding: CGFloat = 24
+    var bottomPadding: CGFloat = 16
     
     var body: some View {
         Group {

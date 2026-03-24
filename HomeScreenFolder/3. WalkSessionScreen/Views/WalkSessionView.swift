@@ -28,22 +28,25 @@ struct WalkSessionView: View {
     var onDismissAll: (() -> Void)?
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        // 1. ZStack top alignment anchors everything to the top safe area
+        ZStack(alignment: .top) {
+            
             // LAYER 1: Background
             themeBackground
+            
+            // LAYER 2: Floating Navigation (Matches WalkSetUpView)
+            IsoWalkBackButton(theme: theme, onBack: {
+                coordinator.handleBackButtonTap()
+            })
+            .zIndex(10)
 
-            // LAYER 2: Main Content
+            // LAYER 3: Main Content
             VStack(spacing: 0) {
                 
-                // Shared back button
-                IsoWalkBackButton(theme: theme, onBack: {
-                    coordinator.handleBackButtonTap()
-                })
-
                 // Shared Theme Image
+                // This is now the first item in a top-aligned VStack.
+                // It automatically inherits the 80pt top padding built into the component.
                 isoWalkThemeImageArea(theme: theme, isAnimated: false)
-                    .padding(.top, -12) 
-                    .padding(.bottom, 8)
                 
                 VStack(spacing: 24) {
                     TimerDisplay(
@@ -66,20 +69,23 @@ struct WalkSessionView: View {
 
                 Spacer()
             }
-            // Removed the "hack" padding from before;
-            // the 16pt on the header is the proper fix.
-            .padding(.bottom, 100)
+            .padding(.bottom, 100) // Preserves clearance for the BottomNavBar
 
-            // LAYER 3: Bottom Nav Bar
-            BottomNavBar(
-                selectedTab: $selectedTab,
-                onTabReTap: {
-                    coordinator.handleTabTap(selectedTab)
-                },
-                onTabChange: { tab in
-                    coordinator.handleTabTap(tab)
-                }
-            )
+            // LAYER 4: Bottom Nav Bar
+            // Wrapped in a VStack with a Spacer to push it to the bottom
+            VStack {
+                Spacer()
+                BottomNavBar(
+                    selectedTab: $selectedTab,
+                    onTabReTap: {
+                        coordinator.handleTabTap(selectedTab)
+                    },
+                    onTabChange: { tab in
+                        coordinator.handleTabTap(tab)
+                    }
+                )
+            }
+            .zIndex(5)
         }
         .navigationBarHidden(true)
         .onAppear {

@@ -22,13 +22,14 @@ struct FeaturesHomeScreenView: View {
         NavigationStack {
             GeometryReader { geo in
                 ZStack(alignment: .top) {
-
+                    
+                    // LAYER 1: Background
                     themeBackground
 
+                    // LAYER 2: Main Content (Header fixed, Content scrolls)
                     VStack(spacing: 0) {
 
-                        // MARK: - Shared Theme Image Area
-                        // Padding is now handled internally by this component
+                        // MARK: - Shared Theme Image Area (Fixed)
                         isoWalkThemeImageArea(theme: theme, isAnimated: true)
                             .frame(maxWidth: .infinity)
 
@@ -78,9 +79,6 @@ struct FeaturesHomeScreenView: View {
             }
             .navigationDestination(isPresented: $viewModel.navigateToScientificProof) {
                 ScientificResearchScreenView()
-            }
-            .navigationDestination(isPresented: $viewModel.navigateToSubmitFeedback) {
-                SubmitFeedbackScreenView()
             }
             .navigationBarHidden(true)
         }

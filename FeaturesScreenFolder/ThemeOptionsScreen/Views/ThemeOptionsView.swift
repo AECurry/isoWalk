@@ -18,17 +18,17 @@ struct ThemeOptionsView: View {
     
     var body: some View {
         GeometryReader { geo in
+            // 1. ZStack top alignment anchors everything to the top safe area
             ZStack(alignment: .top) {
                 
                 themeBackground
                 
-                // ScrollView ignores safe area so content can start from very top
+                // 2. Scrollable Layer: Respects safe area so the image starts at the exact same Y-axis
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 24) {
                         
                         // MARK: - Theme Preview
                         isoWalkThemeImageArea(theme: viewModel.selectedTheme, isAnimated: true)
-                            .padding(.top, 56)
                             .frame(maxWidth: .infinity)
                         
                         ThemeGridSection(
@@ -45,10 +45,9 @@ struct ThemeOptionsView: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .ignoresSafeArea(edges: .top)
                 .frame(width: geo.size.width, height: max(0, geo.size.height - navBarHeight))
                 
-                // MARK: - Universal Shared Back Button
+                // 3. Navigation Layer: Floats independently
                 IsoWalkBackButton(theme: theme) {
                     dismiss()
                 }
@@ -69,12 +68,6 @@ struct ThemeOptionsView: View {
         } else {
             theme.backgroundColor.ignoresSafeArea()
         }
-    }
-}
-
-#Preview {
-    NavigationStack {
-        ThemeOptionsView()
     }
 }
 

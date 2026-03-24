@@ -30,33 +30,26 @@ struct WalkSetUpView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
+            // 1. ZStack top alignment
+            ZStack(alignment: .top) {
                 // LAYER 1: Background
                 themeBackground
                 
-                // LAYER 2: Main Content
+                // LAYER 2: Navigation (Floating)
+                IsoWalkBackButton(theme: theme, onBack: { onDismiss() })
+                    .zIndex(10)
+                
+                // LAYER 3: Main Content (Fixed)
                 VStack(spacing: 0) {
                     
-                    // Shared back button
-                    IsoWalkBackButton(theme: theme, onBack: { onDismiss() })
-                    
-                    // Shared Image Area
+                    // Because this is the first item in a top-aligned VStack,
+                    // it will perfectly match the ScrollView's starting position.
                     isoWalkThemeImageArea(theme: theme, isAnimated: true)
 
                     VStack(spacing: 12) {
-                        PacePopUp(
-                            selectedPace: $viewModel.selectedPace,
-                            isExpanded: $paceExpanded
-                        )
-                        DurationPopUp(
-                            selectedDuration: $viewModel.selectedDuration,
-                            isExpanded: $durationExpanded,
-                            selectedPace: viewModel.selectedPace
-                        )
-                        MusicPopUp(
-                            viewModel: viewModel.musicViewModel,
-                            isExpanded: $musicExpanded
-                        )
+                        PacePopUp(selectedPace: $viewModel.selectedPace, isExpanded: $paceExpanded)
+                        DurationPopUp(selectedDuration: $viewModel.selectedDuration, isExpanded: $durationExpanded, selectedPace: viewModel.selectedPace)
+                        MusicPopUp(viewModel: viewModel.musicViewModel, isExpanded: $musicExpanded)
                     }
                     .padding(.horizontal, 24)
 
@@ -72,7 +65,7 @@ struct WalkSetUpView: View {
                     .padding(.bottom, 124)
                 }
                 
-                // LAYER 3: Bottom Nav Bar (moved INSIDE ZStack)
+                // LAYER 4: Bottom Nav Bar
                 if !navigateToSession {
                     VStack {
                         Spacer()
@@ -87,34 +80,13 @@ struct WalkSetUpView: View {
                             }
                         )
                     }
-                    .zIndex(5)  // Above main content
+                    .zIndex(5)
                 }
                 
-                // LAYER 4: POPUP MODALS — highest z-index
-                if paceExpanded {
-                    PacePopupModal(
-                        selectedPace: $viewModel.selectedPace,
-                        isExpanded: $paceExpanded
-                    )
-                    .zIndex(100)  // Above everything
-                }
-                if durationExpanded {
-                    DurationPopupModal(
-                        selectedDuration: $viewModel.selectedDuration,
-                        isExpanded: $durationExpanded,
-                        selectedPace: viewModel.selectedPace
-                    )
-                    .zIndex(100)  // Above everything
-                }
-                if musicExpanded {
-                    MusicPopupModal(
-                        viewModel: viewModel.musicViewModel,
-                        isExpanded: $musicExpanded,
-                        selectedPace: viewModel.selectedPace,      // NEW: Pass pace
-                        selectedDuration: viewModel.selectedDuration  // NEW: Pass duration
-                    )
-                    .zIndex(100)  // Above everything
-                }
+                // LAYER 5: POPUP MODALS
+                if paceExpanded { PacePopupModal(selectedPace: $viewModel.selectedPace, isExpanded: $paceExpanded).zIndex(100) }
+                if durationExpanded { DurationPopupModal(selectedDuration: $viewModel.selectedDuration, isExpanded: $durationExpanded, selectedPace: viewModel.selectedPace).zIndex(100) }
+                if musicExpanded { MusicPopupModal(viewModel: viewModel.musicViewModel, isExpanded: $musicExpanded, selectedPace: viewModel.selectedPace, selectedDuration: viewModel.selectedDuration).zIndex(100) }
             }
             .onChange(of: paceExpanded)     { if paceExpanded     { durationExpanded = false; musicExpanded = false } }
             .onChange(of: durationExpanded) { if durationExpanded { paceExpanded     = false; musicExpanded = false } }
@@ -138,7 +110,7 @@ struct WalkSetUpView: View {
         if let bgName = theme.backgroundImageName {
             Image(bgName)
                 .resizable()
-                .aspectRatio(contentMode: .fill) // A quick note: .fill can stretch the ZStack boundaries. If your button is still touching the edge, change this to .fit or add .frame(maxWidth: UIScreen.main.bounds.width)
+                .aspectRatio(contentMode: .fill)
                 .ignoresSafeArea()
         } else {
             theme.backgroundColor.ignoresSafeArea()
