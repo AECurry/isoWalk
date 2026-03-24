@@ -7,13 +7,14 @@
 //  PARENT VIEW — intentionally dumb.
 //  Owns the ViewModel and Coordinator. Passes bindings down to children.
 //  Zero business logic — all decisions live in Coordinator and ViewModel.
-//  - FIXED: Implemented universal IsoWalkBackButton and standalone Image Area
 //
 
 import SwiftUI
+import SwiftData
 
 struct WalkSessionView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext // NEW: Grabs the database connection
     @Binding var selectedTab: Int
     @State private var viewModel = WalkSessionViewModel()
     @State private var coordinator = WalkSessionCoordinator()
@@ -92,6 +93,9 @@ struct WalkSessionView: View {
             let c = coordinator
             let vm = viewModel
             let dismissAll = onDismissAll
+            
+            // NEW: Hands the database connection to the ViewModel to save Progress!
+            vm.modelContext = modelContext
 
             c.onPauseForAlert    = { vm.pauseForAlert() }
             c.onResumeAfterAlert = { vm.resumeAfterAlert() }

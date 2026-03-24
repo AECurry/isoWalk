@@ -29,6 +29,7 @@ struct StartWalkingButton: View {
         }
         .buttonStyle(.plain)
         .padding(.bottom, 32)
+        
     }
 }
 

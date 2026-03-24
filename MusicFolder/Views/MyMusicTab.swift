@@ -16,11 +16,17 @@ struct MyMusicTab: View {
     @Bindable var viewModel: MusicViewModel
     @State private var appleMusicService = AppleMusicService.shared
     
+    
+    @AppStorage("useFemaleVoice") private var useFemaleVoice = true
+    
     var body: some View {
         VStack(spacing: 24) {
             
             // Service selector
             servicePicker
+            
+            // NEW: Voice Selection for interval cues
+            voicePicker
             
             // Empty state / Coming soon
             if viewModel.selection.taggedSongs.isEmpty {
@@ -75,6 +81,29 @@ struct MyMusicTab: View {
         .padding(.horizontal, 24)
     }
     
+    // MARK: - Voice Picker
+        
+    private var voicePicker: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Interval Voice Cues")
+                .font(.custom("Inter-SemiBold", size: 14))
+                .foregroundColor(.white.opacity(0.7))
+            
+            Picker("Voice Selection", selection: $useFemaleVoice) {
+                Text("Female Voice").tag(true)
+                Text("Male Voice").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .colorMultiply(Color.white.opacity(0.9))
+            // NEW: Listen for taps and play a sample!
+            .onChange(of: useFemaleVoice) { oldValue, newValue in
+                let voiceName = newValue ? "Female" : "Male"
+                MusicPlayerService.shared.playChimeAndVoiceCue(message: "\(voiceName) voice selected. I will guide your intervals.")
+            }
+        } // <--- The extra curly brace was right here! I removed it.
+        .padding(.horizontal, 24)
+    }
+    
     // MARK: - Empty State
     
     private var emptyState: some View {
@@ -82,7 +111,7 @@ struct MyMusicTab: View {
             Image(systemName: "music.note")
                 .font(.system(size: 48))
                 .foregroundColor(.white.opacity(0.25))
-                .padding(.top, 32)
+                .padding(.top, 16) // Slightly reduced padding to fit the new voice picker
             
             Text("No songs added yet")
                 .font(.custom("Inter-Bold", size: 18))
