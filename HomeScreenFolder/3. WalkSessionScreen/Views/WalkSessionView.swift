@@ -21,13 +21,13 @@ struct WalkSessionView: View {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
     private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
-
+    
     let duration: DurationOptions
     let pace: PaceOptions
     let musicMode: MusicMode
     let musicSelection: MusicSelection
     var onDismissAll: (() -> Void)?
-
+    
     var body: some View {
         // 1. ZStack top alignment anchors everything to the top safe area
         ZStack(alignment: .top) {
@@ -37,7 +37,7 @@ struct WalkSessionView: View {
                 coordinator.handleBackButtonTap()
             })
             .zIndex(10)
-
+            
             // LAYER 2: Main Content
             VStack(spacing: 0) {
                 
@@ -51,12 +51,12 @@ struct WalkSessionView: View {
                         timeString: viewModel.formattedTime,
                         isActive: viewModel.timerState == .running
                     )
-
+                    
                     AudioVisualizer(
                         amplitudes: viewModel.amplitudes,
                         isActive: viewModel.isAudioPlaying
                     )
-
+                    
                     PlaybackControls(
                         timerState: viewModel.timerState,
                         onPlayPause: { viewModel.playPause() },
@@ -64,11 +64,11 @@ struct WalkSessionView: View {
                     )
                 }
                 .padding(.top, 8)
-
+                
                 Spacer()
             }
             .padding(.bottom, 100) // Preserves clearance for the BottomNavBar
-
+            
             // LAYER 3: Bottom Nav Bar
             // Wrapped in a VStack with a Spacer to push it to the bottom
             VStack {
@@ -76,10 +76,20 @@ struct WalkSessionView: View {
                 BottomNavBar(
                     selectedTab: $selectedTab,
                     onTabReTap: {
-                        coordinator.handleTabTap(selectedTab)
+                        if viewModel.remainingTime <= 0 || viewModel.timerState == .stopped {
+                            selectedTab = selectedTab
+                            onDismissAll?()
+                        } else {
+                            coordinator.handleTabTap(selectedTab)
+                        }
                     },
                     onTabChange: { tab in
-                        coordinator.handleTabTap(tab)
+                        if viewModel.remainingTime <= 0 || viewModel.timerState == .stopped {
+                            selectedTab = tab
+                            onDismissAll?()
+                        } else {
+                            coordinator.handleTabTap(tab)
+                        }
                     }
                 )
             }
@@ -96,7 +106,7 @@ struct WalkSessionView: View {
             
             // NEW: Hands the database connection to the ViewModel to save Progress!
             vm.modelContext = modelContext
-
+            
             c.onPauseForAlert    = { vm.pauseForAlert() }
             c.onResumeAfterAlert = { vm.resumeAfterAlert() }
             c.onBackToSetup      = { vm.stopSession(); dismiss() }
@@ -108,7 +118,7 @@ struct WalkSessionView: View {
                     dismissAll?()
                 }
             }
-
+            
             vm.initializeSession(
                 duration: duration,
                 pace: pace,
@@ -133,7 +143,7 @@ struct WalkSessionView: View {
             Text(coordinator.alertType?.message ?? "")
         }
     }
-
+    
     @ViewBuilder
     private var themeBackground: some View {
         if let bgName = theme.backgroundImageName {
