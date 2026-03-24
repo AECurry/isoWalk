@@ -21,3 +21,4 @@ struct IsoWalkLogoView: View {
             .padding(.vertical, 16)
     }
 }
+

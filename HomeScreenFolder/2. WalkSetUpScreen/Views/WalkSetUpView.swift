@@ -9,6 +9,7 @@
 //  Owns the ViewModel and all popup expanded states.
 //  Modals rendered in root ZStack — guaranteed to float above everything.
 //  Only one popup can be open at a time.
+//  - FIXED: Implemented universal IsoWalkBackButton and standalone Image Area
 //
 
 import SwiftUI
@@ -35,8 +36,12 @@ struct WalkSetUpView: View {
                 
                 // LAYER 2: Main Content
                 VStack(spacing: 0) {
-                    WalkSetUpHeader(theme: theme, onBack: { onDismiss() })
-                        .padding(.top, 16)
+                    
+                    // Shared back button
+                    IsoWalkBackButton(theme: theme, onBack: { onDismiss() })
+                    
+                    // Shared Image Area
+                    isoWalkThemeImageArea(theme: theme, isAnimated: true)
 
                     VStack(spacing: 12) {
                         PacePopUp(
@@ -133,7 +138,7 @@ struct WalkSetUpView: View {
         if let bgName = theme.backgroundImageName {
             Image(bgName)
                 .resizable()
-                .aspectRatio(contentMode: .fill)
+                .aspectRatio(contentMode: .fill) // A quick note: .fill can stretch the ZStack boundaries. If your button is still touching the edge, change this to .fit or add .frame(maxWidth: UIScreen.main.bounds.width)
                 .ignoresSafeArea()
         } else {
             theme.backgroundColor.ignoresSafeArea()
@@ -147,3 +152,4 @@ struct WalkSetUpView: View {
         onDismiss: { print("Dismiss") }
     )
 }
+

@@ -18,3 +18,4 @@ struct ImageAreaView: View {
         )
     }
 }
+

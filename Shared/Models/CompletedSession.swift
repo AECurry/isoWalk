@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: Shared/Models/
 //
 //  MODEL — pure data, no UI, no business logic.
 //  Represents a finished walk session.
@@ -15,28 +14,37 @@
 //
 
 import Foundation
+import SwiftData
 
-struct CompletedSession: Identifiable, Codable {
-    let id: UUID
-    let duration: DurationOptions
-    let music: MusicMode          // was MusicOptions
-    let pace: PaceOptions
-    let startTime: Date
-    let endTime: Date
-    let totalDuration: TimeInterval
-    let wasPaused: Bool
+@Model
+final class CompletedSession {
+    var id: UUID
+    var duration: DurationOptions
+    var music: MusicMode
+    var pace: PaceOptions
+    var startTime: Date
+    var endTime: Date
+    var totalDuration: TimeInterval
+    var wasPaused: Bool
 
-    // MARK: - Persistence
-    static func loadAll() -> [CompletedSession] {
-        guard let data = UserDefaults.standard.data(forKey: "completedSessions")
-        else { return [] }
-        return (try? JSONDecoder().decode([CompletedSession].self, from: data)) ?? []
-    }
-
-    static func saveAll(_ sessions: [CompletedSession]) {
-        if let encoded = try? JSONEncoder().encode(sessions) {
-            UserDefaults.standard.set(encoded, forKey: "completedSessions")
-        }
+    init(
+        id: UUID = UUID(),
+        duration: DurationOptions,
+        music: MusicMode,
+        pace: PaceOptions,
+        startTime: Date,
+        endTime: Date,
+        totalDuration: TimeInterval,
+        wasPaused: Bool
+    ) {
+        self.id = id
+        self.duration = duration
+        self.music = music
+        self.pace = pace
+        self.startTime = startTime
+        self.endTime = endTime
+        self.totalDuration = totalDuration
+        self.wasPaused = wasPaused
     }
 }
 

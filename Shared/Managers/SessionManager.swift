@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Observation
+import SwiftData // MARK: - FIXED: Added SwiftData import
 
 @Observable
 class SessionManager {
@@ -42,10 +43,11 @@ class SessionManager {
         WalkSessionOptions.saveActive(newSession)
     }
 
-    func stopSession() {
+    // MARK: - FIXED: Added context parameter
+    func stopSession(context: ModelContext) {
         print("Stopping session")
         if let session = activeSession {
-            _ = WalkSessionOptions.completeSession(session)
+            _ = WalkSessionOptions.completeSession(session, context: context)
         }
         self.activeSession = nil
         WalkSessionOptions.clearActive()

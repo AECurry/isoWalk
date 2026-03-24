@@ -11,6 +11,7 @@
 //
 
 import Foundation
+import SwiftData
 
 struct BadgeEarnedChecker {
     func check(sessions: [CompletedSession]) -> [BadgeID] {
@@ -29,7 +30,7 @@ struct BadgeEarnedChecker {
             return sessions.filter { $0.startTime >= startOfWeek }.count >= 5
             
         case .eveningUnwinder:
-            return sessions.contains { cal.component(.hour, from: $0.startTime) >= 20 }
+            return sessions.contains { cal.component(.hour, from: $0.startTime) >= 18 }
             
         case .morningMover:
             return sessions.contains { cal.component(.hour, from: $0.startTime) < 9 }
@@ -74,3 +75,4 @@ struct BadgeEarnedChecker {
         return streak
     }
 }
+

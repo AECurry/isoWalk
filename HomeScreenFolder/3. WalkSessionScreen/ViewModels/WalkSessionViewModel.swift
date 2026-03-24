@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  Updated 3/17/26: Integrated with MusicSessionManager for music playback
 //
 //  VIEWMODEL — all business logic for the walk session screen.
 //  The View is dumb — it only reads from and calls into this ViewModel.
@@ -14,6 +13,7 @@ import SwiftUI
 import Observation
 import Combine
 import QuartzCore
+import SwiftData
 
 @Observable
 final class WalkSessionViewModel {
@@ -26,6 +26,9 @@ final class WalkSessionViewModel {
     var amplitudes: [Float] = Array(repeating: 0.1, count: 30)
     var isAudioPlaying = false
     var activeSession: WalkSessionOptions?
+    
+    // MARK: - Database Context
+    var modelContext: ModelContext?
 
     // MARK: - Private
     private var totalDuration: TimeInterval = 0
@@ -199,7 +202,17 @@ final class WalkSessionViewModel {
 
     private func completeSession() {
         guard let session = activeSession else { return }
-        _ = WalkSessionOptions.completeSession(session)
+        
+        // MARK: - FIXED: Handled both Saving and Reminders with the Context
+        if let context = modelContext {
+            _ = WalkSessionOptions.completeSession(session, context: context)
+            
+            // Cancel today's pending reminders — user has now walked
+            DailyReminderScheduler.refreshSchedule(context: context)
+        } else {
+            print("Warning: modelContext was not set! Cannot save completed session or refresh reminders.")
+        }
+        
         activeSession = nil
         timerState = .stopped
         remainingTime = 0
@@ -208,9 +221,6 @@ final class WalkSessionViewModel {
         stopTimer()
         musicManager.stop()
         updateFormattedTime()
-
-        // Cancel today's pending reminders — user has now walked
-        DailyReminderScheduler.refreshSchedule()
     }
 
     private func updateFormattedTime() {
@@ -245,3 +255,4 @@ final class WalkSessionViewModel {
         }
     }
 }
+

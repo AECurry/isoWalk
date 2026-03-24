@@ -7,7 +7,7 @@
 //  PARENT VIEW — intentionally dumb.
 //  Owns NameEmailViewModel. Passes data and callbacks to child components.
 //  ScrollView starts from top of screen (ignoresSafeArea).
-//  Back button floats over content in ZStack — same structure as ThemeOptionsView.
+//  Back button floats over content in ZStack.
 //  Keyboard slides OVER the BottomNavBar — never pushes content up.
 //
 
@@ -33,13 +33,11 @@ struct NameEmailScreenView: View {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 0) {
 
-                            ThemeHeaderPreview(
-                                theme: theme,
-                                frameSize: 200
-                            )
-                            .padding(.top, 56)
-                            .padding(.bottom, 16)
-                            .frame(maxWidth: .infinity)
+                            // MARK: - Shared Theme Image Area
+                            isoWalkThemeImageArea(theme: theme, isAnimated: true)
+                                .padding(.top, 56)
+                                .padding(.bottom, 16)
+                                .frame(maxWidth: .infinity)
 
                             HStack {
                                 Text("Name & Email")
@@ -92,17 +90,7 @@ struct NameEmailScreenView: View {
                 }
 
                 // MARK: - Back Button (floats over scroll content)
-                HStack {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(isoWalkColors.deepSpaceBlue)
-                            .padding(12)
-                    }
-                    .padding(.leading, 56)
-                    Spacer()
-                }
-                .padding(.top, -8)
+                IsoWalkBackButton(theme: theme, onBack: { dismiss() })
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
@@ -135,4 +123,3 @@ struct NameEmailScreenView: View {
         NameEmailScreenView()
     }
 }
-

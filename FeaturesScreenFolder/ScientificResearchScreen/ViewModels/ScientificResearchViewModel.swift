@@ -1,5 +1,5 @@
 //
-//  ScientificProofViewModel.swift
+//  ScientificResearchViewModel.swift
 //  isoWalk
 //
 //  Created by AnnElaine on 3/10/26.
@@ -14,14 +14,14 @@ import SwiftUI
 import Observation
 
 @Observable
-final class ScientificProofViewModel {
+final class ScientificResearchViewModel {
 
     // MARK: - State
     var isFullArticleExpanded: Bool = false
 
     // MARK: - Content
-    var shortSections: [ProofSection] { ScientificProofContent.shortSections }
-    var longSections: [ProofSection]  { ScientificProofContent.longSections  }
+    var shortSections: [ProofSection] { ScientificResearchContent.shortSections }
+    var longSections: [ProofSection]  { ScientificResearchContent.longSections  }
 
     var toggleButtonLabel: String {
         isFullArticleExpanded ? "Hide Full Article ▲" : "Read Full Article ▼"

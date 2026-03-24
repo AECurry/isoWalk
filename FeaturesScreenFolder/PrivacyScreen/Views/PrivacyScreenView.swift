@@ -8,7 +8,7 @@
 //  Owns PrivacyViewModel. Renders short policy always.
 //  Full policy expands inline when user taps "Read Full Policy".
 //  ScrollView starts from top of screen (ignoresSafeArea).
-//  Back button floats over content in ZStack — same structure as ThemeOptionsView.
+//  Back button floats over content in ZStack.
 //
 
 import SwiftUI
@@ -32,7 +32,8 @@ struct PrivacyScreenView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
 
-                        ThemeHeaderPreview(theme: theme, frameSize: 200)
+                        // MARK: - Shared Theme Image Area
+                        isoWalkThemeImageArea(theme: theme, isAnimated: true)
                             .padding(.top, 56)
                             .padding(.bottom, 16)
                             .frame(maxWidth: .infinity)
@@ -84,17 +85,7 @@ struct PrivacyScreenView: View {
                 .frame(width: geo.size.width, height: max(0, geo.size.height - navBarHeight))
 
                 // MARK: - Back Button (floats over scroll content)
-                HStack {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(isoWalkColors.deepSpaceBlue)
-                            .padding(12)
-                    }
-                    .padding(.leading, 56)
-                    Spacer()
-                }
-                .padding(.top, -8)
+                IsoWalkBackButton(theme: theme, onBack: { dismiss() })
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }

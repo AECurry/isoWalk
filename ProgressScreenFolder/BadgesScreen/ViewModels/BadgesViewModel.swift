@@ -10,6 +10,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Observation
 
 @Observable
@@ -22,40 +23,29 @@ final class BadgesViewModel {
     var selectedBadge: Badge? = nil
     var showDetailSheet: Bool = false
 
-    // MARK: - Private
     private let checker = BadgeEarnedChecker()
-    private let persistenceKey = "earnedBadgeRecords"
-
-    // MARK: - Computed
-    // The Progress card will eventually read directly from this.
+    
     var earnedCount: Int {
         badges.filter { $0.isUnlocked }.count
     }
-
+    
     var mostRecentBadge: Badge? {
-        badges
-            .filter { $0.isUnlocked }
-            .sorted { ($0.unlockedDate ?? .distantPast) > ($1.unlockedDate ?? .distantPast) }
-            .first
+        guard let idString = UserDefaults.standard.string(forKey: "mostRecentBadgeId"),
+              let badgeId = BadgeID(rawValue: idString) else { return nil }
+        return badges.first { $0.id == badgeId }
     }
 
     // MARK: - Public API
-    func loadBadges() {
-        let sessions = CompletedSession.loadAll()
-        let earnedRecords = loadEarnedRecords()
-        let alreadyEarnedIds = Set(earnedRecords.map { $0.badgeId })
-
-        // 1. Build initial list
-        badges = BadgeID.allCases.map { badgeId in
-            let record = earnedRecords.first { $0.badgeId == badgeId.rawValue }
-            return Badge(id: badgeId, unlockedDate: record?.earnedDate)
-        }
-
-        // 2. RUN DYNAMIC SYNC against session history
-        syncWithSessionHistory(sessions: sessions, alreadyEarned: alreadyEarnedIds, earnedRecords: earnedRecords)
+    func loadBadges(context: ModelContext) {
+        let sessionDescriptor = FetchDescriptor<CompletedSession>()
+        let badgeDescriptor = FetchDescriptor<EarnedBadgeRecord>()
+            
+        let sessions = (try? context.fetch(sessionDescriptor)) ?? []
+        let earnedRecords = (try? context.fetch(badgeDescriptor)) ?? []
+            
+        syncWithSessionHistory(context: context, sessions: sessions, earnedRecords: earnedRecords)
     }
 
-    // MARK: - User Interactions
     func handleBadgeTap(_ badge: Badge) {
         selectedBadge = badge
         showDetailSheet = true
@@ -73,74 +63,48 @@ final class BadgesViewModel {
 
     // MARK: - Dynamic Logic & Sync
     private func syncWithSessionHistory(
+        context: ModelContext,
         sessions: [CompletedSession],
-        alreadyEarned: Set<String>,
         earnedRecords: [EarnedBadgeRecord]
     ) {
-        // Run the dynamic logic checker
         let nowEarnedFromHistory = checker.check(sessions: sessions)
+        let newlyEarnedIds = Set(nowEarnedFromHistory.map { $0.rawValue })
 
-        let newlyEarnedInThisSession = nowEarnedFromHistory
-            .filter { !alreadyEarned.contains($0.rawValue) }
-            .map { EarnedBadgeRecord(badgeId: $0.rawValue, earnedDate: Date()) }
-
-        guard !newlyEarnedInThisSession.isEmpty else {
-            // Even if no new badges found, we still need to ensure the count is correct.
-            saveEarnedCountToUserDefaults(earnedRecords.count)
-            return
+        for record in earnedRecords {
+            if !newlyEarnedIds.contains(record.badgeId) {
+                context.delete(record)
+            }
         }
 
-        // --- NEW BADGES DETECTED ---
-        var allRecords = earnedRecords
-        allRecords.append(contentsOf: newlyEarnedInThisSession)
+        let existingRecordIds = Set(earnedRecords.map { $0.badgeId })
+        var newlyEarnedInThisSession: [EarnedBadgeRecord] = []
         
-        // Persist the full record set
-        saveEarnedRecords(allRecords)
+        for badgeId in nowEarnedFromHistory {
+            if !existingRecordIds.contains(badgeId.rawValue) {
+                let newRecord = EarnedBadgeRecord(badgeId: badgeId.rawValue, earnedDate: Date())
+                context.insert(newRecord)
+                newlyEarnedInThisSession.append(newRecord)
+            }
+        }
         
-        // UNIFY TRUTH: Save the true count to UserDefaults for the Progress screen
-        saveEarnedCountToUserDefaults(allRecords.count)
+        try? context.save()
 
-        // Update local badges array so UI refreshes immediately
+        let finalRecords = (try? context.fetch(FetchDescriptor<EarnedBadgeRecord>())) ?? []
+        
         badges = BadgeID.allCases.map { badgeId in
-            let record = allRecords.first { $0.badgeId == badgeId.rawValue }
+            let record = finalRecords.first { $0.badgeId == badgeId.rawValue }
             return Badge(id: badgeId, unlockedDate: record?.earnedDate)
         }
+        
+        UserDefaults.standard.set(finalRecords.count, forKey: "isoWalkBadgesEarnedTotal")
 
-        // Trigger reveal animation for the first newly earned badge
         if let firstNew = newlyEarnedInThisSession.first,
            let matchedBadge = badges.first(where: { $0.id.rawValue == firstNew.badgeId }) {
             
-            // Save this as the most recent badge id for the progress screen icon
             UserDefaults.standard.set(matchedBadge.id.rawValue, forKey: "mostRecentBadgeId")
-            
-            // Show the full screen reveal
             newlyUnlockedBadge = matchedBadge
             showRevealAnimation = true
         }
     }
-
-    private func saveEarnedCountToUserDefaults(_ count: Int) {
-        // This is the number that the Progress card reads.
-        UserDefaults.standard.set(count, forKey: "isoWalkBadgesEarnedTotal")
-    }
-
-    // MARK: - Persistence Helpers
-    private func loadEarnedRecords() -> [EarnedBadgeRecord] {
-        guard let data = UserDefaults.standard.data(forKey: persistenceKey) else { return [] }
-        do {
-            return try JSONDecoder().decode([EarnedBadgeRecord].self, from: data)
-        } catch {
-            print("Failed to decode badge records: \(error)")
-            return []
-        }
-    }
-
-    private func saveEarnedRecords(_ records: [EarnedBadgeRecord]) {
-        do {
-            let data = try JSONEncoder().encode(records)
-            UserDefaults.standard.set(data, forKey: persistenceKey)
-        } catch {
-            print("Failed to encode badge records: \(error)")
-        }
-    }
 }
+

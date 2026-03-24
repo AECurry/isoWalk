@@ -11,6 +11,7 @@
 //
 
 import Foundation
+import SwiftData
 
 struct WalkSessionOptions: Identifiable, Codable {
     let id: UUID
@@ -87,28 +88,28 @@ struct WalkSessionOptions: Identifiable, Codable {
 
     // MARK: - Complete Session
     @discardableResult
-    static func completeSession(_ session: WalkSessionOptions) -> CompletedSession {
-        let completedSession = CompletedSession(
-            id: session.id,
-            duration: session.duration,
-            music: session.music,
-            pace: session.pace,
-            startTime: session.startTime,
-            endTime: session.endTime ?? Date(),
-            totalDuration: session.durationInSeconds,
-            wasPaused: session.wasPaused
-        )
+        static func completeSession(_ session: WalkSessionOptions, context: ModelContext) -> CompletedSession {
+            let completedSession = CompletedSession(
+                id: session.id,
+                duration: session.duration,
+                music: session.music,
+                pace: session.pace,
+                startTime: session.startTime,
+                endTime: session.endTime ?? Date(),
+                totalDuration: session.durationInSeconds,
+                wasPaused: session.wasPaused
+            )
 
-        var allSessions = CompletedSession.loadAll()
-        allSessions.append(completedSession)
-        CompletedSession.saveAll(allSessions)
+            // Insert directly into the database
+            context.insert(completedSession)
+            try? context.save()
 
-        if !session.wasPaused {
-            UserDefaults.standard.set(true, forKey: "hasCompletedPauseFreeSession")
+            if !session.wasPaused {
+                UserDefaults.standard.set(true, forKey: "hasCompletedPauseFreeSession")
+            }
+
+            clearActive()
+            return completedSession
         }
-
-        clearActive()
-        return completedSession
     }
-}
 

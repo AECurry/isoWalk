@@ -121,3 +121,4 @@ struct SessionMarkerGroup: View {
         }
     }
 }
+

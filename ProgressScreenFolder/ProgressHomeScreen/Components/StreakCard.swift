@@ -4,7 +4,7 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  LOCATION: ProgressScreenFolder/Components/
+//  
 //  COMPONENT — dumb child.
 //  Label ABOVE number. Max width 340, centered, responsive.
 //  Receives values from parent — owns nothing.

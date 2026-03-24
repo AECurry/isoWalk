@@ -1,5 +1,5 @@
 //
-//  ScientificProofScreenView.swift
+//  ScientificResearchScreenView.swift
 //  isoWalk
 //
 //  Created by AnnElaine on 3/10/26.
@@ -8,14 +8,13 @@
 //  Owns ScientificProofViewModel. Renders short article always.
 //  Full article expands inline when user taps "Read Full Article".
 //  ScrollView starts from top of screen (ignoresSafeArea).
-//  Back button floats over content in ZStack — same structure as ThemeOptionsView.
 //
 
 import SwiftUI
 
-struct ScientificProofScreenView: View {
+struct ScientificResearchScreenView: View {
 
-    @State private var viewModel = ScientificProofViewModel()
+    @State private var viewModel = ScientificResearchViewModel()
     @Environment(\.dismiss) private var dismiss
     @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
     private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
@@ -33,7 +32,8 @@ struct ScientificProofScreenView: View {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 0) {
 
-                            ThemeHeaderPreview(theme: theme, frameSize: 200)
+                            // MARK: - Shared Theme Image Area
+                            isoWalkThemeImageArea(theme: theme, isAnimated: true)
                                 .padding(.top, 56)
                                 .padding(.bottom, 16)
                                 .frame(maxWidth: .infinity)
@@ -96,17 +96,7 @@ struct ScientificProofScreenView: View {
                 }
 
                 // MARK: - Back Button (floats over scroll content)
-                HStack {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(isoWalkColors.deepSpaceBlue)
-                            .padding(12)
-                    }
-                    .padding(.leading, 56)
-                    Spacer()
-                }
-                .padding(.top, -8)
+                IsoWalkBackButton(theme: theme, onBack: { dismiss() })
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
@@ -176,7 +166,7 @@ private struct ProofSectionView: View {
 
 #Preview {
     NavigationStack {
-        ScientificProofScreenView()
+        ScientificResearchScreenView()
     }
 }
 

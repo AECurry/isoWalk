@@ -11,10 +11,14 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ProgressScreenView: View {
 
     let onShowBadges: () -> Void
+
+    // MARK: - ADDED: Grab the database context from the environment
+    @Environment(\.modelContext) private var modelContext
 
     @State private var viewModel = ProgressViewModel()
     @AppStorage("userName") private var userName: String = ""
@@ -31,20 +35,20 @@ struct ProgressScreenView: View {
 
                 VStack(spacing: 0) {
 
-                    // MARK: - FIXED: Header
+                    // MARK: - Header
                     ProgressHeader(
                         userName: userName,
                         totalWalkCount: viewModel.totalWalkCountDisplay,
                         mostRecentBadgeId: viewModel.mostRecentBadgeId
                     )
 
-                    // MARK: - FIXED: Total counter
+                    // MARK: - Total counter
                     ProgressTotalCounter(
                         formattedTotalTime: viewModel.formattedTotalTime,
                         isHealthKitEnabled: viewModel.isHealthKitEnabled
                     )
 
-                    // MARK: - FIXED: Today label
+                    // MARK: - Today label
                     let cardLeadingPadding = max((geo.size.width - maxCardWidth) / 2, 16)
                     HStack {
                         Text("Today")
@@ -85,7 +89,8 @@ struct ProgressScreenView: View {
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
         .onAppear {
-            viewModel.loadData()
+            // MARK: - FIXED: Passing the context to the ViewModel
+            viewModel.loadData(context: modelContext)
         }
     }
 
@@ -105,5 +110,7 @@ struct ProgressScreenView: View {
 #Preview {
     ProgressScreenView(onShowBadges: {})
         .environment(SessionManager())
+        // Added this so your preview knows what the database looks like!
+        .modelContainer(for: [CompletedSession.self, EarnedBadgeRecord.self], inMemory: true)
 }
 

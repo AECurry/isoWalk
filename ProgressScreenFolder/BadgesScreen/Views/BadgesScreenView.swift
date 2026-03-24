@@ -13,12 +13,18 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct BadgesScreenView: View {
 
     let onDismiss: () -> Void
 
+    // MARK: - SWIFTDATA INJECTION
+    @Environment(\.modelContext) private var modelContext
+    
+    // MARK: - FIXED: Initialized the ViewModel and removed the optional '?'
     @State private var viewModel = BadgesViewModel()
+    
     @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
     @State private var selectedTab: Int = 1
 
@@ -34,9 +40,7 @@ struct BadgesScreenView: View {
             ZStack(alignment: .top) {
                 themeBackground
 
-                // Content hard-capped above BottomNavBar
                 VStack(spacing: 0) {
-
                     // MARK: - Back Button Row
                     HStack {
                         Button(action: onDismiss) {
@@ -54,13 +58,14 @@ struct BadgesScreenView: View {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 24) {
 
+                            // MARK: - FIXED: Removed all the optional '?' chaining
                             BadgeFeaturedView(
                                 mostRecentBadge: viewModel.mostRecentBadge,
                                 earnedCount: viewModel.earnedCount,
                                 themeId: selectedThemeId,
                                 showReveal: viewModel.showRevealAnimation,
                                 newlyUnlockedBadge: viewModel.newlyUnlockedBadge,
-                                onRevealComplete: { viewModel.dismissReveal() } // FIXED
+                                onRevealComplete: { viewModel.dismissReveal() }
                             )
 
                             LazyVGrid(columns: columns, spacing: 32) {
@@ -68,7 +73,7 @@ struct BadgesScreenView: View {
                                     BadgeGridCell(
                                         badge: badge,
                                         themeId: selectedThemeId,
-                                        onTap: { viewModel.handleBadgeTap(badge) } // FIXED
+                                        onTap: { viewModel.handleBadgeTap(badge) }
                                     )
                                 }
                             }
@@ -84,7 +89,7 @@ struct BadgesScreenView: View {
                     BadgeDetailSheet(
                         badge: badge,
                         themeId: selectedThemeId,
-                        onDismiss: { viewModel.dismissDetailSheet() } // FIXED
+                        onDismiss: { viewModel.dismissDetailSheet() }
                     )
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.showDetailSheet)
@@ -93,7 +98,6 @@ struct BadgesScreenView: View {
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
-        // MARK: - BottomNavBar overlay
         .overlay(alignment: .bottom) {
             BottomNavBar(
                 selectedTab: $selectedTab,
@@ -109,7 +113,8 @@ struct BadgesScreenView: View {
             )
         }
         .onAppear {
-            viewModel.loadBadges()
+            // MARK: - FIXED: No more optional chaining here
+            viewModel.loadBadges(context: modelContext)
         }
     }
 
@@ -127,6 +132,3 @@ struct BadgesScreenView: View {
     }
 }
 
-#Preview {
-    BadgesScreenView(onDismiss: {})
-}

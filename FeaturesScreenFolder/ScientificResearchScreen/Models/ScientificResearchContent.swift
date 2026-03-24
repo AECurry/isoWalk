@@ -12,7 +12,7 @@
 
 import Foundation
 
-enum ScientificProofContent {
+enum ScientificResearchContent {
 
     // MARK: - Short Version
     static let shortSections: [ProofSection] = [

@@ -120,3 +120,4 @@ private struct StatCell: View {
         .frame(maxWidth: .infinity)
     }
 }
+

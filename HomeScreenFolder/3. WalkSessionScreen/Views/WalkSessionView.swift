@@ -7,6 +7,7 @@
 //  PARENT VIEW — intentionally dumb.
 //  Owns the ViewModel and Coordinator. Passes bindings down to children.
 //  Zero business logic — all decisions live in Coordinator and ViewModel.
+//  - FIXED: Implemented universal IsoWalkBackButton and standalone Image Area
 //
 
 import SwiftUI
@@ -33,15 +34,16 @@ struct WalkSessionView: View {
 
             // LAYER 2: Main Content
             VStack(spacing: 0) {
-                // FIXED: Added the 16pt padding to match WalkSetUpView exactly
-                WalkSessionHeader(theme: theme, onBack: {
+                
+                // Shared back button
+                IsoWalkBackButton(theme: theme, onBack: {
                     coordinator.handleBackButtonTap()
                 })
-                .padding(.top, 16)
 
-                // FIXED: Added the -12pt padding to match the ImageArea placement
-                WalkSessionImageArea(theme: theme)
-                    .padding(.top, -12)
+                // Shared Theme Image
+                isoWalkThemeImageArea(theme: theme, isAnimated: false)
+                    .padding(.top, -12) 
+                    .padding(.bottom, 8)
                 
                 VStack(spacing: 24) {
                     TimerDisplay(
@@ -134,3 +136,4 @@ struct WalkSessionView: View {
         }
     }
 }
+

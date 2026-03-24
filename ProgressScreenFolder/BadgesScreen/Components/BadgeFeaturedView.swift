@@ -11,6 +11,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct BadgeFeaturedView: View {
 

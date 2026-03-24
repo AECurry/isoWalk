@@ -12,6 +12,7 @@
 import SwiftUI
 
 struct isoWalkMainView: View {
+
     @State private var selectedTab: Int = 0
     @State private var showingSetup: Bool = false
     @State private var showingBadges: Bool = false
@@ -47,7 +48,6 @@ struct isoWalkMainView: View {
                 onTabReTap: { showingSetup = true }
             )
         }
-        // Keyboard slides over the entire app — BottomNavBar never moves
         .ignoresSafeArea(.keyboard)
         // MARK: - Walk Setup Cover
         .fullScreenCover(isPresented: $showingSetup) {

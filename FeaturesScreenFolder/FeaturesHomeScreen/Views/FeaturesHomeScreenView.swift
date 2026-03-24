@@ -4,13 +4,6 @@
 //
 //  Created by AnnElaine on 3/9/26.
 //
-//
-//  PARENT VIEW — intentionally dumb.
-//  Owns FeaturesViewModel and the NavigationStack for all sub-screens.
-//  Hero image + title are FIXED at top.
-//  Cards scroll underneath the title.
-//  HealthKitCard owns its own HealthKitViewModel internally.
-//
 
 import SwiftUI
 
@@ -34,25 +27,12 @@ struct FeaturesHomeScreenView: View {
 
                     VStack(spacing: 0) {
 
-                        // MARK: - FIXED: Hero image
-                        ThemeHeaderPreview(
-                            theme: theme,
-                            frameSize: 200
-                        )
-                        .padding(.top, 8)
-                        .padding(.bottom, 8)
+                        // MARK: - Shared Theme Image Area
+                        // Padding is now handled internally by this component
+                        isoWalkThemeImageArea(theme: theme, isAnimated: true)
+                            .frame(maxWidth: .infinity)
 
-                        // MARK: - FIXED: Title
-                        HStack {
-                            Text("More Options")
-                                .font(.custom("Inter-Bold", size: 34))
-                                .foregroundColor(isoWalkColors.deepSpaceBlue)
-                            Spacer()
-                        }
-                        .padding(.horizontal, max((geo.size.width - maxCardWidth) / 2, 20))
-                        .padding(.bottom, 16)
-
-                        // MARK: - SCROLLABLE: Cards scroll behind title
+                        // MARK: - SCROLLABLE: Cards
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
 
@@ -97,7 +77,7 @@ struct FeaturesHomeScreenView: View {
                 PrivacyScreenView()
             }
             .navigationDestination(isPresented: $viewModel.navigateToScientificProof) {
-                ScientificProofScreenView()
+                ScientificResearchScreenView()
             }
             .navigationDestination(isPresented: $viewModel.navigateToSubmitFeedback) {
                 SubmitFeedbackScreenView()

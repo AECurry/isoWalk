@@ -7,18 +7,14 @@
 //
 //  Tab content for "My Music" mode (Apple Music / Spotify integration).
 //
-//  TODO: Implement in next sprint:
-//  - MusicKit integration for Apple Music
-//  - Spotify SDK integration
-//  - Song tagging (Normal vs Brisk)
-//  - Playlist building with N-B-N-B validation
-//
 
 import SwiftUI
+import MusicKit
 
 struct MyMusicTab: View {
     
     @Bindable var viewModel: MusicViewModel
+    @State private var appleMusicService = AppleMusicService.shared
     
     var body: some View {
         VStack(spacing: 24) {
@@ -98,15 +94,14 @@ struct MyMusicTab: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             
-            // TODO: Add Songs button
+            // Authorization & Add Songs Button
             Button(action: {
-                // TODO: Open MusicKit picker or Spotify auth
-                print("Add songs from \(viewModel.selection.musicService.displayName)")
+                handleAddSongsTapped()
             }) {
                 HStack {
-                    Image(systemName: "plus.circle.fill")
+                    Image(systemName: buttonIcon)
                         .font(.system(size: 16))
-                    Text("Add Songs from \(viewModel.selection.musicService.displayName)")
+                    Text(buttonText)
                         .font(.custom("Inter-SemiBold", size: 16))
                 }
                 .foregroundColor(isoWalkColors.balticBlue)
@@ -133,6 +128,44 @@ struct MyMusicTab: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+    
+    // MARK: - Helper Methods for Button Logic
+    
+    private var isAppleMusicSelected: Bool {
+        // Assuming MusicService enum has an .appleMusic case
+        viewModel.selection.musicService.displayName.contains("Apple")
+    }
+    
+    private var buttonText: String {
+        if isAppleMusicSelected && !appleMusicService.isAuthorized {
+            return "Connect Apple Music"
+        }
+        return "Add Songs from \(viewModel.selection.musicService.displayName)"
+    }
+    
+    private var buttonIcon: String {
+        if isAppleMusicSelected && !appleMusicService.isAuthorized {
+            return "link"
+        }
+        return "plus.circle.fill"
+    }
+    
+    private func handleAddSongsTapped() {
+        if isAppleMusicSelected {
+            if !appleMusicService.isAuthorized {
+                // Request Auth
+                Task {
+                    await appleMusicService.requestAuthorization()
+                }
+            } else {
+                // TODO: Present Music Search Sheet
+                print("Presenting Apple Music Search...")
+            }
+        } else {
+            // TODO: Handle Spotify logic
+            print("Spotify integration coming soon...")
+        }
     }
     
     // MARK: - Song List
@@ -192,7 +225,8 @@ struct MyMusicTab: View {
 
 #Preview {
     ZStack {
-        isoWalkColors.balticBlue.ignoresSafeArea()
+        // Assuming isoWalkColors.balticBlue exists in your global scope
+        Color.blue.ignoresSafeArea() // Placeholder for preview
         
         MyMusicTab(viewModel: MusicViewModel())
     }

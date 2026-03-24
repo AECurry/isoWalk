@@ -11,6 +11,7 @@
 //
 
 import Foundation
+import SwiftData
 
 // MARK: - Badge ID
 enum BadgeID: String, CaseIterable, Codable {
@@ -40,7 +41,7 @@ extension BadgeID {
         switch self {
         case .firstSteps:       return "Complete your very first session."
         case .habitWalker:      return "Complete 5 sessions in a single week."
-        case .eveningUnwinder:  return "Complete a session after 8:00 PM."
+        case .eveningUnwinder:  return "Complete a session after 6:00 PM."
         case .morningMover:     return "Complete a session before 9:00 AM."
         case .perfectPace:      return "Complete a session of at least 30 minutes."
         case .rhythmFinder:     return "Maintain a 7-day walking streak."
@@ -48,7 +49,6 @@ extension BadgeID {
         }
     }
 
-    // Explicitly mapping the exact file names in your Assets folder
     private var exactAssetFileName: String {
         switch self {
         case .firstSteps:       return "FirstSteps"
@@ -61,7 +61,6 @@ extension BadgeID {
         }
     }
 
-    // THEME-AWARE PATHING LOGIC
     func imageName(themeId: String) -> String {
         let folder = badgeFolder(for: themeId)
         return "\(folder)/\(exactAssetFileName)"
@@ -77,7 +76,7 @@ extension BadgeID {
     }
 }
 
-// MARK: - Badge Struct
+// MARK: - Badge Struct (UI Display Model)
 struct Badge: Identifiable {
     let id: BadgeID
     let unlockedDate: Date?
@@ -91,7 +90,3 @@ struct Badge: Identifiable {
     }
 }
 
-struct EarnedBadgeRecord: Codable {
-    let badgeId: String
-    let earnedDate: Date
-}

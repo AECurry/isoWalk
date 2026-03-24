@@ -13,6 +13,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct BadgeDetailSheet: View {
 
@@ -22,10 +23,12 @@ struct BadgeDetailSheet: View {
 
     // MARK: - Design Constants
     private let popupWidth: CGFloat = 320
-    private let popupHeight: CGFloat = 440 // Increased slightly to fit the Share button nicely
+    private let popupHeight: CGFloat = 440
     private let cornerRadius: CGFloat = 24
+    
+    // We only need one size now! The badge handles its own shape.
     private let circleSize: CGFloat = 120
-    private let iconSize: CGFloat = 60
+    
     private let titleFontSize: CGFloat = 22
     private let bodyFontSize: CGFloat = 15
     private let labelFontSize: CGFloat = 13
@@ -50,16 +53,8 @@ struct BadgeDetailSheet: View {
                     .padding([.top, .trailing], 16)
                 }
 
-                // Badge circle
-                ZStack {
-                    Circle()
-                        .fill(badge.isUnlocked
-                              ? isoWalkColors.forestGreen
-                              : isoWalkColors.forestGreen.opacity(0.3)) // Muted if locked
-                        .frame(width: circleSize, height: circleSize)
-
-                    badgeImageContent
-                }
+                // The image view now completely handles its own sizing and clipping
+                badgeImageContent
 
                 // Badge name
                 Text(badge.id.displayName)
@@ -109,7 +104,6 @@ struct BadgeDetailSheet: View {
                 Spacer()
                 
                 // MARK: - Share Button
-                // Only show the share button if they actually earned it!
                 if badge.isUnlocked {
                     ShareLink(
                         item: "I just earned the \(badge.id.displayName) badge in isoWalk! 🚶‍♂️✨ Time to keep the streak alive."
@@ -128,7 +122,6 @@ struct BadgeDetailSheet: View {
                         .padding(.bottom, 20)
                     }
                 } else {
-                    // Just a little bottom padding if locked
                     Spacer().frame(height: 20)
                 }
             }
@@ -156,27 +149,35 @@ struct BadgeDetailSheet: View {
         
         if badge.isUnlocked {
             if UIImage(named: assetName) != nil {
+                // Fills the 120x120 space perfectly and clips to a circle
                 Image(assetName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: iconSize, height: iconSize)
+                    .frame(width: circleSize, height: circleSize)
+                    .clipShape(Circle())
             } else {
-                Image(systemName: "trophy.fill")
-                    .font(.system(size: iconSize * 0.7))
-                    .foregroundColor(.white)
+                // Fallback Trophy
+                ZStack {
+                    Circle()
+                        .fill(isoWalkColors.forestGreen)
+                        .frame(width: circleSize, height: circleSize)
+                    Image(systemName: "trophy.fill")
+                        .font(.system(size: circleSize * 0.55))
+                        .foregroundColor(.white)
+                }
             }
         } else {
-            if UIImage(named: assetName) != nil {
-                Image(assetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: iconSize, height: iconSize)
-                    .saturation(0) // Grayscale
-                    .opacity(0.2)  // Very faint
-            } else {
+            // MARK: - THE FIX: Locked State
+            // Always shows the mystery lock icon, regardless of whether the image asset exists yet!
+            ZStack {
+                Circle()
+                    .fill(isoWalkColors.forestGreen.opacity(0.55)) // Matched to grid exact opacity
+                    .frame(width: circleSize, height: circleSize)
+                
                 Image(systemName: "lock.fill")
-                    .font(.system(size: iconSize * 0.6))
-                    .foregroundColor(.white.opacity(0.6))
+                    .font(.system(size: circleSize * 0.45))
+                    .foregroundColor(.white)
+                    .opacity(0.6)
             }
         }
     }
@@ -185,3 +186,4 @@ struct BadgeDetailSheet: View {
         IsoWalkTheme.current(selectedId: themeId).backgroundImageName
     }
 }
+
