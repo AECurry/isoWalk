@@ -6,7 +6,6 @@
 //
 //  PARENT VIEW — intentionally dumb.
 //  Owns SubmitFeedbackViewModel and assembles child components.
-//  ScrollView starts from top of screen (ignoresSafeArea).
 //
 
 import SwiftUI
@@ -19,82 +18,81 @@ struct SubmitFeedbackScreenView: View {
     private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
     @FocusState private var focusedField: FeedbackField?
 
-    // Removed navBarHeight as we're letting the ScrollView size itself naturally
     private let maxContentWidth: CGFloat = 340
 
     enum FeedbackField { case name, email, message }
 
     var body: some View {
-        // Outer ZStack keeps the background isolated from the GeometryReader's resizing
-        // when the keyboard appears
         ZStack(alignment: .top) {
             themeBackground
 
             GeometryReader { geo in
                 ZStack(alignment: .top) {
                     
-                    // MARK: - Scrollable Content
-                    ScrollViewReader { proxy in
-                        ScrollView(.vertical, showsIndicators: false) {
-                            VStack(spacing: 0) {
-
-                                // MARK: - Shared Theme Image Area
-                                isoWalkThemeImageArea(theme: theme, isAnimated: true)
-                                    .padding(.top, 56)
-                                    .padding(.bottom, 16)
-                                    .frame(maxWidth: .infinity)
-
-                                HStack {
-                                    Text("Submit Feedback")
-                                        .font(.custom("Inter-Bold", size: 34))
-                                        .foregroundColor(isoWalkColors.deepSpaceBlue)
-                                    Spacer()
-                                }
-                                .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
-                                .padding(.bottom, 8)
-
-                                HStack {
-                                    Text("Your feedback helps us make isoWalk better for everyone.")
-                                        .font(.custom("Inter-Regular", size: 15))
-                                        .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.70))
-                                        .fixedSize(horizontal: false, vertical: true)
-                                    Spacer()
-                                }
-                                .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
-                                .padding(.bottom, 28)
-
-                                // MARK: - Form Card (child)
-                                FeedbackFormCard(
-                                    viewModel: viewModel,
-                                    focusedField: $focusedField,
-                                    scrollProxy: proxy
-                                )
-                                .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
-                                .padding(.bottom, 20)
-
-                                // MARK: - Send Button (child)
-                                FeedbackSendButton {
-                                    focusedField = nil
-                                    viewModel.submit()
-                                }
-                                .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
-                                .padding(.bottom, 40)
-                                .id("sendButton")
-                            }
+                    // Main layout: Fixed header on top, scrollable form below
+                    VStack(spacing: 0) {
+                        
+                        // MARK: - Fixed Header (Image Area)
+                        isoWalkThemeImageArea(theme: theme, isAnimated: true)
+                            .padding(.top, 56)
+                            .padding(.bottom, 16)
                             .frame(maxWidth: .infinity)
+
+                        // MARK: - Scrollable Content
+                        ScrollViewReader { proxy in
+                            ScrollView(.vertical, showsIndicators: false) {
+                                VStack(spacing: 0) {
+
+                                    HStack {
+                                        Text("Submit Feedback")
+                                            .font(.custom("Inter-Bold", size: 34))
+                                            .foregroundColor(isoWalkColors.deepSpaceBlue)
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
+                                    .padding(.bottom, 8)
+
+                                    HStack {
+                                        Text("Your feedback helps us make isoWalk better for everyone.")
+                                            .font(.custom("Inter-Regular", size: 15))
+                                            .foregroundColor(isoWalkColors.deepSpaceBlue.opacity(0.70))
+                                            .fixedSize(horizontal: false, vertical: true)
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
+                                    .padding(.bottom, 28)
+
+                                    // MARK: - Form Card (child)
+                                    FeedbackFormCard(
+                                        viewModel: viewModel,
+                                        focusedField: $focusedField,
+                                        scrollProxy: proxy
+                                    )
+                                    .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
+                                    .padding(.bottom, 20)
+
+                                    // MARK: - Send Button (child)
+                                    FeedbackSendButton {
+                                        focusedField = nil
+                                        viewModel.submit()
+                                    }
+                                    .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
+                                    .padding(.bottom, 40)
+                                    .id("sendButton")
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            // Removed .ignoresSafeArea(edges: .top) so it stops overlapping the notch
+                            .scrollDismissesKeyboard(.interactively)
                         }
-                        .ignoresSafeArea(edges: .top)
-                        .scrollDismissesKeyboard(.interactively)
-                        // Removed the restrictive .frame(height: ...) here to allow dynamic resizing
                     }
 
-                    // MARK: - Back Button (floats over scroll content)
+                    // MARK: - Back Button (floats over everything)
                     IsoWalkBackButton(theme: theme, onBack: { dismiss() })
                 }
             }
         }
         .navigationBarHidden(true)
-        // Removed .ignoresSafeArea(.keyboard) so the view shrinks and scrolls when the keyboard opens
 
         .alert("No Email App Found", isPresented: $viewModel.showNoEmailAppAlert) {
             Button("Copy Email Address") {

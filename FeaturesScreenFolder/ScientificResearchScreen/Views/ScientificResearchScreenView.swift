@@ -44,7 +44,7 @@ struct ScientificResearchScreenView: View {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
                                 HStack {
-                                    Text("Scientific Proof")
+                                    Text("Scientific Research")
                                         .font(.custom("Inter-Bold", size: 34))
                                         .foregroundColor(isoWalkColors.deepSpaceBlue)
                                     Spacer()
@@ -56,7 +56,7 @@ struct ScientificResearchScreenView: View {
                                 // Short Version (always visible)
                                 VStack(alignment: .leading, spacing: 20) {
                                     ForEach(viewModel.shortSections) { section in
-                                        ProofSectionView(section: section)
+                                        ResearchSectionView(section: section)
                                     }
                                 }
                                 .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
@@ -85,7 +85,7 @@ struct ScientificResearchScreenView: View {
                                     VStack(alignment: .leading, spacing: 20) {
                                         Divider().padding(.bottom, 4)
                                         ForEach(viewModel.longSections) { section in
-                                            ProofSectionView(section: section)
+                                            ResearchSectionView(section: section)
                                         }
                                     }
                                     .padding(.horizontal, max((geo.size.width - maxContentWidth) / 2, 20))
@@ -120,9 +120,9 @@ struct ScientificResearchScreenView: View {
 }
 
 // MARK: - Section View
-private struct ProofSectionView: View {
+private struct ResearchSectionView: View {
 
-    let section: ProofSection
+    let section: ResearchSection
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {

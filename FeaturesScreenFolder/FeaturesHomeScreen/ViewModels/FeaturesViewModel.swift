@@ -20,7 +20,7 @@ final class FeaturesViewModel {
     var navigateToNameEmail       = false
     var navigateToNotifications   = false
     var navigateToPrivacy         = false
-    var navigateToScientificProof = false
+    var navigateToScientificResearch = false
     var navigateToSubmitFeedback  = false
     var navigateToTheme           = false
 

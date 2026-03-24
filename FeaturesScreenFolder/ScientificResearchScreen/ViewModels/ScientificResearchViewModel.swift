@@ -5,7 +5,7 @@
 //  Created by AnnElaine on 3/10/26.
 //
 //
-//  VIEWMODEL — all logic for ScientificProofScreenView.
+//  VIEWMODEL — all logic for ScientificResearchScreenView.
 //  Owns the expanded/collapsed state for the full article toggle.
 //  View is dumb — reads from and calls into this only.
 //
@@ -20,8 +20,8 @@ final class ScientificResearchViewModel {
     var isFullArticleExpanded: Bool = false
 
     // MARK: - Content
-    var shortSections: [ProofSection] { ScientificResearchContent.shortSections }
-    var longSections: [ProofSection]  { ScientificResearchContent.longSections  }
+    var shortSections: [ResearchSection] { ScientificResearchContent.shortSections }
+    var longSections: [ResearchSection]  { ScientificResearchContent.longSections  }
 
     var toggleButtonLabel: String {
         isFullArticleExpanded ? "Hide Full Article ▲" : "Read Full Article ▼"

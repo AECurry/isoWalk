@@ -16,7 +16,7 @@ struct FeaturesMenuGroup: View {
     let onNameEmail:       () -> Void
     let onNotifications:   () -> Void
     let onPrivacy:         () -> Void
-    let onScientificProof: () -> Void
+    let onScientificResearch: () -> Void
     let onSubmitFeedback:  () -> Void
 
     @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
@@ -47,8 +47,8 @@ struct FeaturesMenuGroup: View {
             divider
             menuRow(
                 icon: "doc.text",
-                title: "Scientific Proof",
-                onTap: onScientificProof
+                title: "Scientific Research",
+                onTap: onScientificResearch
             )
             divider
             menuRow(

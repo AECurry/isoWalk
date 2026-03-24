@@ -47,12 +47,13 @@ struct FeaturesHomeScreenView: View {
                                 .shadow(color: .black.opacity(0.10), radius: cardShadowRadius, x: 0, y: cardShadowY)
                                 .padding(.bottom, 24)
 
+                                // MARK: - Updated onScientificResearch here
                                 FeaturesMenuGroup(
-                                    onNameEmail:       { viewModel.navigateToNameEmail = true },
-                                    onNotifications:   { viewModel.navigateToNotifications = true },
-                                    onPrivacy:         { viewModel.navigateToPrivacy = true },
-                                    onScientificProof: { viewModel.navigateToScientificProof = true },
-                                    onSubmitFeedback:  { viewModel.navigateToSubmitFeedback = true }
+                                    onNameEmail:          { viewModel.navigateToNameEmail = true },
+                                    onNotifications:      { viewModel.navigateToNotifications = true },
+                                    onPrivacy:            { viewModel.navigateToPrivacy = true },
+                                    onScientificResearch: { viewModel.navigateToScientificResearch = true },
+                                    onSubmitFeedback:     { viewModel.navigateToSubmitFeedback = true }
                                 )
                                 .shadow(color: .black.opacity(0.10), radius: cardShadowRadius, x: 0, y: cardShadowY)
                                 .padding(.bottom, 40)
@@ -77,8 +78,12 @@ struct FeaturesHomeScreenView: View {
             .navigationDestination(isPresented: $viewModel.navigateToPrivacy) {
                 PrivacyScreenView()
             }
-            .navigationDestination(isPresented: $viewModel.navigateToScientificProof) {
+            // MARK: - Updated navigationDestination here
+            .navigationDestination(isPresented: $viewModel.navigateToScientificResearch) {
                 ScientificResearchScreenView()
+            }
+            .navigationDestination(isPresented: $viewModel.navigateToSubmitFeedback) {
+                SubmitFeedbackScreenView()
             }
             .navigationBarHidden(true)
         }
@@ -101,4 +106,3 @@ struct FeaturesHomeScreenView: View {
     FeaturesHomeScreenView()
         .environment(SessionManager())
 }
-
