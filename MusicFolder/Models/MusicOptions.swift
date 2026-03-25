@@ -97,9 +97,9 @@ struct SunoTrack: Identifiable, Codable {
     let bpm: Int?               // Optional: 112
     let style: String?          // Optional: "Jane Austen"
     
-    // Computed property: builds full filename based on duration needed
+    // FIXED: Now matches actual file naming pattern: _Xmins).wav
     func filename(forDuration minutes: Int) -> String {
-        return "\(baseFilename)_\(minutes)min)"
+        return "\(baseFilename)_\(minutes)mins)"
     }
     
     // Display duration in MM:SS format

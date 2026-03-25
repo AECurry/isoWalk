@@ -4,6 +4,7 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
+//
 //  VIEWMODEL — all business logic for the walk session screen.
 //  The View is dumb — it only reads from and calls into this ViewModel.
 //
@@ -30,7 +31,6 @@ final class WalkSessionViewModel {
     var modelContext: ModelContext?
     
     // MARK: - Private
-    private var totalDuration: TimeInterval = 0
     private var timerCancellable: AnyCancellable?
     private var amplitudeLink: CADisplayLink?
     private var backgroundTime: Date?
@@ -41,10 +41,16 @@ final class WalkSessionViewModel {
     private var musicManager = MusicSessionManager()
     private var intervalManager = WalkIntervalManager()
     
+    // MARK: - Computed (derived from activeSession)
+    private var totalDuration: TimeInterval {
+        activeSession?.durationInSeconds ?? 0
+    }
+    
     deinit {
         stopTimer()
         stopAmplitudeLink()
         musicManager.stop()
+        MusicPlayerService.shared.stopSilentHeartbeat()
     }
     
     // MARK: - Session Lifecycle
@@ -69,7 +75,6 @@ final class WalkSessionViewModel {
         activeSession = session
         WalkSessionOptions.saveActive(session)
         
-        totalDuration = session.durationInSeconds
         remainingTime = session.durationInSeconds
         progress = 0
         timerState = .stopped
@@ -82,6 +87,8 @@ final class WalkSessionViewModel {
         
         updateFormattedTime()
         startAmplitudeLink()
+        
+        print("✅ Session initialized: \(duration.displayName), \(pace.displayName), \(musicMode.displayName)")
     }
     
     func playPause() {
@@ -92,12 +99,12 @@ final class WalkSessionViewModel {
             startTimer()
             musicManager.start(remainingTime: remainingTime)
             
-            // NEW: Keep app alive for background/Snapchat usage on "No Music" walks
+            // Start silent heartbeat for No Music mode
             if currentMusicMode == .noMusic {
                 MusicPlayerService.shared.startSilentHeartbeat()
             }
             
-            // Announce start of walk if at the very beginning
+            // Announce start if at the very beginning
             if remainingTime == totalDuration {
                 intervalManager.announceStart()
             }
@@ -112,13 +119,14 @@ final class WalkSessionViewModel {
                 activeSession = session
                 WalkSessionOptions.saveActive(session)
             }
+            
         case .paused:
             timerState = .running
             isAudioPlaying = currentMusicMode != .noMusic
             startTimer()
             musicManager.resume()
             
-            // NEW: Restart heartbeat if they resume a paused "No Music" walk
+            // Restart silent heartbeat if resuming No Music mode
             if currentMusicMode == .noMusic {
                 MusicPlayerService.shared.startSilentHeartbeat()
             }
@@ -129,6 +137,7 @@ final class WalkSessionViewModel {
         stopTimer()
         stopAmplitudeLink()
         musicManager.stop()
+        MusicPlayerService.shared.stopSilentHeartbeat()
         
         if let session = activeSession {
             remainingTime = session.durationInSeconds
@@ -172,16 +181,23 @@ final class WalkSessionViewModel {
         activeSession = session
     }
     
+    // FIXED: Added background time tracking
     func handleScenePhase(_ phase: ScenePhase) {
         switch phase {
         case .background, .inactive:
-            // Do NOT stop the timer or music here anymore!
-            // Our silent heartbeat will keep the app awake so chimes can play.
-            print("App moved to background. Heartbeat is keeping us alive! ")
+            if timerState == .running {
+                backgroundTime = Date()
+                print("📱 App backgrounded at \(Date())")
+            }
+            
         case .active:
-            // We are back in the app. Since we never paused, the timer
-            // has been ticking the whole time. Nothing to do!
-            print("App returned to active.")
+            if let bgTime = backgroundTime, timerState == .running {
+                let elapsed = Date().timeIntervalSince(bgTime)
+                print("📱 App resumed. Deducting \(elapsed)s background time")
+                intervalManager.deductBackgroundTime(elapsed)
+                backgroundTime = nil
+            }
+            
         @unknown default:
             break
         }
@@ -216,10 +232,8 @@ final class WalkSessionViewModel {
     private func completeSession() {
         guard let session = activeSession else { return }
         
-        // NEW: Announce session completion if not using isoWalkTracks
-        if currentMusicMode != .noMusic {
-            // Or adjust logic here if you want it to always speak at the end
-        }
+        // FIXED: Only announce completion for No Music and My Music modes
+        // (isoWalkTracks has completion built into the final track)
         if currentMusicMode != .isoWalkTracks {
             MusicPlayerService.shared.playChimeAndVoiceCue(
                 message: "Walk session complete. Great job!"
@@ -230,7 +244,7 @@ final class WalkSessionViewModel {
             _ = WalkSessionOptions.completeSession(session, context: context)
             DailyReminderScheduler.refreshSchedule(context: context)
         } else {
-            print("Warning: modelContext was not set! Cannot save session.")
+            print("⚠️ Warning: modelContext was not set! Cannot save session.")
         }
         
         activeSession = nil
@@ -240,6 +254,7 @@ final class WalkSessionViewModel {
         isAudioPlaying = false
         stopTimer()
         musicManager.stop()
+        MusicPlayerService.shared.stopSilentHeartbeat()
         updateFormattedTime()
     }
     

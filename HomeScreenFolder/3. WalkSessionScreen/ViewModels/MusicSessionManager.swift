@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 3/17/26.
 //
-//  LOCATION: WalkSessionScreen/ViewModels/
 //
 //  Handles all music playback logic during walk sessions.
 //  Manages track sequencing, interval transitions, and playback state.
@@ -40,6 +39,11 @@ final class MusicSessionManager {
         trackSequence = sequence.playbackSequence
         currentIntervalIndex = 0
         print("🎵 Loaded track sequence: \(trackSequence.count) intervals")
+        
+        // Debug: Print full sequence
+        for (index, item) in trackSequence.enumerated() {
+            print("   \(index + 1). \(item.track.title) (\(item.paceLabel)) - \(item.durationMinutes) min")
+        }
     }
     
     // MARK: - Playback Control
@@ -47,6 +51,7 @@ final class MusicSessionManager {
     func start(remainingTime: TimeInterval) {
         guard musicMode == .isoWalkTracks, !trackSequence.isEmpty else { return }
         intervalStartTime = remainingTime
+        currentIntervalIndex = 0
         playCurrentInterval()
         isPlaying = true
     }
@@ -80,12 +85,26 @@ final class MusicSessionManager {
         let intervalDuration = TimeInterval(currentItem.durationMinutes * 60)
         let elapsedInInterval = intervalStartTime - remainingTime
         
+        // Debug log every 30 seconds
+        let elapsedMinutes = Int(elapsedInInterval) / 60
+        let elapsedSeconds = Int(elapsedInInterval) % 60
+        if Int(elapsedInInterval) % 30 == 0 {
+            print("⏱️ Interval \(currentIntervalIndex + 1): \(elapsedMinutes):\(String(format: "%02d", elapsedSeconds)) / \(currentItem.durationMinutes):00")
+        }
+        
         // Check if current interval is complete
         if elapsedInInterval >= intervalDuration {
+            print("✅ Interval \(currentIntervalIndex + 1) complete!")
             currentIntervalIndex += 1
+            
             if currentIntervalIndex < trackSequence.count {
                 intervalStartTime = remainingTime
                 playCurrentInterval()
+                
+                // FIXED: Add voice cue for interval transitions
+                announceIntervalTransition()
+            } else {
+                print("🏁 All intervals complete!")
             }
         }
     }
@@ -97,12 +116,31 @@ final class MusicSessionManager {
         
         let item = trackSequence[currentIntervalIndex]
         
-        print("🎵 Playing interval \(item.intervalNumber): \(item.track.title) (\(item.durationMinutes) min)")
+        print("🎵 Playing interval \(item.intervalNumber)/\(trackSequence.count): \(item.track.title) (\(item.paceLabel)) - \(item.durationMinutes) min")
         
         MusicPlayerService.shared.playSunoTrack(
             trackId: item.track.id,
             duration: item.durationMinutes
         )
+    }
+    
+    // FIXED: Voice cues for isoWalkTracks mode
+    private func announceIntervalTransition() {
+        guard currentIntervalIndex < trackSequence.count else { return }
+        
+        let nextItem = trackSequence[currentIntervalIndex]
+        
+        let message: String
+        if nextItem.track.pace == .brisk {
+            message = "Time to speed up. Switch to a brisk pace."
+        } else if nextItem.isCooldown {
+            message = "Final cooldown. Return to your normal pace."
+        } else {
+            message = "Time to slow down. Return to your normal pace."
+        }
+        
+        // Play voice cue OVER the music
+        MusicPlayerService.shared.playChimeAndVoiceCue(message: message)
     }
 }
 

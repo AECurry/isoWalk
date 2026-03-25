@@ -11,7 +11,7 @@
 //  isoWalk/Shared/Audio/NormalPace/3mins/
 //  isoWalk/Shared/Audio/NormalPace/4mins/
 //  isoWalk/Shared/Audio/NormalPace/5mins/
-//  isoWalk/Shared/Audio/BriskPace/1min/
+//  isoWalk/Shared/Audio/BriskPace/1mins/
 //  isoWalk/Shared/Audio/BriskPace/2mins/
 //  isoWalk/Shared/Audio/BriskPace/3mins/
 //

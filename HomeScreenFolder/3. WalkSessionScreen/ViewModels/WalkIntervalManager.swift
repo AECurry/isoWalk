@@ -29,13 +29,15 @@ final class WalkIntervalManager {
         if let first = intervals.first {
             self.timeRemaining = TimeInterval(first.duration * 60)
         }
+        
+        print("🏃 Interval manager configured: \(intervals.count) intervals, mode: \(musicMode.displayName)")
     }
     
     // MARK: - Actions
     func announceStart() {
-        // Only announce if NOT using Suno tracks (which have built-in cues)
+        // Only announce for No Music and My Music modes
+        // isoWalkTracks has its own announcement timing
         if currentMusicMode != .isoWalkTracks {
-            // FIXED: Removed the 'isFemale' argument. MusicPlayerService should read the preference itself!
             MusicPlayerService.shared.playChimeAndVoiceCue(
                 message: "Starting your isoWalk session. Begin at a normal pace."
             )
@@ -62,18 +64,17 @@ final class WalkIntervalManager {
     private func transitionToNextInterval() {
         currentIntervalIndex += 1
         
-        // Stop if we reached the end
         guard currentIntervalIndex < intervals.count else { return }
         
         let nextInterval = intervals[currentIntervalIndex]
         timeRemaining = TimeInterval(nextInterval.duration * 60)
         
+        // Only announce for No Music and My Music modes
         if currentMusicMode != .isoWalkTracks {
             let message = nextInterval.pace == .brisk
                 ? "Time to speed up. Switch to a brisk pace."
                 : "Time to slow down. Return to your normal pace."
                 
-            // FIXED: Removed the 'isFemale' argument.
             MusicPlayerService.shared.playChimeAndVoiceCue(message: message)
         }
     }

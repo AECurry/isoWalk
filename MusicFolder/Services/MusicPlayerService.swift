@@ -12,7 +12,7 @@
 
 import AVFoundation
 import Foundation
-import Observation // Needed for @Observable
+import Observation
 
 @Observable
 final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
@@ -26,13 +26,18 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
     var isPlaying: Bool = false
     var volume: Float = 0.8
     
-    // NEW: The engine that handles reading text out loud
+    // Speech synthesis
     private let speechSynthesizer = AVSpeechSynthesizer()
     
+    // Silent heartbeat
+    private var silencePlayer: AVAudioPlayer?
+    private var silenceFileURL: URL?
+    
     private override init() {
-        super.init() // Required because we now inherit from NSObject
+        super.init()
         setupAudioSession()
-        speechSynthesizer.delegate = self // Lets us know when the voice stops speaking
+        speechSynthesizer.delegate = self
+        createSilentAudioFile()
     }
     
     // MARK: - Audio Session Setup
@@ -40,12 +45,16 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
     private func setupAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
-            // NEW: Added .duckOthers so Apple Music / Spotify volume lowers automatically when voice speaks!
-            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers, .duckOthers])
+            // FIXED: Added background audio capability
+            try session.setCategory(
+                .playback,
+                mode: .default,
+                options: [.mixWithOthers, .duckOthers]
+            )
             try session.setActive(true)
-            print("Audio session activated successfully")
+            print("✅ Audio session activated with background capability")
         } catch {
-            print("Failed to setup audio session: \(error)")
+            print("❌ Failed to setup audio session: \(error)")
         }
     }
     
@@ -53,29 +62,24 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
     
     func playSunoTrack(trackId: String, duration: Int) {
         guard let track = SunoTrackLibrary.track(byId: trackId) else {
-            print("Track not found: \(trackId)")
+            print("❌ Track not found: \(trackId)")
             return
         }
         
-        // Build filename with duration
         let filename = track.filename(forDuration: duration)
         
-        // Debug output
-        print("DEBUG: Looking for file: \(filename).wav")
-        print("DEBUG: Track title: \(track.title)")
+        print("🎵 Looking for: \(filename).wav")
         
-        // Try to load audio file - search entire bundle
         guard let url = Bundle.main.url(
             forResource: filename,
             withExtension: "wav"
         ) else {
-            print("Audio file not found: \(filename).wav")
-            print("Searching bundle for any .wav files...")
+            print("❌ Audio file not found: \(filename).wav")
             
-            // Debug: Print all .wav files in bundle
+            // Debug: List all .wav files
             if let allWavs = Bundle.main.urls(forResourcesWithExtension: "wav", subdirectory: nil) {
-                print("Found \(allWavs.count) .wav files in bundle:")
-                allWavs.forEach { print("   - \($0.lastPathComponent)") }
+                print("📁 Found \(allWavs.count) .wav files:")
+                allWavs.prefix(5).forEach { print("   - \($0.lastPathComponent)") }
             }
             return
         }
@@ -89,10 +93,9 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
             currentTrackId = trackId
             isPlaying = true
             
-            print("Playing: \(track.title) (\(duration) min)")
-            print("Audio player started! Volume: \(audioPlayer?.volume ?? 0), isPlaying: \(audioPlayer?.isPlaying ?? false)")
+            print("✅ Playing: \(track.title) (\(duration) min)")
         } catch {
-            print("Failed to play audio: \(error)")
+            print("❌ Failed to play audio: \(error)")
         }
     }
     
@@ -100,15 +103,13 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
     
     func playPreview(trackId: String, duration: Double = 7.0) {
         guard let track = SunoTrackLibrary.track(byId: trackId) else {
-            print("Track not found for preview: \(trackId)")
+            print("❌ Track not found for preview: \(trackId)")
             return
         }
         
-        // For previews, use 3min for Normal, 1min for Brisk
         let previewDuration = track.pace == .normal ? 3 : 1
         playSunoTrack(trackId: trackId, duration: previewDuration)
         
-        // Stop after preview duration
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
             if self?.currentTrackId == trackId {
                 self?.stop()
@@ -162,75 +163,83 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
         }
     }
     
-    // MARK: - Chime & Voice Cue (INTEGRATED)
+    // MARK: - Chime & Voice Cue
     
     func playChimeAndVoiceCue(message: String) {
-        // 1. Manually "duck" (lower) the Suno track volume while speaking
+        // Duck the music volume while speaking
         if let player = audioPlayer, isPlaying {
-            player.setVolume(self.volume * 0.15, fadeDuration: 0.5) // Lower to 15% volume
+            player.setVolume(self.volume * 0.15, fadeDuration: 0.5)
         }
         
-        // 2. Play Chime (Optional TODO: hook up your actual ding.mp3 here)
-        print("🎵 [Chime Sound Plays]")
+        // TODO: Play chime sound here
+        print("🔔 [Chime]")
         
-        // 3. Read the user's Male/Female preference
+        // FIXED: Read user's voice preference
         let useFemaleVoice = UserDefaults.standard.bool(forKey: "useFemaleVoice")
         let utterance = AVSpeechUtterance(string: message)
         let preferredGender: AVSpeechSynthesisVoiceGender = useFemaleVoice ? .female : .male
         
-        // 4. Gather all English voices matching the gender
+        // Find best quality voice matching gender
         let availableVoices = AVSpeechSynthesisVoice.speechVoices().filter {
             $0.language.hasPrefix("en") && $0.gender == preferredGender
         }
         
-        // 5. Hunt for the highest quality voice available (Premium > Enhanced > Default)
         if let bestVoice = availableVoices.first(where: { $0.quality == .premium }) ??
                            availableVoices.first(where: { $0.quality == .enhanced }) ??
                            availableVoices.first {
             utterance.voice = bestVoice
-            print("Selected Premium/Enhanced Voice: \(bestVoice.name)")
+            print("🗣️ Using \(bestVoice.name)")
         } else {
-            // Ultimate fallback
             utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
         }
         
-        // 6. Speak!
-        print("Voice Cue: \(message)")
+        print("🗣️ Voice Cue: \(message)")
         speechSynthesizer.speak(utterance)
     }
     
-    // NEW: This triggers automatically when the robot voice finishes speaking
+    // MARK: - Speech Synthesizer Delegate
+    
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        // Fade the Suno track volume back up to normal over 1 second!
+        // Fade music volume back up
         if let player = audioPlayer, isPlaying {
             player.setVolume(self.volume, fadeDuration: 1.0)
         }
     }
     
-    // The "Ghost" player that stays silent but keeps the app awake
-    private var silencePlayer: AVAudioPlayer?
-
+    // MARK: - Silent Heartbeat (for No Music mode background running)
+    
+    // FIXED: Create silence file once and reuse
+    private func createSilentAudioFile() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("isoWalk_silence.wav")
+        
+        // Only create if doesn't exist
+        if !FileManager.default.fileExists(atPath: url.path) {
+            let audioData = Data(count: 44100 * 2) // 1 second of silence
+            try? audioData.write(to: url)
+        }
+        
+        silenceFileURL = url
+    }
+    
     func startSilentHeartbeat() {
-        // Only start this if we aren't already playing music
-        guard audioPlayer == nil || !isPlaying else { return }
-        
-        // We create a tiny 1-second silent file programmatically
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("silence.wav")
-        
-        // Create the "empty" audio file
-        let audioData = Data(count: 44100 * 2) // 1 second of 16-bit silence
-        try? audioData.write(to: url)
+        guard let url = silenceFileURL else { return }
+        guard silencePlayer == nil || silencePlayer?.isPlaying == false else { return }
         
         do {
             silencePlayer = try AVAudioPlayer(contentsOf: url)
-            silencePlayer?.numberOfLoops = -1 // Loop forever
-            silencePlayer?.volume = 0.01 // Inaudible to the human ear
+            silencePlayer?.numberOfLoops = -1
+            silencePlayer?.volume = 0.01
             silencePlayer?.prepareToPlay()
             silencePlayer?.play()
-            print("Silent heartbeat started to maintain background session.")
+            print("🤫 Silent heartbeat started")
         } catch {
-            print("Could not start silence player: \(error)")
+            print("❌ Could not start silence player: \(error)")
         }
+    }
+    
+    func stopSilentHeartbeat() {
+        silencePlayer?.stop()
+        silencePlayer = nil
     }
 }
 
