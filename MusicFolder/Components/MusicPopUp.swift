@@ -20,22 +20,22 @@ import SwiftUI
 // ─────────────────────────────────────────
 
 struct MusicPopUp: View {
-
+    
     @Bindable var viewModel: MusicViewModel
     @Binding var isExpanded: Bool
     
     @AppStorage("dropdownWidth") private var width: Double = 320
-    @AppStorage("dropdownHeight") private var height: Double = 52
+    @AppStorage("dropdownHeight") private var height: Double = 64
     @AppStorage("dropdownCornerRadius") private var cornerRadius: Double = 12
     @AppStorage("dropdownShadowRadius") private var shadowRadius: Double = 4
-
+    
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
             Text("Select Music")
                 .font(.custom("Inter-SemiBold", size: 18))
                 .foregroundColor(isoWalkColors.adaptiveText)
                 .frame(width: width, alignment: .leading)
-
+            
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.2)) { isExpanded = true }
             }) {
@@ -66,14 +66,14 @@ struct MusicPopUp: View {
 // ─────────────────────────────────────────
 
 struct MusicPopupModal: View {
-
+    
     @Bindable var viewModel: MusicViewModel
     @Binding var isExpanded: Bool
     
     // NEW: Receive pace and duration from WalkSetUpViewModel
     var selectedPace: PaceOptions
     var selectedDuration: DurationOptions
-
+    
     var body: some View {
         ZStack {
             // Dimmed backdrop — tap to dismiss
@@ -82,16 +82,16 @@ struct MusicPopupModal: View {
                 .onTapGesture {
                     withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
                 }
-
+            
             // Centered modal card
             VStack(spacing: 0) {
                 Text("Select Music")
-                    .font(.custom("Inter-Bold", size: 18))
+                    .font(.custom("Inter-Bold", size: 24))
                     .foregroundColor(.white)
                     .padding(.vertical, 16)
-
+                
                 Divider().overlay(Color.white.opacity(0.2))
-
+                
                 // Mode tabs
                 HStack(spacing: 0) {
                     ForEach(MusicMode.allCases) { mode in
@@ -100,9 +100,9 @@ struct MusicPopupModal: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
-
+                
                 Divider().overlay(Color.white.opacity(0.20))
-
+                
                 // Tab content
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
@@ -120,22 +120,24 @@ struct MusicPopupModal: View {
                         }
                     }
                     .padding(.bottom, 20)
+                   
                 }
                 .frame(maxHeight: 400)
-
-                Divider().overlay(Color.white.opacity(0.2))
-
+                
+                
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
                 }) {
                     Text("Done")
                         .font(.custom("Inter-Medium", size: 16))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .padding(.vertical, 16)
+                        .background(isoWalkColors.deepSpaceBlue)
                 }
                 .buttonStyle(.plain)
             }
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(isoWalkColors.balticBlue)
@@ -148,7 +150,6 @@ struct MusicPopupModal: View {
             viewModel.activeTab = viewModel.selectedMode
         }
     }
-
     // MARK: - Mode Tab Button
     private func modeTab(_ mode: MusicMode) -> some View {
         let isActive = viewModel.activeTab == mode

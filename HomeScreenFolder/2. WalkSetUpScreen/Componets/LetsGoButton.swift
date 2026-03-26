@@ -41,6 +41,7 @@ struct LetsGoButton: View {
         .buttonStyle(.plain)
         .disabled(!isEnabled)
         .animation(.easeInOut(duration: 0.2), value: isEnabled)
+        .padding(.top, 24)
         .padding(.bottom, 32)
     }
 }

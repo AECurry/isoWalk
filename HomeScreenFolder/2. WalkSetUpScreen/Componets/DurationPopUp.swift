@@ -19,7 +19,7 @@ struct DurationPopUp: View {
     var selectedPace: PaceOptions
 
     @AppStorage("dropdownWidth") private var width: Double = 320
-    @AppStorage("dropdownHeight") private var height: Double = 52
+    @AppStorage("dropdownHeight") private var height: Double = 64
     @AppStorage("dropdownCornerRadius") private var cornerRadius: Double = 12
     @AppStorage("dropdownShadowRadius") private var shadowRadius: Double = 4
 
@@ -72,7 +72,7 @@ struct DurationPopupModal: View {
             // Centered modal card
             VStack(spacing: 0) {
                 Text("Select Duration")
-                    .font(.custom("Inter-Bold", size: 18))
+                    .font(.custom("Inter-Bold", size: 24))
                     .foregroundColor(.white)
                     .padding(.vertical, 16)
 
@@ -131,19 +131,21 @@ struct DurationPopupModal: View {
                 }
                 .frame(maxHeight: 400)
 
-                Divider().overlay(Color.white.opacity(0.2))
+                // 👉 1. DIVIDER IS GONE FROM HERE!
 
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
                 }) {
                     Text("Cancel")
                         .font(.custom("Inter-Medium", size: 16))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.white) // Solid white text
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .padding(.vertical, 16)
+                        .background(isoWalkColors.deepSpaceBlue) // 👉 2. UPDATED TO SPACE BLUE
                 }
                 .buttonStyle(.plain)
             }
+            .clipShape(RoundedRectangle(cornerRadius: 16)) // 👉 3. ADDED CLIP SHAPE HERE
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(isoWalkColors.balticBlue)
@@ -164,4 +166,3 @@ struct DurationPopupModal: View {
     .padding()
     .background(isoWalkColors.parchment)
 }
-

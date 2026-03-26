@@ -232,13 +232,10 @@ final class WalkSessionViewModel {
     private func completeSession() {
         guard let session = activeSession else { return }
         
-        // FIXED: Only announce completion for No Music and My Music modes
-        // (isoWalkTracks has completion built into the final track)
-        if currentMusicMode != .isoWalkTracks {
-            MusicPlayerService.shared.playChimeAndVoiceCue(
-                message: "Walk session complete. Great job!"
-            )
-        }
+        // FIXED: Announce completion for ALL music modes!
+        MusicPlayerService.shared.playChimeAndVoiceCue(
+            message: "Walk session complete. Great job!"
+        )
         
         if let context = modelContext {
             _ = WalkSessionOptions.completeSession(session, context: context)

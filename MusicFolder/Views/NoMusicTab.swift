@@ -12,9 +12,7 @@
 import SwiftUI
 
 struct NoMusicTab: View {
-    // 1. Read/Write the user's preference automatically
-    @AppStorage("useFemaleVoice") private var useFemaleVoice = true
-
+    
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "speaker.slash.fill")
@@ -32,24 +30,14 @@ struct NoMusicTab: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             
-            // 2. The Voice Selection Toggle
-                        Picker("Voice Selection", selection: $useFemaleVoice) {
-                            Text("Female Voice").tag(true)
-                            Text("Male Voice").tag(false)
-                        }
-                        .pickerStyle(.segmented)
-                        .colorMultiply(Color.white.opacity(0.9))
-                        .padding(.horizontal, 40)
-                        .padding(.top, 16)
-                        // NEW: Listen for taps and play a sample!
-                        .onChange(of: useFemaleVoice) { oldValue, newValue in
-                                        let voiceName = newValue ? "Female" : "Male"
-                                        MusicPlayerService.shared.playChimeAndVoiceCue(message: "\(voiceName) voice selected. I will guide your intervals.")
-                                    }                        }
+            // 👉 Dropping in the reusable CustomVoiceToggle!
+            CustomVoiceToggle()
+                .padding(.top, 16)
             
             Spacer(minLength: 40)
         }
     }
+}
 
 #Preview {
     ZStack {
@@ -57,4 +45,3 @@ struct NoMusicTab: View {
         NoMusicTab()
     }
 }
-

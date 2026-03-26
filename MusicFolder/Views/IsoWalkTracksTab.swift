@@ -34,6 +34,10 @@ struct IsoWalkTracksTab: View {
                 // Quick stats
                 statsSection(seq)
                 
+                // 👉 THE NEW VOICE TOGGLE IS DROPPED IN HERE
+                CustomVoiceToggle()
+                    .padding(.vertical, 12)
+                
                 // Action buttons
                 actionButtons
                 
