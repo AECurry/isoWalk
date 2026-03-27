@@ -4,9 +4,6 @@
 //
 //  Created by AnnElaine on 3/26/26.
 //
-//  FIXED 3/26/26:
-//  - Uses RunLoop.common mode for background execution
-//  - Timer continues running even when app is backgrounded
 //
 //  TIMER SUB-MANAGER — handles all timer-related operations.
 //
@@ -18,7 +15,9 @@ import SwiftUI
 
 final class WalkSessionTimerManager {
     
-    private var timerCancellable: AnyCancellable?
+    // FIXED: Use a GCD Timer instead of a Combine publisher
+    private var backgroundTimer: DispatchSourceTimer?
+    
     private var amplitudeLink: CADisplayLink?
     private var backgroundTime: Date?
     private var currentAmplitudes: [Float] = Array(repeating: 0.1, count: 30)
@@ -28,20 +27,29 @@ final class WalkSessionTimerManager {
     func startTimer(onTick: @escaping () -> Void) {
         stopTimer()
         
-        // CRITICAL: Use .common run loop mode
-        // This ensures timer continues in background
-        timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
-            .autoconnect()
-            .sink { _ in
+        // CRITICAL: Create a dedicated background queue for the timer
+        // This ensures iOS does not throttle it when the screen is backgrounded
+        let queue = DispatchQueue(label: "com.isowalk.backgroundTimer", qos: .userInteractive)
+        backgroundTimer = DispatchSource.makeTimerSource(queue: queue)
+        
+        // Fire immediately, then repeat every 1.0 seconds exactly
+        backgroundTimer?.schedule(deadline: .now(), repeating: 1.0)
+        
+        backgroundTimer?.setEventHandler {
+            // Push the actual tick update back to the Main thread so the UI can update safely
+            DispatchQueue.main.async {
                 onTick()
             }
+        }
         
-        print("⏱️ Timer started (runs in background)")
+        backgroundTimer?.resume()
+        print("⏱️ GCD Background Timer started (immune to UI throttling)")
     }
     
     func stopTimer() {
-        timerCancellable?.cancel()
-        timerCancellable = nil
+        backgroundTimer?.cancel()
+        backgroundTimer = nil
+        print("⏱️ GCD Background Timer stopped")
     }
     
     // MARK: - Background Time Tracking
@@ -59,7 +67,8 @@ final class WalkSessionTimerManager {
                 let elapsed = Date().timeIntervalSince(bgTime)
                 print("📱 App resumed after \(Int(elapsed))s")
                 
-                // Even though timer kept running, verify we're still in sync
+                // With the new GCD timer, drift should be near zero,
+                // but this acts as a great safety net just in case of severe system lag.
                 if elapsed > 2 {
                     print("⚠️ Detected background time drift of \(Int(elapsed))s")
                     onBackgroundTimeDeducted(elapsed)

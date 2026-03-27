@@ -196,8 +196,8 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
         }
         
         if let bestVoice = availableVoices.first(where: { $0.quality == .premium }) ??
-                           availableVoices.first(where: { $0.quality == .enhanced }) ??
-                           availableVoices.first {
+            availableVoices.first(where: { $0.quality == .enhanced }) ??
+            availableVoices.first {
             utterance.voice = bestVoice
             print("🗣️ Using \(bestVoice.name)")
         } else {
@@ -225,17 +225,40 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
     }
     
     // MARK: - Silent Heartbeat
-    
-    private func createSilentAudioFile() {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("isoWalk_silence.wav")
         
-        if !FileManager.default.fileExists(atPath: url.path) {
-            let audioData = Data(count: 44100 * 2)
-            try? audioData.write(to: url)
+        private func createSilentAudioFile() {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("isoWalk_silence.wav")
+            
+            // 1. If we already made the file successfully, just use it!
+            if FileManager.default.fileExists(atPath: url.path) {
+                silenceFileURL = url
+                // Don't print anything here so we don't spam the console
+                return
+            }
+            
+            // 2. Use the "Standard" format which iOS heavily prefers (Float32)
+            guard let format = AVAudioFormat(standardFormatWithSampleRate: 44100.0, channels: 1) else { return }
+            
+            do {
+                let audioFile = try AVAudioFile(forWriting: url, settings: format.settings)
+                guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 44100) else { return }
+                
+                buffer.frameLength = buffer.frameCapacity
+                
+                // 3. EXPLICITLY fill the memory with silence (zeros) so CoreAudio doesn't panic
+                if let channelData = buffer.floatChannelData {
+                    for i in 0..<Int(buffer.frameLength) {
+                        channelData[0][i] = 0.0
+                    }
+                }
+                
+                try audioFile.write(from: buffer)
+                silenceFileURL = url
+                print("✅ Properly formatted silent WAV file created")
+            } catch {
+                print("❌ Failed to create silent audio file: \(error)")
+            }
         }
-        
-        silenceFileURL = url
-    }
     
     func startSilentHeartbeat() {
         guard let url = silenceFileURL else { return }
