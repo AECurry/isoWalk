@@ -21,6 +21,13 @@ struct PacePopUp: View {
     @AppStorage("dropdownCornerRadius") private var cornerRadius: Double = 12
     @AppStorage("dropdownShadowRadius") private var shadowRadius: Double = 4
 
+    // 👉 Pulls in your theme manager
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    
+    private var theme: IsoWalkTheme {
+        IsoWalkTheme.current(selectedId: selectedThemeId)
+    }
+
     private var displayText: String {
         lastSelectedPaceId.isEmpty ? "Tap to select" : selectedPace.displayName
     }
@@ -29,7 +36,7 @@ struct PacePopUp: View {
         VStack(alignment: .center, spacing: 8) {
             Text("Select Pace")
                 .font(.custom("Inter-SemiBold", size: 18))
-                .foregroundColor(isoWalkColors.adaptiveText)
+                .foregroundColor(theme.primaryTextColor) // 👉 Now uses your active theme's text color
                 .frame(width: width, alignment: .leading)
 
             Button(action: {
@@ -72,7 +79,6 @@ struct PacePopupModal: View {
 
             // Centered modal card
             VStack(spacing: 0) {
-                // FIX: Changed from Inter-SemiBold to Inter-Bold to match all other modals
                 Text("Select Pace")
                     .font(.custom("Inter-Bold", size: 24))
                     .foregroundColor(.white)
@@ -121,21 +127,19 @@ struct PacePopupModal: View {
                 }
                 .frame(maxHeight: 400)
 
-                // 👉 1. DIVIDER IS GONE FROM HERE!
-
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
                 }) {
-                    Text("Cancel")
+                    Text("Done")
                         .font(.custom("Inter-Medium", size: 16))
-                        .foregroundColor(.white) // Solid white text
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(isoWalkColors.deepSpaceBlue) // 👉 2. UPDATED TO SPACE BLUE
+                        .background(isoWalkColors.deepSpaceBlue)
                 }
                 .buttonStyle(.plain)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 16)) // 👉 3. ADDED CLIP SHAPE HERE
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(isoWalkColors.balticBlue)

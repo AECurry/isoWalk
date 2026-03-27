@@ -15,9 +15,9 @@
 
 import SwiftUI
 
-// ─────────────────────────────────────────
+
 // MARK: - MusicPopUp (collapsed card)
-// ─────────────────────────────────────────
+
 
 struct MusicPopUp: View {
     
@@ -29,11 +29,18 @@ struct MusicPopUp: View {
     @AppStorage("dropdownCornerRadius") private var cornerRadius: Double = 12
     @AppStorage("dropdownShadowRadius") private var shadowRadius: Double = 4
     
+    // Pulls in your theme manager
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    
+    private var theme: IsoWalkTheme {
+        IsoWalkTheme.current(selectedId: selectedThemeId)
+    }
+    
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
             Text("Select Music")
                 .font(.custom("Inter-SemiBold", size: 18))
-                .foregroundColor(isoWalkColors.adaptiveText)
+                .foregroundColor(theme.primaryTextColor) // Now uses your active theme's text color
                 .frame(width: width, alignment: .leading)
             
             Button(action: {
@@ -61,9 +68,7 @@ struct MusicPopUp: View {
     }
 }
 
-// ─────────────────────────────────────────
 // MARK: - MusicPopupModal (centered modal - matches Pace/Duration)
-// ─────────────────────────────────────────
 
 struct MusicPopupModal: View {
     
@@ -120,7 +125,7 @@ struct MusicPopupModal: View {
                         }
                     }
                     .padding(.bottom, 20)
-                   
+                    
                 }
                 .frame(maxHeight: 400)
                 
@@ -150,7 +155,9 @@ struct MusicPopupModal: View {
             viewModel.activeTab = viewModel.selectedMode
         }
     }
+    
     // MARK: - Mode Tab Button
+    
     private func modeTab(_ mode: MusicMode) -> some View {
         let isActive = viewModel.activeTab == mode
         return Button(action: {
@@ -185,4 +192,3 @@ struct MusicPopupModal: View {
         .padding()
     }
 }
-

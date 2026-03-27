@@ -98,6 +98,22 @@ final class BadgesViewModel {
         
         UserDefaults.standard.set(finalRecords.count, forKey: "isoWalkBadgesEarnedTotal")
 
+        // MARK: - 🛡️ NEW SAFETY CHECK ADDED HERE 🛡️
+        // Verify the most recent badge hasn't been un-earned (e.g., if a session was deleted)
+        if let savedRecentId = UserDefaults.standard.string(forKey: "mostRecentBadgeId") {
+            let stillHasBadge = finalRecords.contains { $0.badgeId == savedRecentId }
+            if !stillHasBadge {
+                // If they lost their most recent badge, default to their newest remaining one, or nil
+                let newestRemaining = finalRecords.sorted { $0.earnedDate > $1.earnedDate }.first
+                if let newRecent = newestRemaining {
+                    UserDefaults.standard.set(newRecent.badgeId, forKey: "mostRecentBadgeId")
+                } else {
+                    UserDefaults.standard.removeObject(forKey: "mostRecentBadgeId")
+                }
+            }
+        }
+        // ------------------------------------------
+
         if let firstNew = newlyEarnedInThisSession.first,
            let matchedBadge = badges.first(where: { $0.id.rawValue == firstNew.badgeId }) {
             

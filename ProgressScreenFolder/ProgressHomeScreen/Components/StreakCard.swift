@@ -42,7 +42,7 @@ struct StreakCard: View {
                         .font(.custom(theme.titleFontName, size: valueFontSize))
                         .foregroundColor(theme.primaryTextColor)
                         .contentTransition(.numericText())
-                    Text("days")
+                    Text("times")
                         .font(.custom(theme.bodyFontName, size: labelFontSize))
                         .foregroundColor(theme.primaryTextColor)
                 }

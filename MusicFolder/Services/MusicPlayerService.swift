@@ -38,6 +38,7 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
         setupAudioSession()
         speechSynthesizer.delegate = self
         createSilentAudioFile()
+        warmUpVoiceEngine()
     }
     
     // MARK: - Audio Session Setup
@@ -117,6 +118,42 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
         }
     }
     
+    // MARK: - Voice Engine Warm Up
+    
+    private func warmUpVoiceEngine() {
+        // 1. Use an actual word so the buffer isn't 0 bytes
+        let utterance = AVSpeechUtterance(string: "Ready")
+        
+        // 2. Set to 0.01 instead of 0.0 to guarantee AVFoundation processes the audio
+        utterance.volume = 0.01
+        utterance.rate = AVSpeechUtteranceMaximumSpeechRate
+        
+        // 3. Pre-load the EXACT heavy Premium voice we will use later
+        if let preferredVoice = getPreferredVoice() {
+            utterance.voice = preferredVoice
+        }
+        
+        // Wakes the engine up and loads the Premium voice into RAM
+        speechSynthesizer.speak(utterance)
+        print("🗣️ Voice engine warmed up with Premium voice!")
+    }
+
+    // MARK: - Voice Selection Helper
+    
+    private func getPreferredVoice() -> AVSpeechSynthesisVoice? {
+        let useFemaleVoice = UserDefaults.standard.bool(forKey: "useFemaleVoice")
+        let preferredGender: AVSpeechSynthesisVoiceGender = useFemaleVoice ? .female : .male
+        
+        let availableVoices = AVSpeechSynthesisVoice.speechVoices().filter {
+            $0.language.hasPrefix("en") && $0.gender == preferredGender
+        }
+        
+        // Try to find the highest quality voice available
+        return availableVoices.first(where: { $0.quality == .premium }) ??
+               availableVoices.first(where: { $0.quality == .enhanced }) ??
+               availableVoices.first
+    }
+    
     // MARK: - Playback Controls
     
     func pause() {
@@ -162,7 +199,7 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
             }
         }
     }
-    
+
     // MARK: - Chime & Voice Cue
     
     func playChimeAndVoiceCue(message: String) {
@@ -174,19 +211,10 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
         // TODO: Play chime sound here
         print("🔔 [Chime]")
         
-        // FIXED: Read user's voice preference
-        let useFemaleVoice = UserDefaults.standard.bool(forKey: "useFemaleVoice")
         let utterance = AVSpeechUtterance(string: message)
-        let preferredGender: AVSpeechSynthesisVoiceGender = useFemaleVoice ? .female : .male
         
-        // Find best quality voice matching gender
-        let availableVoices = AVSpeechSynthesisVoice.speechVoices().filter {
-            $0.language.hasPrefix("en") && $0.gender == preferredGender
-        }
-        
-        if let bestVoice = availableVoices.first(where: { $0.quality == .premium }) ??
-                           availableVoices.first(where: { $0.quality == .enhanced }) ??
-                           availableVoices.first {
+        // Use our new helper to grab the already-loaded voice
+        if let bestVoice = getPreferredVoice() {
             utterance.voice = bestVoice
             print("🗣️ Using \(bestVoice.name)")
         } else {

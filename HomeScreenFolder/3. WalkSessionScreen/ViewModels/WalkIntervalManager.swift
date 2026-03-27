@@ -36,11 +36,13 @@ final class WalkIntervalManager {
     // MARK: - Actions
     func announceStart() {
         // Only announce for No Music and My Music modes
-        // isoWalkTracks has its own announcement timing
         if currentMusicMode != .isoWalkTracks {
-            MusicPlayerService.shared.playChimeAndVoiceCue(
-                message: "Starting your isoWalk session. Begin at a normal pace."
-            )
+            // Add a tiny delay so music settles first
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                MusicPlayerService.shared.playChimeAndVoiceCue(
+                    message: "Starting your isoWalk session. Begin at a normal pace."
+                )
+            }
         }
     }
     

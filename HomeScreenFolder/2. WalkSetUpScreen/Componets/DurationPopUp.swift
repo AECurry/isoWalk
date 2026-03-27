@@ -4,7 +4,6 @@
 //
 //  Created by AnnElaine on 2/17/26.
 //
-//  Updated 3/12/26: Match PacePopUp structure exactly
 //
 //  COMPONENT — dumb child.
 //  Trigger button + modal popup.
@@ -23,11 +22,18 @@ struct DurationPopUp: View {
     @AppStorage("dropdownCornerRadius") private var cornerRadius: Double = 12
     @AppStorage("dropdownShadowRadius") private var shadowRadius: Double = 4
 
+    // 👉 Pulls in your theme manager
+    @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    
+    private var theme: IsoWalkTheme {
+        IsoWalkTheme.current(selectedId: selectedThemeId)
+    }
+
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
             Text("Select Duration")
                 .font(.custom("Inter-SemiBold", size: 18))
-                .foregroundColor(isoWalkColors.adaptiveText)
+                .foregroundColor(theme.primaryTextColor) // 👉 Now uses your active theme's text color
                 .frame(width: width, alignment: .leading)
 
             Button(action: {
@@ -131,21 +137,19 @@ struct DurationPopupModal: View {
                 }
                 .frame(maxHeight: 400)
 
-                // 👉 1. DIVIDER IS GONE FROM HERE!
-
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
                 }) {
                     Text("Cancel")
                         .font(.custom("Inter-Medium", size: 16))
-                        .foregroundColor(.white) // Solid white text
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(isoWalkColors.deepSpaceBlue) // 👉 2. UPDATED TO SPACE BLUE
+                        .background(isoWalkColors.deepSpaceBlue)
                 }
                 .buttonStyle(.plain)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 16)) // 👉 3. ADDED CLIP SHAPE HERE
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(isoWalkColors.balticBlue)

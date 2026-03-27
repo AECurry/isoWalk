@@ -50,33 +50,58 @@ final class ProgressViewModel {
 
     // MARK: - Load (Now takes ModelContext)
     func loadData(context: ModelContext) {
+        print("🔍 ProgressViewModel: Loading data from database...")
+        
         let descriptor = FetchDescriptor<CompletedSession>()
-        let all = (try? context.fetch(descriptor)) ?? []
         
-        totalWalkCount = all.count
-        totalWalkTime = all.reduce(0) { $0 + $1.totalDuration }
+        do {
+            let all = try context.fetch(descriptor)
+            print("✅ Found \(all.count) sessions in database")
+            
+            // Print details of each session
+            for (index, session) in all.enumerated() {
+                print("   Session \(index + 1): \(session.duration.displayName), \(session.startTime)")
+            }
+            
+            totalWalkCount = all.count
+            totalWalkTime = all.reduce(0) { $0 + $1.totalDuration }
 
-        let calendar = Calendar.current
-        let todayStart = calendar.startOfDay(for: Date())
+            let calendar = Calendar.current
+            let todayStart = calendar.startOfDay(for: Date())
 
-        todaySessions = all
-            .filter { calendar.startOfDay(for: $0.startTime) == todayStart }
-            .sorted { $0.startTime < $1.startTime }
+            todaySessions = all
+                .filter { calendar.startOfDay(for: $0.startTime) == todayStart }
+                .sorted { $0.startTime < $1.startTime }
 
-        walksThisMonth = countWalksThisMonth(from: all)
-        longestStreak = calculateLongestStreak(from: all)
-        
-        // MARK: - FIXED: Clears out ghost badges if there are 0 walks
-        if totalWalkCount == 0 {
+            print("📅 Today's sessions: \(todaySessions.count)")
+
+            walksThisMonth = countWalksThisMonth(from: all)
+            longestStreak = calculateLongestStreak(from: all)
+            
+            if totalWalkCount == 0 {
+                print("⚠️ No sessions found - clearing badge data")
+                mostRecentBadgeId = nil
+                UserDefaults.standard.removeObject(forKey: "mostRecentBadgeId")
+            } else {
+                mostRecentBadgeId = UserDefaults.standard.string(forKey: "mostRecentBadgeId")
+                print("🏅 Most recent badge: \(mostRecentBadgeId ?? "none")")
+            }
+            
+            syncBadgesSilently(context: context)
+            
+        } catch {
+            print("❌ CRITICAL: Database fetch failed: \(error)")
+            print("   Error details: \(error.localizedDescription)")
+            // Set to empty to avoid crashes, but we now know there's an error
+            totalWalkCount = 0
+            totalWalkTime = 0
+            todaySessions = []
+            walksThisMonth = 0
+            longestStreak = 0
             mostRecentBadgeId = nil
-            UserDefaults.standard.removeObject(forKey: "mostRecentBadgeId")
-        } else {
-            mostRecentBadgeId = UserDefaults.standard.string(forKey: "mostRecentBadgeId")
         }
-        
-        syncBadgesSilently(context: context)
     }
-
+    
     private func syncBadgesSilently(context: ModelContext) {
         let badgesVM = BadgesViewModel()
         badgesVM.loadBadges(context: context)
