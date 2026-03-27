@@ -35,25 +35,33 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
     
     private override init() {
         super.init()
-        setupAudioSession()
+        setupAudioSession(withDucking: false) // ← Start WITHOUT ducking
         speechSynthesizer.delegate = self
         createSilentAudioFile()
-        warmUpVoiceEngine()
     }
     
     // MARK: - Audio Session Setup
     
-    private func setupAudioSession() {
+    // Takes a parameter to control ducking
+    private func setupAudioSession(withDucking: Bool) {
         do {
             let session = AVAudioSession.sharedInstance()
-            // FIXED: Added background audio capability
+            
+            // CRITICAL: Only add .duckOthers when voice cue is playing
+            var options: AVAudioSession.CategoryOptions = [.mixWithOthers]
+            if withDucking {
+                options.insert(.duckOthers)
+            }
+            
             try session.setCategory(
                 .playback,
                 mode: .default,
-                options: [.mixWithOthers, .duckOthers]
+                options: options
             )
             try session.setActive(true)
-            print("✅ Audio session activated with background capability")
+            
+            let duckStatus = withDucking ? "WITH ducking" : "WITHOUT ducking"
+            print("✅ Audio session configured \(duckStatus)")
         } catch {
             print("❌ Failed to setup audio session: \(error)")
         }
@@ -77,7 +85,6 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
         ) else {
             print("❌ Audio file not found: \(filename).wav")
             
-            // Debug: List all .wav files
             if let allWavs = Bundle.main.urls(forResourcesWithExtension: "wav", subdirectory: nil) {
                 print("📁 Found \(allWavs.count) .wav files:")
                 allWavs.prefix(5).forEach { print("   - \($0.lastPathComponent)") }
@@ -100,7 +107,7 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
         }
     }
     
-    // MARK: - Play Preview (6-8 second clip)
+    // MARK: - Play Preview
     
     func playPreview(trackId: String, duration: Double = 7.0) {
         guard let track = SunoTrackLibrary.track(byId: trackId) else {
@@ -116,42 +123,6 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
                 self?.stop()
             }
         }
-    }
-    
-    // MARK: - Voice Engine Warm Up
-    
-    private func warmUpVoiceEngine() {
-        // 1. Use an actual word so the buffer isn't 0 bytes
-        let utterance = AVSpeechUtterance(string: "Ready")
-        
-        // 2. Set to 0.01 instead of 0.0 to guarantee AVFoundation processes the audio
-        utterance.volume = 0.01
-        utterance.rate = AVSpeechUtteranceMaximumSpeechRate
-        
-        // 3. Pre-load the EXACT heavy Premium voice we will use later
-        if let preferredVoice = getPreferredVoice() {
-            utterance.voice = preferredVoice
-        }
-        
-        // Wakes the engine up and loads the Premium voice into RAM
-        speechSynthesizer.speak(utterance)
-        print("🗣️ Voice engine warmed up with Premium voice!")
-    }
-
-    // MARK: - Voice Selection Helper
-    
-    private func getPreferredVoice() -> AVSpeechSynthesisVoice? {
-        let useFemaleVoice = UserDefaults.standard.bool(forKey: "useFemaleVoice")
-        let preferredGender: AVSpeechSynthesisVoiceGender = useFemaleVoice ? .female : .male
-        
-        let availableVoices = AVSpeechSynthesisVoice.speechVoices().filter {
-            $0.language.hasPrefix("en") && $0.gender == preferredGender
-        }
-        
-        // Try to find the highest quality voice available
-        return availableVoices.first(where: { $0.quality == .premium }) ??
-               availableVoices.first(where: { $0.quality == .enhanced }) ??
-               availableVoices.first
     }
     
     // MARK: - Playback Controls
@@ -199,22 +170,34 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
             }
         }
     }
-
+    
     // MARK: - Chime & Voice Cue
     
     func playChimeAndVoiceCue(message: String) {
-        // Duck the music volume while speaking
+        // FIXED: Enable ducking BEFORE speaking
+        setupAudioSession(withDucking: true)
+        
+        // Manually lower isoWalk track volume (if playing)
         if let player = audioPlayer, isPlaying {
             player.setVolume(self.volume * 0.15, fadeDuration: 0.5)
         }
         
-        // TODO: Play chime sound here
+        // Play chime (TODO: Add actual chime sound)
         print("🔔 [Chime]")
         
+        // Read user's voice preference
+        let useFemaleVoice = UserDefaults.standard.bool(forKey: "useFemaleVoice")
         let utterance = AVSpeechUtterance(string: message)
+        let preferredGender: AVSpeechSynthesisVoiceGender = useFemaleVoice ? .female : .male
         
-        // Use our new helper to grab the already-loaded voice
-        if let bestVoice = getPreferredVoice() {
+        // Find best quality voice
+        let availableVoices = AVSpeechSynthesisVoice.speechVoices().filter {
+            $0.language.hasPrefix("en") && $0.gender == preferredGender
+        }
+        
+        if let bestVoice = availableVoices.first(where: { $0.quality == .premium }) ??
+                           availableVoices.first(where: { $0.quality == .enhanced }) ??
+                           availableVoices.first {
             utterance.voice = bestVoice
             print("🗣️ Using \(bestVoice.name)")
         } else {
@@ -228,21 +211,26 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
     // MARK: - Speech Synthesizer Delegate
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        // Fade music volume back up
+        print("🗣️ Voice cue finished")
+        
+        // FIXED: Restore isoWalk track volume
         if let player = audioPlayer, isPlaying {
             player.setVolume(self.volume, fadeDuration: 1.0)
         }
+        
+        // CRITICAL: Disable ducking AFTER speaking
+        // This lets Apple Music return to full volume
+        setupAudioSession(withDucking: false)
+        print("✅ Audio ducking disabled - external music restored")
     }
     
-    // MARK: - Silent Heartbeat (for No Music mode background running)
+    // MARK: - Silent Heartbeat
     
-    // FIXED: Create silence file once and reuse
     private func createSilentAudioFile() {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("isoWalk_silence.wav")
         
-        // Only create if doesn't exist
         if !FileManager.default.fileExists(atPath: url.path) {
-            let audioData = Data(count: 44100 * 2) // 1 second of silence
+            let audioData = Data(count: 44100 * 2)
             try? audioData.write(to: url)
         }
         
@@ -259,7 +247,7 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
             silencePlayer?.volume = 0.01
             silencePlayer?.prepareToPlay()
             silencePlayer?.play()
-            print("🤫 Silent heartbeat started")
+            print("🤫 Silent heartbeat started (keeps app alive in background)")
         } catch {
             print("❌ Could not start silence player: \(error)")
         }
@@ -268,6 +256,7 @@ final class MusicPlayerService: NSObject, AVSpeechSynthesizerDelegate {
     func stopSilentHeartbeat() {
         silencePlayer?.stop()
         silencePlayer = nil
+        print("🤫 Silent heartbeat stopped")
     }
 }
 

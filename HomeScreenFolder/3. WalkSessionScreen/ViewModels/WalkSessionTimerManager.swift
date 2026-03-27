@@ -4,9 +4,11 @@
 //
 //  Created by AnnElaine on 3/26/26.
 //
+//  FIXED 3/26/26:
+//  - Uses RunLoop.common mode for background execution
+//  - Timer continues running even when app is backgrounded
+//
 //  TIMER SUB-MANAGER — handles all timer-related operations.
-//  Separated from WalkSessionViewModel to maintain single responsibility.
-//  Manages: timer ticking, background time tracking, amplitude animation, time formatting.
 //
 
 import Foundation
@@ -16,7 +18,6 @@ import SwiftUI
 
 final class WalkSessionTimerManager {
     
-    // MARK: - Private State
     private var timerCancellable: AnyCancellable?
     private var amplitudeLink: CADisplayLink?
     private var backgroundTime: Date?
@@ -26,9 +27,16 @@ final class WalkSessionTimerManager {
     
     func startTimer(onTick: @escaping () -> Void) {
         stopTimer()
+        
+        // CRITICAL: Use .common run loop mode
+        // This ensures timer continues in background
         timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
             .autoconnect()
-            .sink { _ in onTick() }
+            .sink { _ in
+                onTick()
+            }
+        
+        print("⏱️ Timer started (runs in background)")
     }
     
     func stopTimer() {
@@ -49,8 +57,13 @@ final class WalkSessionTimerManager {
         case .active:
             if let bgTime = backgroundTime, isRunning {
                 let elapsed = Date().timeIntervalSince(bgTime)
-                print("📱 App resumed. Deducting \(elapsed)s background time")
-                onBackgroundTimeDeducted(elapsed)
+                print("📱 App resumed after \(Int(elapsed))s")
+                
+                // Even though timer kept running, verify we're still in sync
+                if elapsed > 2 {
+                    print("⚠️ Detected background time drift of \(Int(elapsed))s")
+                    onBackgroundTimeDeducted(elapsed)
+                }
                 backgroundTime = nil
             }
             
@@ -96,8 +109,7 @@ final class WalkSessionTimerManager {
     }
     
     @objc private func animateAmplitudes() {
-        // This runs on every display frame but we don't update here
-        // The actual update happens in updateAmplitudes() called from timer tick
+        // Display link callback
     }
     
     // MARK: - Cleanup
@@ -107,4 +119,3 @@ final class WalkSessionTimerManager {
         stopAmplitudeAnimation()
     }
 }
-
