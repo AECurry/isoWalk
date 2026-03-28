@@ -30,7 +30,7 @@ final class MusicPlayerService: NSObject, AVAudioPlayerDelegate {
     
     private override init() {
         super.init()
-        createSilentAudioFile()
+        loadSilentAudioFile() // ← CHANGED: Now loads from bundle instead of creating
         AudioSessionManager.shared.configureForBackgroundPlayback()
     }
     
@@ -172,49 +172,30 @@ final class MusicPlayerService: NSObject, AVAudioPlayerDelegate {
     
     // MARK: - Silent Heartbeat
     
-    private func createSilentAudioFile() {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("isoWalk_silence.wav")
-        
-        if FileManager.default.fileExists(atPath: url.path) {
-            silenceFileURL = url
-            print("✅ Silent audio file already exists")
+    private func loadSilentAudioFile() {
+        // Load the pre-made silent audio file from the bundle
+        guard let url = Bundle.main.url(forResource: "silence-heartbeat", withExtension: "wav") else {
+            print("❌ CRITICAL: silence-heartbeat.wav not found in bundle!")
+            print("   This will prevent background execution for No Music mode")
             return
         }
         
-        guard let format = AVAudioFormat(standardFormatWithSampleRate: 44100.0, channels: 1) else {
-            print("❌ Failed to create audio format")
-            return
-        }
-        
-        do {
-            let audioFile = try AVAudioFile(forWriting: url, settings: format.settings)
-            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 44100) else {
-                print("❌ Failed to create audio buffer")
-                return
-            }
-            
-            buffer.frameLength = buffer.frameCapacity
-            
-            if let channelData = buffer.floatChannelData {
-                for i in 0..<Int(buffer.frameLength) {
-                    channelData[0][i] = 0.0
-                }
-            }
-            
-            try audioFile.write(from: buffer)
-            silenceFileURL = url
-            print("✅ Silent WAV file created at: \(url.path)")
-        } catch {
-            print("❌ Failed to create silent audio file: \(error)")
-        }
+        silenceFileURL = url
+        print("✅ Silent audio file loaded from bundle: \(url.lastPathComponent)")
     }
     
     func startSilentHeartbeat() {
+        // Ensure we have the silent audio file
+        if silenceFileURL == nil {
+            loadSilentAudioFile()
+        }
+        
         guard let url = silenceFileURL else {
-            print("❌ Silent audio file not ready - cannot start heartbeat")
+            print("❌ Silent audio file not available - cannot start heartbeat")
             return
         }
         
+        // Don't restart if already playing
         if let player = silencePlayer, player.isPlaying {
             print("🤫 Silent heartbeat already running")
             return
@@ -222,20 +203,25 @@ final class MusicPlayerService: NSObject, AVAudioPlayerDelegate {
         
         do {
             silencePlayer = try AVAudioPlayer(contentsOf: url)
-            silencePlayer?.numberOfLoops = -1
-            silencePlayer?.volume = 0.01
-            silencePlayer?.prepareToPlay() // ← FIXED: Capital 'P'
+            silencePlayer?.numberOfLoops = -1 // Loop forever
+            silencePlayer?.volume = 0.0 // Volume at ZERO - silent but iOS recognizes it
+            silencePlayer?.prepareToPlay()
             silencePlayer?.play()
             
-            print("🤫 Silent heartbeat started - app will stay alive in background")
+            print("🤫 Silent heartbeat started using real audio file at volume 0.0")
+            print("   File: \(url.lastPathComponent)")
+            print("   Is playing: \(silencePlayer?.isPlaying ?? false)")
         } catch {
             print("❌ Could not start silence player: \(error)")
         }
     }
     
     func stopSilentHeartbeat() {
+        if let player = silencePlayer {
+            print("🤫 Stopping silent heartbeat (was playing: \(player.isPlaying))")
+        }
         silencePlayer?.stop()
         silencePlayer = nil
-        print("🤫 Silent heartbeat stopped")
     }
 }
+
