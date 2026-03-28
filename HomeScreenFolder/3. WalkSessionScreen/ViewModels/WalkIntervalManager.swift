@@ -6,7 +6,7 @@
 //
 //
 //  Manages the sub-intervals (normal/brisk pacing) during a walk.
-//  Triggers voice and chime cues when it's time to change pace.
+//  Triggers custom .mp3 voice cues when it's time to change pace.
 //
 
 import Foundation
@@ -18,6 +18,16 @@ final class WalkIntervalManager {
     private var currentIntervalIndex: Int = 0
     private var timeRemaining: TimeInterval = 0
     private var currentMusicMode: MusicMode = .noMusic
+    
+    // Helper to automatically pick the correct custom voice based on user preference
+    private var voicePrefix: String {
+        // If the user hasn't made a choice yet, default to Jacqueline
+        if UserDefaults.standard.object(forKey: "useFemaleVoice") == nil {
+            return "Jacqueline"
+        }
+        // Otherwise, use their saved preference
+        return UserDefaults.standard.bool(forKey: "useFemaleVoice") ? "Jacqueline" : "William"
+    }
     
     // MARK: - Setup
     func configure(duration: DurationOptions, pace: PaceOptions, musicMode: MusicMode) {
@@ -38,10 +48,11 @@ final class WalkIntervalManager {
         // Only announce for No Music and My Music modes
         if currentMusicMode != .isoWalkTracks {
             // Add a tiny delay so music settles first
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                MusicPlayerService.shared.playChimeAndVoiceCue(
-                    message: "Starting your isoWalk session. Begin at a normal pace."
-                )
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                guard let self = self else { return }
+                
+                // Plays either Jacqueline-StartingSession.mp3 or William-StartingSession.mp3
+                MusicPlayerService.shared.playVoiceCue(filename: "\(self.voicePrefix)-StartingSession")
             }
         }
     }
@@ -73,11 +84,12 @@ final class WalkIntervalManager {
         
         // Only announce for No Music and My Music modes
         if currentMusicMode != .isoWalkTracks {
-            let message = nextInterval.pace == .brisk
-                ? "Time to speed up. Switch to a brisk pace."
-                : "Time to slow down. Return to your normal pace."
+            // Determine which custom audio file to play based on the new pace
+            let filename = nextInterval.pace == .brisk
+                ? "\(voicePrefix)-BriskPace"
+                : "\(voicePrefix)-NormalPace"
                 
-            MusicPlayerService.shared.playChimeAndVoiceCue(message: message)
+            MusicPlayerService.shared.playVoiceCue(filename: filename)
         }
     }
 }

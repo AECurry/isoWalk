@@ -48,10 +48,13 @@ struct CustomVoiceToggle: View {
         .clipShape(Capsule())
         .padding(.horizontal, 40)
         
-        // Audio playback
+        // Audio playback preview
         .onChange(of: useFemaleVoice) { oldValue, newValue in
-            let voiceName = newValue ? "Female" : "Male"
-            MusicPlayerService.shared.playChimeAndVoiceCue(message: "\(voiceName) voice selected. I will guide your intervals.")
+            let voicePrefix = newValue ? "Jacqueline" : "William"
+            
+            // Play the Starting Session mp3 as a preview so they can hear the voice!
+            MusicPlayerService.shared.playVoiceCue(filename: "\(voicePrefix)-StartingSession")
         }
     }
 }
+

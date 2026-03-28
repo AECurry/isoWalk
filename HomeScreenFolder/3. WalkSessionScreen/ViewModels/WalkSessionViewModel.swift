@@ -18,7 +18,6 @@ import SwiftData
 @Observable
 final class WalkSessionViewModel {
     
-    // MARK: - State
     var timerState: TimerState = .stopped
     var remainingTime: TimeInterval = 0
     var formattedTime: String = "00:00"
@@ -26,20 +25,23 @@ final class WalkSessionViewModel {
     var amplitudes: [Float] = Array(repeating: 0.1, count: 30)
     var isAudioPlaying = false
     var activeSession: WalkSessionOptions?
-    
-    // MARK: - Database Context
     var modelContext: ModelContext?
     
-    // MARK: - Private
     private var currentMusicMode: MusicMode = .noMusic
     private var wasRunningBeforeAlert = false
     
-    // Sub-Managers
     private var musicManager = MusicSessionManager()
     private var intervalManager = WalkIntervalManager()
     private var timerManager = WalkSessionTimerManager()
+    private var stateManager = TimerStateManager()
     
-    // MARK: - Computed
+    private var voicePrefix: String {
+        if UserDefaults.standard.object(forKey: "useFemaleVoice") == nil {
+            return "Jacqueline"
+        }
+        return UserDefaults.standard.bool(forKey: "useFemaleVoice") ? "Jacqueline" : "William"
+    }
+    
     private var totalDuration: TimeInterval {
         activeSession?.durationInSeconds ?? 0
     }
@@ -92,51 +94,58 @@ final class WalkSessionViewModel {
     }
     
     func playPause() {
-        switch timerState {
-        case .stopped:
-            timerState = .running
-            isAudioPlaying = currentMusicMode != .noMusic
-            
-            timerManager.startTimer { [weak self] in
-                self?.onTimerTick()
-            }
-            
-            musicManager.start(remainingTime: remainingTime)
-            
-            if currentMusicMode == .noMusic {
-                MusicPlayerService.shared.startSilentHeartbeat()
-            }
-            
-            if remainingTime == totalDuration {
-                intervalManager.announceStart()
-            }
-            
-        case .running:
-            timerState = .paused
-            isAudioPlaying = false
-            timerManager.stopTimer()
-            musicManager.pause()
-            
-            if var session = activeSession {
+        let result = stateManager.handlePlayPause(
+            currentState: timerState,
+            currentMusicMode: currentMusicMode,
+            remainingTime: remainingTime,
+            totalDuration: totalDuration,
+            onStartTimer: { [weak self] in
+                self?.timerManager.startTimer { self?.onTimerTick() }
+            },
+            onStopTimer: { [weak self] in
+                self?.timerManager.stopTimer()
+            },
+            onStartMusic: { [weak self] in
+                guard let self = self else { return }
+                self.musicManager.start(remainingTime: self.remainingTime)
+                
+                // CRITICAL: Start silent heartbeat for No Music mode
+                if self.currentMusicMode == .noMusic {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        MusicPlayerService.shared.startSilentHeartbeat()
+                        print("🤫 Silent heartbeat started for .noMusic mode")
+                    }
+                }
+            },
+            onPauseMusic: { [weak self] in
+                self?.musicManager.pause()
+                // DON'T stop silent heartbeat on pause - keep app alive
+            },
+            onResumeMusic: { [weak self] in
+                guard let self = self else { return }
+                self.musicManager.resume()
+                
+                // CRITICAL: Restart silent heartbeat for No Music mode
+                if self.currentMusicMode == .noMusic {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        MusicPlayerService.shared.startSilentHeartbeat()
+                        print("🤫 Silent heartbeat restarted for .noMusic mode")
+                    }
+                }
+            },
+            onAnnounceStart: { [weak self] in
+                self?.intervalManager.announceStart()
+            },
+            onSessionPaused: { [weak self] in
+                guard var session = self?.activeSession else { return }
                 session.wasPaused = true
-                activeSession = session
+                self?.activeSession = session
                 WalkSessionOptions.saveActive(session)
             }
-            
-        case .paused:
-            timerState = .running
-            isAudioPlaying = currentMusicMode != .noMusic
-            
-            timerManager.startTimer { [weak self] in
-                self?.onTimerTick()
-            }
-            
-            musicManager.resume()
-            
-            if currentMusicMode == .noMusic {
-                MusicPlayerService.shared.startSilentHeartbeat()
-            }
-        }
+        )
+        
+        timerState = result.newState
+        isAudioPlaying = result.isAudioPlaying
     }
     
     func stopSession() {
@@ -178,6 +187,7 @@ final class WalkSessionViewModel {
             
             if currentMusicMode == .noMusic {
                 MusicPlayerService.shared.startSilentHeartbeat()
+                print("🤫 Restarted silent heartbeat after alert")
             }
         }
         wasRunningBeforeAlert = false
@@ -194,9 +204,25 @@ final class WalkSessionViewModel {
         timerManager.handleScenePhase(phase, isRunning: timerState == .running) { [weak self] elapsed in
             self?.intervalManager.deductBackgroundTime(elapsed)
         }
+        
+        switch phase {
+        case .background:
+            print("📱 App entered background - timer should continue if running")
+            // DEBUG: Check if silent heartbeat is actually playing
+            if currentMusicMode == .noMusic {
+                print("🤫 DEBUG: Checking silent heartbeat status...")
+                MusicPlayerService.shared.startSilentHeartbeat() // Ensure it's running
+            }
+        case .active:
+            print("📱 App entered foreground")
+        case .inactive:
+            print("📱 App became inactive")
+        @unknown default:
+            break
+        }
     }
     
-    // MARK: - Timer Tick Handler
+    // MARK: - Timer Tick
     
     private func onTimerTick() {
         guard remainingTime > 0 else {
@@ -228,44 +254,28 @@ final class WalkSessionViewModel {
         }
         
         print("🏁 completeSession() called")
-        print("   Active session exists: YES")
-        print("   Duration: \(session.duration.displayName)")
-        print("   Pace: \(session.pace.displayName)")
         
-        MusicPlayerService.shared.playChimeAndVoiceCue(
-            message: "Walk session complete. Great job!"
-        )
+        MusicPlayerService.shared.playVoiceCue(filename: "\(voicePrefix)-CompletedSession")
         
         if let context = modelContext {
-            print("💾 Saving session to database...")
-            print("   Duration: \(session.duration.displayName)")
-            print("   Pace: \(session.pace.displayName)")
-            print("   Music: \(session.music.displayName)")
-            print("   Start: \(session.startTime)")
-            print("   Was Paused: \(session.wasPaused)")
-            
-            let completed = WalkSessionOptions.completeSession(session, context: context)
-            
-            print("✅ Session saved with ID: \(completed.id)")
-            
-            let descriptor = FetchDescriptor<CompletedSession>()
-            do {
-                let all = try context.fetch(descriptor)
-                print("📊 Total sessions in database after save: \(all.count)")
-                
-                for (index, s) in all.enumerated() {
-                    print("   Session \(index + 1): \(s.duration.displayName), \(s.startTime)")
-                }
-            } catch {
-                print("❌ Failed to fetch sessions after save: \(error)")
-            }
-            
-            DailyReminderScheduler.refreshSchedule(context: context)
+            saveToDatabase(session: session, context: context)
         } else {
             print("❌ CRITICAL: modelContext is NIL! Session will NOT be saved!")
-            print("   This means WalkSessionView didn't set the modelContext property!")
         }
         
+        cleanupAfterCompletion()
+    }
+    
+    private func saveToDatabase(session: WalkSessionOptions, context: ModelContext) {
+        print("💾 Saving session to database...")
+        
+        let completed = WalkSessionOptions.completeSession(session, context: context)
+        print("✅ Session saved with ID: \(completed.id)")
+        
+        DailyReminderScheduler.refreshSchedule(context: context)
+    }
+    
+    private func cleanupAfterCompletion() {
         activeSession = nil
         timerState = .stopped
         remainingTime = 0

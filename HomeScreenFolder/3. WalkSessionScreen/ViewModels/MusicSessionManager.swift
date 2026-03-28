@@ -24,6 +24,14 @@ final class MusicSessionManager {
     private var currentIntervalIndex: Int = 0
     private var intervalStartTime: TimeInterval = 0
     
+    // Helper to automatically pick the correct custom voice based on user preference
+    private var voicePrefix: String {
+        if UserDefaults.standard.object(forKey: "useFemaleVoice") == nil {
+            return "Jacqueline"
+        }
+        return UserDefaults.standard.bool(forKey: "useFemaleVoice") ? "Jacqueline" : "William"
+    }
+    
     // MARK: - Setup
     
     func configure(musicMode: MusicMode, pace: PaceOptions, duration: DurationOptions) {
@@ -47,14 +55,18 @@ final class MusicSessionManager {
     }
     
     // MARK: - Playback Control
-    
-    func start(remainingTime: TimeInterval) {
-        guard musicMode == .isoWalkTracks, !trackSequence.isEmpty else { return }
-        intervalStartTime = remainingTime
-        currentIntervalIndex = 0
-        playCurrentInterval()
-        isPlaying = true
-    }
+        
+        func start(remainingTime: TimeInterval) {
+            guard musicMode == .isoWalkTracks, !trackSequence.isEmpty else { return }
+            intervalStartTime = remainingTime
+            currentIntervalIndex = 0
+            
+            // Start the music
+            playCurrentInterval()
+            isPlaying = true
+            
+            MusicPlayerService.shared.playVoiceCue(filename: "\(voicePrefix)-StartingSession")
+        }
     
     func pause() {
         guard musicMode == .isoWalkTracks else { return }
@@ -130,17 +142,13 @@ final class MusicSessionManager {
         
         let nextItem = trackSequence[currentIntervalIndex]
         
-        let message: String
-        if nextItem.track.pace == .brisk {
-            message = "Time to speed up. Switch to a brisk pace."
-        } else if nextItem.isCooldown {
-            message = "Final cooldown. Return to your normal pace."
-        } else {
-            message = "Time to slow down. Return to your normal pace."
-        }
+        // Determine which custom audio file to play
+        let filename = nextItem.track.pace == .brisk
+            ? "\(voicePrefix)-BriskPace"
+            : "\(voicePrefix)-NormalPace" // Handles both normal pace and the final cooldown
         
         // Play voice cue OVER the music
-        MusicPlayerService.shared.playChimeAndVoiceCue(message: message)
+        MusicPlayerService.shared.playVoiceCue(filename: filename)
     }
 }
 
