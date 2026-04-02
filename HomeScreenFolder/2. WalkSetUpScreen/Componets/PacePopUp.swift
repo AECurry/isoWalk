@@ -34,7 +34,7 @@ struct PacePopUp: View {
 
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
-            Text("Select Pace")
+            Text("1. Select Pace")
                 .font(.custom("Inter-Bold", size: 18))
                 .foregroundColor(theme.primaryTextColor)
                 .frame(width: width, alignment: .leading)

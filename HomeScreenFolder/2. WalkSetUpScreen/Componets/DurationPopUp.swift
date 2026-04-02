@@ -31,7 +31,7 @@ struct DurationPopUp: View {
 
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
-            Text("Select Duration")
+            Text("2. Select Duration")
                 .font(.custom("Inter-SemiBold", size: 18))
                 .foregroundColor(theme.primaryTextColor)
                 .frame(width: width, alignment: .leading)

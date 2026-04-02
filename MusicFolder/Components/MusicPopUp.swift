@@ -38,7 +38,7 @@ struct MusicPopUp: View {
     
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
-            Text("Select Music")
+            Text("3. Select Music")
                 .font(.custom("Inter-SemiBold", size: 18))
                 .foregroundColor(theme.primaryTextColor) // Now uses your active theme's text color
                 .frame(width: width, alignment: .leading)
