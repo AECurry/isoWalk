@@ -28,6 +28,12 @@ final class WalkSessionViewModel {
     var activeSession: WalkSessionOptions?
     var modelContext: ModelContext?
     
+    var showCompletionPopup: Bool = false
+    
+    // ⚠️ Developer Test Mode Properties
+    var isTestModeActive: Bool = false
+    private let testDuration: TimeInterval = 90
+    
     private var currentMusicMode: MusicMode = .noMusic
     private var wasRunningBeforeAlert = false
     
@@ -44,7 +50,7 @@ final class WalkSessionViewModel {
     }
     
     private var totalDuration: TimeInterval {
-        activeSession?.durationInSeconds ?? 0
+        return isTestModeActive ? testDuration : (activeSession?.durationInSeconds ?? 0)
     }
     
     deinit {
@@ -59,10 +65,14 @@ final class WalkSessionViewModel {
         duration: DurationOptions,
         pace: PaceOptions,
         musicMode: MusicMode,
-        musicSelection: MusicSelection
+        musicSelection: MusicSelection,
+        isTesting: Bool // Injected from the View's toggle
     ) {
         WalkSessionOptions.clearActive()
         activeSession = nil
+        showCompletionPopup = false
+        
+        self.isTestModeActive = isTesting
         
         let session = WalkSessionOptions(
             duration: duration,
@@ -75,7 +85,8 @@ final class WalkSessionViewModel {
         activeSession = session
         WalkSessionOptions.saveActive(session)
         
-        remainingTime = session.durationInSeconds
+        // Dynamically set time based on Test Mode
+        remainingTime = isTestModeActive ? testDuration : session.durationInSeconds
         progress = 0
         timerState = .stopped
         isAudioPlaying = false
@@ -91,7 +102,7 @@ final class WalkSessionViewModel {
             self?.amplitudes = newAmplitudes
         }
         
-        print("✅ Session initialized: \(duration.displayName), \(pace.displayName), \(musicMode.displayName)")
+        print("✅ Session initialized. Test Mode: \(isTesting)")
     }
     
     func playPause() {
@@ -110,32 +121,34 @@ final class WalkSessionViewModel {
                 guard let self = self else { return }
                 self.musicManager.start(remainingTime: self.remainingTime)
                 
-                // CRITICAL: Start silent heartbeat for No Music mode
                 if self.currentMusicMode == .noMusic {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         MusicPlayerService.shared.startSilentHeartbeat()
-                        print("🤫 Silent heartbeat started for .noMusic mode")
                     }
                 }
             },
             onPauseMusic: { [weak self] in
                 self?.musicManager.pause()
-                // DON'T stop silent heartbeat on pause - keep app alive
             },
             onResumeMusic: { [weak self] in
                 guard let self = self else { return }
                 self.musicManager.resume()
                 
-                // CRITICAL: Restart silent heartbeat for No Music mode
                 if self.currentMusicMode == .noMusic {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         MusicPlayerService.shared.startSilentHeartbeat()
-                        print("🤫 Silent heartbeat restarted for .noMusic mode")
                     }
                 }
             },
             onAnnounceStart: { [weak self] in
-                self?.intervalManager.announceStart()
+                guard let self = self else { return }
+                if self.isTestModeActive {
+                    // Force the explicit test starting cue
+                    print("🗣️ Triggering test voice cue: StartingSession")
+                    MusicPlayerService.shared.playVoiceCue(filename: "\(self.voicePrefix)-StartingSession")
+                } else {
+                    self.intervalManager.announceStart()
+                }
             },
             onSessionPaused: { [weak self] in
                 guard var session = self?.activeSession else { return }
@@ -155,7 +168,7 @@ final class WalkSessionViewModel {
         MusicPlayerService.shared.stopSilentHeartbeat()
         
         if let session = activeSession {
-            remainingTime = session.durationInSeconds
+            remainingTime = isTestModeActive ? testDuration : session.durationInSeconds
             progress = 0
             timerManager.updateFormattedTime(remainingTime: remainingTime) { [weak self] formatted in
                 self?.formattedTime = formatted
@@ -188,7 +201,6 @@ final class WalkSessionViewModel {
             
             if currentMusicMode == .noMusic {
                 MusicPlayerService.shared.startSilentHeartbeat()
-                print("🤫 Restarted silent heartbeat after alert")
             }
         }
         wasRunningBeforeAlert = false
@@ -208,16 +220,11 @@ final class WalkSessionViewModel {
         
         switch phase {
         case .background:
-            print("📱 App entered background - timer should continue if running")
-            // DEBUG: Check if silent heartbeat is actually playing
             if currentMusicMode == .noMusic {
-                print("🤫 DEBUG: Checking silent heartbeat status...")
-                MusicPlayerService.shared.startSilentHeartbeat() // Ensure it's running
+                MusicPlayerService.shared.startSilentHeartbeat()
             }
-        case .active:
-            print("📱 App entered foreground")
-        case .inactive:
-            print("📱 App became inactive")
+        case .active, .inactive:
+            break
         @unknown default:
             break
         }
@@ -234,9 +241,26 @@ final class WalkSessionViewModel {
         remainingTime -= 1
         progress = 1 - (remainingTime / totalDuration)
         
-        intervalManager.tick()
-        
-        isBriskInterval = intervalManager.isBriskInterval
+        if isTestModeActive {
+            // ⚠️ EXCLUSIVE TEST MODE LOGIC (Bypasses regular interval manager)
+            let shouldBeBrisk = (remainingTime <= 60 && remainingTime > 30)
+            
+            if shouldBeBrisk != isBriskInterval {
+                if shouldBeBrisk {
+                    print("🗣️ Triggering test voice cue: BriskPace")
+                    MusicPlayerService.shared.playVoiceCue(filename: "\(voicePrefix)-BriskPace")
+                } else {
+                    print("🗣️ Triggering test voice cue: NormalPace")
+                    MusicPlayerService.shared.playVoiceCue(filename: "\(voicePrefix)-NormalPace")
+                }
+            }
+            isBriskInterval = shouldBeBrisk
+            
+        } else {
+            // 🟢 REAL SESSION LOGIC
+            intervalManager.tick()
+            isBriskInterval = intervalManager.isBriskInterval
+        }
         
         musicManager.checkIntervalChange(remainingTime: remainingTime)
         
@@ -252,32 +276,27 @@ final class WalkSessionViewModel {
     // MARK: - Complete Session
     
     private func completeSession() {
-        guard let session = activeSession else {
-            print("❌ completeSession called but activeSession is nil!")
-            return
-        }
+        guard let session = activeSession else { return }
         
         print("🏁 completeSession() called")
-        
         MusicPlayerService.shared.playVoiceCue(filename: "\(voicePrefix)-CompletedSession")
         
         if let context = modelContext {
             saveToDatabase(session: session, context: context)
-        } else {
-            print("❌ CRITICAL: modelContext is NIL! Session will NOT be saved!")
         }
         
+        showCompletionPopup = true
         cleanupAfterCompletion()
     }
     
     private func saveToDatabase(session: WalkSessionOptions, context: ModelContext) {
-        print("💾 Saving session to database...")
-        
-        let completed = WalkSessionOptions.completeSession(session, context: context)
-        print("✅ Session saved with ID: \(completed.id)")
-        
-        DailyReminderScheduler.refreshSchedule(context: context)
-    }
+            print("💾 Saving session to database...")
+            
+            let completed = WalkSessionOptions.completeSession(session, context: context)
+            print("✅ Session saved with ID: \(completed.id)")
+            
+            DailyReminderScheduler.refreshSchedule(context: context)
+        }
     
     private func cleanupAfterCompletion() {
         activeSession = nil
@@ -292,8 +311,6 @@ final class WalkSessionViewModel {
         timerManager.updateFormattedTime(remainingTime: 0) { [weak self] formatted in
             self?.formattedTime = formatted
         }
-        
-        print("🏁 completeSession() finished")
     }
 }
 

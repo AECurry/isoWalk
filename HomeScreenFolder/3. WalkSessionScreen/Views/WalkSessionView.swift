@@ -23,6 +23,10 @@ struct WalkSessionView: View {
     
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
+    
+    // Tracks the state of the Developer Toggle
+    @AppStorage("isDeveloperTestMode") private var isTestModeActive: Bool = false
+    
     private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
     
     let duration: DurationOptions
@@ -31,12 +35,11 @@ struct WalkSessionView: View {
     let musicSelection: MusicSelection
     var onDismissAll: (() -> Void)?
     
-    // NEW: We calculate the BPM dynamically based on the live workout phase
     private var currentBPM: Int {
         if viewModel.isBriskInterval {
-            return 140 // Fast pace for brisk minutes
+            return 140
         } else {
-            return 100 // Recovery pace for the 3 normal minutes
+            return 100
         }
     }
     
@@ -54,9 +57,8 @@ struct WalkSessionView: View {
                 
                 isoWalkThemeImageArea(theme: theme, isAnimated: false)
                     .contentShape(Rectangle())
-                    .allowsHitTesting(true) // Ensures the view is interactive
-                    .zIndex(1) // Keeps it in front of background layers
-                // use one finger and double tap to activate
+                    .allowsHitTesting(true)
+                    .zIndex(1)
                     .onTapGesture(count: 2) {
                         print("🫵 Double-tap detected! Triggering \(currentBPM) BPM haptics.")
                         hapticManager.playPace(bpm: currentBPM)
@@ -79,6 +81,10 @@ struct WalkSessionView: View {
                         onPlayPause: { viewModel.playPause() },
                         onStop: { coordinator.handleStopButtonTap() }
                     )
+                    
+                    // NEW: The Developer Toggle View injected here
+                    DeveloperTestToggleView(isOn: $isTestModeActive)
+                        .padding(.top, 20)
                 }
                 .padding(.top, 8)
                 
@@ -86,7 +92,17 @@ struct WalkSessionView: View {
             }
             .padding(.bottom, 40)
             
+            // LAYER 3: Completion Popup Overlay
+            if viewModel.showCompletionPopup {
+                CompletionPopupView {
+                    coordinator.handleCompletionProgressTap()
+                }
+                .zIndex(100)
+                .transition(.opacity.combined(with: .scale))
+            }
+            
         }
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.showCompletionPopup)
         .background {
             themeBackground
         }
@@ -114,7 +130,19 @@ struct WalkSessionView: View {
                 duration: duration,
                 pace: pace,
                 musicMode: musicMode,
-                musicSelection: musicSelection
+                musicSelection: musicSelection,
+                isTesting: isTestModeActive // Passes current toggle state
+            )
+        }
+        // INSTANTLY adjusts session if the teacher flips the toggle mid-screen
+        .onChange(of: isTestModeActive) { _, newValue in
+            viewModel.stopSession()
+            viewModel.initializeSession(
+                duration: duration,
+                pace: pace,
+                musicMode: musicMode,
+                musicSelection: musicSelection,
+                isTesting: newValue
             )
         }
         .onDisappear {

@@ -27,6 +27,10 @@ final class WalkSessionCoordinator {
     var onResumeAfterAlert: (() -> Void)?
 
     // MARK: - Triggers (called by view buttons and nav bar)
+    func handleCompletionProgressTap() {
+            // Change '1' to whatever integer index represents your Progress tab
+            onNavigateToTab?(1)
+        }
 
     func handleBackButtonTap() {
         onPauseForAlert?()
