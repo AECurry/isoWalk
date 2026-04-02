@@ -9,7 +9,6 @@
 //  for the entire app lifetime.
 //
 
-
 import SwiftUI
 import SwiftData
 
@@ -28,6 +27,20 @@ struct isoWalkApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
+    
+    // MARK: - Initialization
+    
+    init() {
+        // Set default pace to "steady" (3-3) on first launch
+        if UserDefaults.standard.string(forKey: "lastSelectedPace") == nil {
+            UserDefaults.standard.set("steady", forKey: "lastSelectedPace")
+        }
+        
+        // Set default duration to "thirty" minutes on first launch
+        if UserDefaults.standard.string(forKey: "lastSelectedDuration") == nil {
+            UserDefaults.standard.set("thirty", forKey: "lastSelectedDuration")
+        }
+    }
 
     var body: some Scene {
         WindowGroup {

@@ -52,8 +52,8 @@ struct TrackSequenceEditor: View {
                         Spacer(minLength: 40)  // Extra padding at bottom
                     }
                     .padding(.horizontal, 24)
-                    .padding(.top, 16)
-                    .padding(.bottom, 100)
+                    .padding(.top, 32)
+                    .padding(.bottom, 80)
                 }
             }
             .navigationTitle("Customize Playlist")
@@ -233,7 +233,7 @@ struct TrackSequenceEditor: View {
             Spacer()
             
             // Drag handle
-            Image(systemName: "line.3.horizontal")
+            Image(systemName: "chevron.right")
                 .font(.system(size: 16))
                 .foregroundColor(isoWalkColors.slateGray)
         }

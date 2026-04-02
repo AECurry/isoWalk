@@ -53,7 +53,7 @@ struct CustomVoiceToggle: View {
             let voicePrefix = newValue ? "Jacqueline" : "William"
             
             // Play the Starting Session mp3 as a preview so they can hear the voice!
-            MusicPlayerService.shared.playVoiceCue(filename: "\(voicePrefix)-StartingSession")
+            MusicPlayerService.shared.playVoiceCue(filename: "\(voicePrefix)-Greeting")
         }
     }
 }

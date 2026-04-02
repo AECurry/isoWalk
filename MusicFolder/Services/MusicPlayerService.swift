@@ -30,7 +30,7 @@ final class MusicPlayerService: NSObject, AVAudioPlayerDelegate {
     
     private override init() {
         super.init()
-        loadSilentAudioFile() // ← CHANGED: Now loads from bundle instead of creating
+        loadSilentAudioFile()
         AudioSessionManager.shared.configureForBackgroundPlayback()
     }
     
@@ -44,8 +44,8 @@ final class MusicPlayerService: NSObject, AVAudioPlayerDelegate {
         
         let filename = track.filename(forDuration: duration)
         
-        guard let url = Bundle.main.url(forResource: filename, withExtension: "wav") else {
-            print("❌ Audio file not found: \(filename).wav")
+        guard let url = Bundle.main.url(forResource: filename, withExtension: "mp3") else {
+            print("❌ Audio file not found: \(filename).mp3")
             return
         }
         
@@ -174,8 +174,8 @@ final class MusicPlayerService: NSObject, AVAudioPlayerDelegate {
     
     private func loadSilentAudioFile() {
         // Load the pre-made silent audio file from the bundle
-        guard let url = Bundle.main.url(forResource: "silence-heartbeat", withExtension: "wav") else {
-            print("❌ CRITICAL: silence-heartbeat.wav not found in bundle!")
+        guard let url = Bundle.main.url(forResource: "silence-heartbeat", withExtension: "mp3") else { 
+            print("❌ CRITICAL: silence-heartbeat.mp3 not found in bundle!")
             print("   This will prevent background execution for No Music mode")
             return
         }

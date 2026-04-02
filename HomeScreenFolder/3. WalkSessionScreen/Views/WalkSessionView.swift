@@ -14,10 +14,13 @@ import SwiftData
 
 struct WalkSessionView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext // NEW: Grabs the database connection
+    @Environment(\.modelContext) private var modelContext
     @Binding var selectedTab: Int
+    
     @State private var viewModel = WalkSessionViewModel()
     @State private var coordinator = WalkSessionCoordinator()
+    @State private var hapticManager = HapticPaceManager()
+    
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
     private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
@@ -28,11 +31,19 @@ struct WalkSessionView: View {
     let musicSelection: MusicSelection
     var onDismissAll: (() -> Void)?
     
+    // NEW: We calculate the BPM dynamically based on the live workout phase
+    private var currentBPM: Int {
+        if viewModel.isBriskInterval {
+            return 140 // Fast pace for brisk minutes
+        } else {
+            return 100 // Recovery pace for the 3 normal minutes
+        }
+    }
+    
     var body: some View {
-        // 1. ZStack top alignment anchors everything to the top safe area
         ZStack(alignment: .top) {
             
-            // LAYER 1: Floating Navigation (Matches WalkSetUpView)
+            // LAYER 1: Floating Navigation
             IsoWalkBackButton(theme: theme, onBack: {
                 coordinator.handleBackButtonTap()
             })
@@ -41,10 +52,15 @@ struct WalkSessionView: View {
             // LAYER 2: Main Content
             VStack(spacing: 0) {
                 
-                // Shared Theme Image
-                // This is now the first item in a top-aligned VStack.
-                // It automatically inherits the 80pt top padding built into the component.
                 isoWalkThemeImageArea(theme: theme, isAnimated: false)
+                    .contentShape(Rectangle())
+                    .allowsHitTesting(true) // Ensures the view is interactive
+                    .zIndex(1) // Keeps it in front of background layers
+                // use one finger and double tap to activate
+                    .onTapGesture(count: 2) {
+                        print("🫵 Double-tap detected! Triggering \(currentBPM) BPM haptics.")
+                        hapticManager.playPace(bpm: currentBPM)
+                    }
                 
                 VStack(spacing: 24) {
                     TimerDisplay(
@@ -54,7 +70,8 @@ struct WalkSessionView: View {
                     
                     AudioVisualizer(
                         amplitudes: viewModel.amplitudes,
-                        isActive: viewModel.isAudioPlaying
+                        isActive: viewModel.isAudioPlaying,
+                        bpm: currentBPM
                     )
                     
                     PlaybackControls(
@@ -67,33 +84,8 @@ struct WalkSessionView: View {
                 
                 Spacer()
             }
-            .padding(.bottom, 100) // Preserves clearance for the BottomNavBar
+            .padding(.bottom, 40)
             
-            // LAYER 3: Bottom Nav Bar
-            // Wrapped in a VStack with a Spacer to push it to the bottom
-            VStack {
-                Spacer()
-                BottomNavBar(
-                    selectedTab: $selectedTab,
-                    onTabReTap: {
-                        if viewModel.remainingTime <= 0 || viewModel.timerState == .stopped {
-                            selectedTab = selectedTab
-                            onDismissAll?()
-                        } else {
-                            coordinator.handleTabTap(selectedTab)
-                        }
-                    },
-                    onTabChange: { tab in
-                        if viewModel.remainingTime <= 0 || viewModel.timerState == .stopped {
-                            selectedTab = tab
-                            onDismissAll?()
-                        } else {
-                            coordinator.handleTabTap(tab)
-                        }
-                    }
-                )
-            }
-            .zIndex(5)
         }
         .background {
             themeBackground
@@ -104,7 +96,6 @@ struct WalkSessionView: View {
             let vm = viewModel
             let dismissAll = onDismissAll
             
-            // NEW: Hands the database connection to the ViewModel to save Progress!
             vm.modelContext = modelContext
             
             c.onPauseForAlert    = { vm.pauseForAlert() }

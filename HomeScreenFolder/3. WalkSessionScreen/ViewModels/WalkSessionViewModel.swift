@@ -24,6 +24,7 @@ final class WalkSessionViewModel {
     var progress: Double = 0
     var amplitudes: [Float] = Array(repeating: 0.1, count: 30)
     var isAudioPlaying = false
+    var isBriskInterval: Bool = false
     var activeSession: WalkSessionOptions?
     var modelContext: ModelContext?
     
@@ -234,6 +235,9 @@ final class WalkSessionViewModel {
         progress = 1 - (remainingTime / totalDuration)
         
         intervalManager.tick()
+        
+        isBriskInterval = intervalManager.isBriskInterval
+        
         musicManager.checkIntervalChange(remainingTime: remainingTime)
         
         timerManager.updateFormattedTime(remainingTime: remainingTime) { [weak self] formatted in

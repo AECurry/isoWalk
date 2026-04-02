@@ -35,8 +35,8 @@ struct PacePopUp: View {
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
             Text("Select Pace")
-                .font(.custom("Inter-SemiBold", size: 18))
-                .foregroundColor(theme.primaryTextColor) // 👉 Now uses your active theme's text color
+                .font(.custom("Inter-Bold", size: 18))
+                .foregroundColor(theme.primaryTextColor)
                 .frame(width: width, alignment: .leading)
 
             Button(action: {
@@ -131,7 +131,7 @@ struct PacePopupModal: View {
                     withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
                 }) {
                     Text("Done")
-                        .font(.custom("Inter-Medium", size: 16))
+                        .font(.custom("Inter-Medium", size: 18))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)

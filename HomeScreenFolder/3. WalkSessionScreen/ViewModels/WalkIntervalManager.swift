@@ -19,6 +19,12 @@ final class WalkIntervalManager {
     private var timeRemaining: TimeInterval = 0
     private var currentMusicMode: MusicMode = .noMusic
     
+    // 👇 NEW: Tells the ViewModel if the current active interval is brisk
+    var isBriskInterval: Bool {
+        guard currentIntervalIndex < intervals.count else { return false }
+        return intervals[currentIntervalIndex].pace == .brisk
+    }
+    
     // Helper to automatically pick the correct custom voice based on user preference
     private var voicePrefix: String {
         // If the user hasn't made a choice yet, default to Jacqueline
@@ -93,4 +99,3 @@ final class WalkIntervalManager {
         }
     }
 }
-

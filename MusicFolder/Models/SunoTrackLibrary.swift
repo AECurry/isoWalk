@@ -42,6 +42,15 @@ struct SunoTrackLibrary {
             pace: .normal,
             bpm: 112,
             style: "Jane Austen"
+        ),
+        
+        SunoTrack(
+            id: "normal_03",
+            title: "Katie Byrne",
+            baseFilename: "Katie Byrne (Normal_112",
+            pace: .normal,
+            bpm: 112,
+            style: "Irish"
         )
     ]
     

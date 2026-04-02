@@ -33,7 +33,7 @@ struct DurationPopUp: View {
         VStack(alignment: .center, spacing: 8) {
             Text("Select Duration")
                 .font(.custom("Inter-SemiBold", size: 18))
-                .foregroundColor(theme.primaryTextColor) // 👉 Now uses your active theme's text color
+                .foregroundColor(theme.primaryTextColor)
                 .frame(width: width, alignment: .leading)
 
             Button(action: {
@@ -141,7 +141,7 @@ struct DurationPopupModal: View {
                     withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
                 }) {
                     Text("Cancel")
-                        .font(.custom("Inter-Medium", size: 16))
+                        .font(.custom("Inter-Medium", size: 18))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)

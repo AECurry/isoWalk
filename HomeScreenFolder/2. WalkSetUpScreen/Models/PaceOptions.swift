@@ -9,9 +9,9 @@
 import Foundation
 
 enum PaceOptions: String, CaseIterable, Identifiable, Codable {
-    case leisurely = "3 min to 1 min pace"
-    case steady = "3 min to 2 min pace"
-    case brisk = "3 min to 3 min pace"
+    case leisurely = "3 min normal to 1 min brisk pace"
+    case steady = "3 min normal to 2 min brisk pace"
+    case brisk = "3 min normal to 3 min brisk pace"
     
     var id: String { rawValue }
     var displayName: String { rawValue }
@@ -24,8 +24,15 @@ enum PaceOptions: String, CaseIterable, Identifiable, Codable {
         }
     }
     
-    // Interval durations in minutes
-    var normalMinutes: Int { 3 }
+    // The target BPM for the "Normal" portions
+        var targetNormalBPM: Int {
+            return 112
+        }
+    
+    // The target BPM for the "Brisk" portions of these walks
+        var targetBriskBPM: Int {
+            return 132 // Every brisk interval hits 132 BPM, regardless of duration
+        }
     
     var briskMinutes: Int {
         switch self {
