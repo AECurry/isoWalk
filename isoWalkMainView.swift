@@ -15,7 +15,9 @@ struct isoWalkMainView: View {
 
     @State private var selectedTab: Int = 0
     @State private var showingSetup: Bool = false
+    @State private var showingQuickStart: Bool = false
     @State private var showingBadges: Bool = false
+    @State private var setupVM = WalkSetUpViewModel()
     @Environment(SessionManager.self) private var sessionManager
 
     var body: some View {
@@ -32,10 +34,19 @@ struct isoWalkMainView: View {
                     }
                 }
             )) {
-                GetWalkingView(onStartWalking: { showingSetup = true })
-                    .tag(0)
+                GetWalkingView(
+                    selectedTab: $selectedTab,
+                    onStartWalking: { showingSetup = true },
+                    onQuickStart: {
+                        print("🚀 Quick Start triggered!")
+                        showingQuickStart = true
+                    }
+                )
+                .tag(0)
+                
                 ProgressScreenView(onShowBadges: { showingBadges = true })
                     .tag(1)
+                
                 FeaturesHomeScreenView()
                     .tag(2)
             }
@@ -49,13 +60,29 @@ struct isoWalkMainView: View {
             )
         }
         .ignoresSafeArea(.keyboard)
-        // MARK: - Walk Setup Cover
+        
+        // MARK: - Walk Setup Cover (Normal Start)
         .fullScreenCover(isPresented: $showingSetup) {
             WalkSetUpView(
                 selectedTab: $selectedTab,
                 onDismiss: { showingSetup = false }
             )
         }
+        
+        // MARK: - Quick Start Cover (Long Press)
+        .fullScreenCover(isPresented: $showingQuickStart) {
+            WalkSessionView(
+                selectedTab: $selectedTab,
+                duration: setupVM.selectedDuration,
+                pace: setupVM.selectedPace,
+                musicMode: setupVM.selectedMusicMode,
+                musicSelection: setupVM.musicViewModel.selection,
+                onDismissAll: {
+                    showingQuickStart = false
+                }
+            )
+        }
+        
         // MARK: - Badges Cover
         .fullScreenCover(isPresented: $showingBadges) {
             BadgesScreenView(onDismiss: { showingBadges = false })
@@ -67,4 +94,3 @@ struct isoWalkMainView: View {
     isoWalkMainView()
         .environment(SessionManager())
 }
-

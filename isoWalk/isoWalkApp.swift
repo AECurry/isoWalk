@@ -17,7 +17,6 @@ struct isoWalkApp: App {
     @State private var sessionManager = SessionManager()
     @Environment(\.scenePhase) private var scenePhase
     
-    // Explicitly create the ModelContainer so we can safely pass the context to background tasks
     let sharedModelContainer: ModelContainer = {
         let schema = Schema([CompletedSession.self, EarnedBadgeRecord.self])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
@@ -27,8 +26,6 @@ struct isoWalkApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
-    
-    // MARK: - Initialization
     
     init() {
         // Set default pace to "steady" (3-3) on first launch
@@ -40,6 +37,32 @@ struct isoWalkApp: App {
         if UserDefaults.standard.string(forKey: "lastSelectedDuration") == nil {
             UserDefaults.standard.set("thirty", forKey: "lastSelectedDuration")
         }
+        
+        // ✅ NEW: Retroactive Quick Start unlock for existing users
+        migrateQuickStartFeature()
+    }
+    
+    // MARK: - Migration Helper
+    
+    private func migrateQuickStartFeature() {
+        // Only run this check if the flag doesn't exist yet
+        if UserDefaults.standard.object(forKey: "hasCompletedFirstWalk") == nil {
+            let context = sharedModelContainer.mainContext
+            let descriptor = FetchDescriptor<CompletedSession>()
+            
+            do {
+                let sessions = try context.fetch(descriptor)
+                if !sessions.isEmpty {
+                    // User has existing walks - unlock Quick Start!
+                    UserDefaults.standard.set(true, forKey: "hasCompletedFirstWalk")
+                    print("🔓 Quick Start unlocked for existing user (\(sessions.count) walks found)")
+                } else {
+                    print("🆕 New user - Quick Start will unlock after first walk")
+                }
+            } catch {
+                print("❌ Migration check failed: \(error)")
+            }
+        }
     }
 
     var body: some Scene {
@@ -50,7 +73,6 @@ struct isoWalkApp: App {
         .modelContainer(sharedModelContainer)
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                // Pass the context so it can check if the user walked today
                 DailyReminderScheduler.refreshSchedule(context: sharedModelContainer.mainContext)
             }
         }

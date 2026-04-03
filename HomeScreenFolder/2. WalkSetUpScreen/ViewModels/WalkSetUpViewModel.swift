@@ -19,10 +19,11 @@ import Observation
 @Observable
 final class WalkSetUpViewModel {
 
-    var selectedPace:     PaceOptions     = .steady
-    var selectedDuration: DurationOptions = .recommended
+    var selectedPace:       PaceOptions     = .steady
+    var selectedDuration:   DurationOptions = .recommended
 
-    // Music owned by MusicFolder — this VM just holds the reference
+    // 🌟 PERFECT FOR QUICK START: When this is initialized, it automatically
+    // calls MusicSelection.load(), meaning the last used music mode is instantly ready!
     var musicViewModel: MusicViewModel = MusicViewModel()
 
     // Convenience passthroughs for WalkSetUpView
@@ -48,12 +49,16 @@ final class WalkSetUpViewModel {
     }
 
     init() {
+        // Automatically loads last duration and pace for the Quick Start
         loadLastPreferences()
     }
 
     func startWalkingSession() {
+        // Save duration and pace for next time
         UserDefaults.standard.set(selectedDuration.rawValue, forKey: "lastDuration")
         UserDefaults.standard.set(selectedPace.rawValue,     forKey: "lastPace")
+        
+        // Save the music selection (Mode, Playlists, Tracks) for next time
         musicViewModel.selection.save()
         
         let info = currentCycleInfo

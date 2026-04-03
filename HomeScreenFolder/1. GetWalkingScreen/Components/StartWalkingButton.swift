@@ -13,23 +13,31 @@ struct StartWalkingButton: View {
     @AppStorage("buttonCornerRadius") private var cornerRadius: Double = 32
     
     let action: () -> Void
+    var longPressAction: (() -> Void)? = nil
     
     var body: some View {
-        Button(action: action) {  // USE action - not sessionManager
-            Text("Start Walking")
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(width: width, height: height)
-                .background(
-                    Capsule()
-                        .fill(isoWalkColors.gradientBlue)
-                        .shadow(color: isoWalkColors.deepSpaceBlue.opacity(0.4), radius: 8, x: 0, y: 4)
-                )
-                .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .padding(.bottom, 32)
-        
+        Text("Start Walking")
+            .font(.headline)
+            .foregroundColor(.white)
+            .frame(width: width, height: height)
+            .background(
+                Capsule()
+                    .fill(isoWalkColors.gradientBlue)
+                    .shadow(color: isoWalkColors.deepSpaceBlue.opacity(0.4), radius: 8, x: 0, y: 4)
+            )
+            .clipShape(Capsule())
+            .padding(.bottom, 32)
+            .contentShape(Capsule()) // ← Makes entire area tappable
+            .onTapGesture {
+                print("👆 Regular tap")
+                action()
+            }
+            .onLongPressGesture(minimumDuration: 0.8) {
+                print("🔥 Long press fired!")
+                if let longPressAction = longPressAction {
+                    longPressAction()
+                }
+            }
     }
 }
 

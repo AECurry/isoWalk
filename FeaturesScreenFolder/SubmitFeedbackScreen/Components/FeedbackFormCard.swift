@@ -33,12 +33,12 @@ struct FeedbackFormCard: View {
                     .foregroundStyle(theme.primaryIconColor)
                     .frame(width: 24)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("To")
-                        .font(.custom("Inter-SemiBold", size: 14))
-                        .foregroundColor(theme.primaryTextColor.opacity(0.55))
-                    Text(viewModel.companyEmail)
-                        .font(.custom("Inter-Regular", size: 15))
+                    Text("To:")
+                        .font(.custom("Inter-Bold", size: 18))
                         .foregroundColor(theme.primaryTextColor)
+                    Text(viewModel.companyEmail)
+                        .font(.custom("Inter-Regular", size: 16))
+                        .foregroundColor(theme.primaryTextColor.opacity(0.55))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
@@ -54,10 +54,10 @@ struct FeedbackFormCard: View {
                     .frame(width: 24)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Your Name")
-                        .font(.custom("Inter-SemiBold", size: 14))
-                        .foregroundColor(theme.primaryTextColor.opacity(0.55))
-                    TextField("Optional", text: $viewModel.name)
-                        .font(.custom("Inter-Regular", size: 15))
+                        .font(.custom("Inter-Bold", size: 18))
+                        .foregroundColor(theme.primaryTextColor)
+                    TextField("So we know whom to address", text: $viewModel.name)
+                        .font(.custom("Inter-Regular", size: 16))
                         .foregroundColor(theme.primaryTextColor)
                         .focused($focusedField, equals: .name)
                         .submitLabel(.next)
@@ -87,13 +87,13 @@ struct FeedbackFormCard: View {
                         .frame(width: 24)
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Your Email")
-                            .font(.custom("Inter-SemiBold", size: 14))
-                            .foregroundColor(theme.primaryTextColor.opacity(0.55))
+                            .font(.custom("Inter-Bold", size: 18))
+                            .foregroundColor(theme.primaryTextColor)
                         TextField("So we can reply to you", text: Binding(
                             get: { viewModel.email },
                             set: { viewModel.email = $0; viewModel.emailDidChange() }
                         ))
-                        .font(.custom("Inter-Regular", size: 15))
+                        .font(.custom("Inter-Regular", size: 16))
                         .foregroundColor(theme.primaryTextColor)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
@@ -121,23 +121,23 @@ struct FeedbackFormCard: View {
                         .font(.system(size: 16))
                         .foregroundStyle(theme.primaryIconColor)
                         .frame(width: 24)
-                    Text("Message")
-                        .font(.custom("Inter-SemiBold", size: 14))
-                        .foregroundColor(theme.primaryTextColor.opacity(0.55))
+                    Text("Message:")
+                        .font(.custom("Inter-Bold", size: 18))
+                        .foregroundColor(theme.primaryTextColor)
                     Spacer()
                 }
 
                 ZStack(alignment: .topLeading) {
                     if viewModel.message.isEmpty {
                         Text("Write your message here…")
-                            .font(.custom("Inter-Regular", size: 15))
+                            .font(.custom("Inter-Regular", size: 16))
                             .foregroundColor(theme.primaryTextColor.opacity(0.30))
                             .padding(.top, 8)
                             .padding(.leading, 5)
                             .allowsHitTesting(false)
                     }
                     TextEditor(text: $viewModel.message)
-                        .font(.custom("Inter-Regular", size: 15))
+                        .font(.custom("Inter-Regular", size: 16))
                         .foregroundColor(theme.primaryTextColor)
                         .frame(minHeight: 120)
                         .scrollContentBackground(.hidden)
@@ -156,7 +156,7 @@ struct FeedbackFormCard: View {
                 .padding(.leading, 36)
             }
         }
-        .padding(20)
+        .padding(24)
         .background(
             RoundedRectangle(cornerRadius: 14)
                 .fill(theme.cardColor) // <-- This now changes dynamically!

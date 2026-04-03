@@ -285,18 +285,21 @@ final class WalkSessionViewModel {
             saveToDatabase(session: session, context: context)
         }
         
+        // Unlocks the Quick Start feature after first use
+        UserDefaults.standard.set(true, forKey: "hasCompletedFirstWalk")
+        
         showCompletionPopup = true
         cleanupAfterCompletion()
     }
     
     private func saveToDatabase(session: WalkSessionOptions, context: ModelContext) {
-            print("💾 Saving session to database...")
-            
-            let completed = WalkSessionOptions.completeSession(session, context: context)
-            print("✅ Session saved with ID: \(completed.id)")
-            
-            DailyReminderScheduler.refreshSchedule(context: context)
-        }
+        print("💾 Saving session to database...")
+        
+        let completed = WalkSessionOptions.completeSession(session, context: context)
+        print("✅ Session saved with ID: \(completed.id)")
+        
+        DailyReminderScheduler.refreshSchedule(context: context)
+    }
     
     private func cleanupAfterCompletion() {
         activeSession = nil

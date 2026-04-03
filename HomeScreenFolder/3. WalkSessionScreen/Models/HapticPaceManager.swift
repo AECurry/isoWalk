@@ -31,7 +31,7 @@ final class HapticPaceManager {
         }
     }
     
-    func playPace(bpm: Int, durationInSeconds: Double = 4.0) {
+    func playPace(bpm: Int, durationInSeconds: Double = 6.0) {
         guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
         
         // We put everything inside one single do-catch block
