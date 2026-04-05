@@ -43,7 +43,23 @@ struct BadgeEarnedChecker {
             return calculateStreak(sessions) >= 7
             
         case .momentumMaker:
-            return calculateStreak(sessions) >= 14
+                    return calculateStreak(sessions) >= 14
+                    
+        case .lifestyleWalker:
+                    return calculateStreak(sessions) >= 90
+                    
+        case .paceLegend:
+                    return calculateStreak(sessions) >= 120
+                    
+        case .earlyRiser:
+                    return sessions.filter { cal.component(.hour, from: $0.startTime) < 8 }.count >= 10
+                    
+        case .middayMover:
+                    return sessions.filter {
+                        let hour = cal.component(.hour, from: $0.startTime)
+                        return hour >= 11 && hour < 13 // Covers 11:00 AM through 12:59 PM
+                    }.count >= 10
+            }
         }
     }
 
@@ -74,5 +90,4 @@ struct BadgeEarnedChecker {
         }
         return streak
     }
-}
 

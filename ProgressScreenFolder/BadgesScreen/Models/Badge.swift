@@ -22,6 +22,10 @@ enum BadgeID: String, CaseIterable, Codable {
     case perfectPace
     case rhythmFinder
     case momentumMaker
+    case lifestyleWalker
+    case paceLegend
+    case earlyRiser
+    case middayMover
 }
 
 extension BadgeID {
@@ -34,6 +38,11 @@ extension BadgeID {
         case .perfectPace:      return "Perfect Pace"
         case .rhythmFinder:     return "Rhythm Finder"
         case .momentumMaker:    return "Momentum Maker"
+        case .lifestyleWalker:  return "Lifestyle Walker"
+        case .paceLegend:       return "Pace Legend"
+        case .earlyRiser:        return "Early Riser"
+        case .middayMover:        return "Midday Mover"
+
         }
     }
 
@@ -46,6 +55,10 @@ extension BadgeID {
         case .perfectPace:      return "Complete a session of at least 30 minutes."
         case .rhythmFinder:     return "Maintain a 7-day walking streak."
         case .momentumMaker:    return "Maintain a 14-day walking streak."
+        case .lifestyleWalker:   return "Complete a 90 day consistant walking streak."
+        case .paceLegend:       return "Complete a 120 day consistant walking streak."
+        case .earlyRiser:        return "Complete 10 walking sessions before 8:00 AM."
+        case .middayMover:        return "Complete 10 walking sessions between 11:00 AM - 1:00 PM"
         }
     }
 
@@ -58,6 +71,10 @@ extension BadgeID {
         case .perfectPace:      return "PerfectPace"
         case .rhythmFinder:     return "RhythmFinder"
         case .momentumMaker:    return "MomentumMaker"
+        case .lifestyleWalker:  return "LifestyleWalker"
+        case .paceLegend:       return "PaceLegend"
+        case .earlyRiser:        return "Early Riser"
+        case .middayMover:        return "Midday Mover"
         }
     }
 

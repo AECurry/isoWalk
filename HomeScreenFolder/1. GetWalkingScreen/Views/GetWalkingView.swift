@@ -13,6 +13,7 @@ struct GetWalkingView: View {
     private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
     
     @State private var setupVM = WalkSetUpViewModel()
+    @State private var showQuickStartTooltip = false // NEW
     
     @Binding var selectedTab: Int
     
@@ -37,26 +38,56 @@ struct GetWalkingView: View {
                 ImageAreaView(theme: theme)
                 Spacer()
 
-                StartWalkingButton(
-                    action: {
-                        onStartWalking() // Normal tap → opens setup
-                    },
-                    longPressAction: {
-                        print("👉 Long press detected - Quick Start!")
-                        let hasCompletedFirst = UserDefaults.standard.bool(forKey: "hasCompletedFirstWalk")
-                        
-                        if hasCompletedFirst {
-                            // Haptic feedback
-                            let impact = UIImpactFeedbackGenerator(style: .heavy)
-                            impact.impactOccurred()
+                ZStack(alignment: .top) {
+                    StartWalkingButton(
+                        action: {
+                            onStartWalking()
+                        },
+                        longPressAction: {
+                            print("👉 Long press detected - Quick Start!")
+                            let hasCompletedFirst = UserDefaults.standard.bool(forKey: "hasCompletedFirstWalk")
                             
-                            onQuickStart() // ← Call parent to handle presentation
-                        } else {
-                            print("⚠️ First walk not completed - Quick Start disabled")
+                            if hasCompletedFirst {
+                                let impact = UIImpactFeedbackGenerator(style: .heavy)
+                                impact.impactOccurred()
+                                onQuickStart()
+                            } else {
+                                print("⚠️ First walk not completed - Quick Start disabled")
+                            }
                         }
+                    )
+                    
+                    // Quick Start Tooltip (appears above button)
+                    if showQuickStartTooltip {
+                        FeatureTooltip(
+                            message: "💡 Press and hold the 'Start Walking' button to quickly start your last walk",
+                            position: .bottom,
+                            onDismiss: {
+                                showQuickStartTooltip = false
+                                FeatureTooltipManager.markAsSeen("quickStart")
+                            }
+                        )
+                        .offset(y: -80)
+                        .zIndex(10)
                     }
-                )
+                }
                 .padding(.bottom, 124)
+            }
+        }
+        .onAppear {
+            checkAndShowTooltips()
+        }
+    }
+    
+    // MARK: - Tooltip Logic
+    
+    private func checkAndShowTooltips() {
+        let hasCompletedFirst = UserDefaults.standard.bool(forKey: "hasCompletedFirstWalk")
+        
+        // Only show Quick Start tooltip if feature is unlocked
+        if hasCompletedFirst && FeatureTooltipManager.shouldShow("quickStart") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                showQuickStartTooltip = true
             }
         }
     }

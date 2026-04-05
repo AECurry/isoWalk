@@ -40,6 +40,11 @@ struct isoWalkApp: App {
         
         // ✅ NEW: Retroactive Quick Start unlock for existing users
         migrateQuickStartFeature()
+        
+        // 🎬 DEMO MODE: Reset tooltips for presentation
+        #if DEBUG
+        resetTooltipsForDemo()
+        #endif
     }
     
     // MARK: - Migration Helper
@@ -63,6 +68,15 @@ struct isoWalkApp: App {
                 print("❌ Migration check failed: \(error)")
             }
         }
+    }
+    
+    // MARK: - Demo Helper
+    
+    private func resetTooltipsForDemo() {
+        // 🎬 UNCOMMENT THESE 3 LINES FOR MONDAY'S PRESENTATION:
+        UserDefaults.standard.removeObject(forKey: "hasSeenTooltip_quickStart")
+        UserDefaults.standard.removeObject(forKey: "hasSeenTooltip_hapticPace")
+        print("🎬 DEMO MODE: Tooltips reset for presentation")
     }
 
     var body: some Scene {

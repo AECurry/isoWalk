@@ -6,7 +6,7 @@
 //
 //
 //  Full customization screen for isoWalk track sequences.
-//  Allows users to select, reorder, and shuffle tracks for their walk.
+//  Allows users to select the tracks for their walk.
 //  Displays an interleaved playlist with clear, prominent pace titles above each track.
 //
 
@@ -58,7 +58,8 @@ struct TrackSequenceEditor: View {
             if i < normalCount {
                 let isLastNormal = (i == normalCount - 1)
                 let duration = isLastNormal ? info.finalNormalDuration : info.normalDuration
-                let isCooldown = isLastNormal && info.cooldownExtension > 0
+                // FIX: The last normal track is ALWAYS the cooldown, whether extended or not
+                let isCooldown = isLastNormal
                 
                 result.append(OrderedTrack(
                     displayIndex: overallCounter,
@@ -163,11 +164,10 @@ struct TrackSequenceEditor: View {
                 .font(.custom("Inter-Bold", size: 20))
                 .foregroundColor(isoWalkColors.jetBlack)
             
-            if let info = cycleInfo {
-                Text("\(seq.pace.ratioDisplay) pace • \(info.totalCycles) intervals")
-                    .font(.custom("Inter-Regular", size: 14))
-                    .foregroundColor(isoWalkColors.slateGray)
-            }
+            // FIX: Now uses interleavedTracks.count to guarantee accuracy
+            Text("\(seq.pace.ratioDisplay) pace • \(interleavedTracks.count) intervals")
+                .font(.custom("Inter-Regular", size: 14))
+                .foregroundColor(isoWalkColors.slateGray)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
@@ -184,12 +184,10 @@ struct TrackSequenceEditor: View {
                     .font(.custom("Inter-Bold", size: 14))
                     .foregroundColor(isoWalkColors.slateGray)
                 
-                if let seq = sequence {
-                    let totalTracks = seq.normalTrackIds.count + seq.briskTrackIds.count
-                    Text("(\(totalTracks) tracks)")
-                        .font(.custom("Inter-Regular", size: 14))
-                        .foregroundColor(isoWalkColors.slateGray)
-                }
+                // FIX: Now uses interleavedTracks.count to guarantee accuracy
+                Text("(\(interleavedTracks.count) tracks)")
+                    .font(.custom("Inter-Regular", size: 14))
+                    .foregroundColor(isoWalkColors.slateGray)
                 
                 Spacer()
             }
@@ -224,7 +222,8 @@ struct TrackSequenceEditor: View {
     private func trackTitleHeader(for track: OrderedTrack) -> some View {
         let titleText: String = {
             if track.isCooldown {
-                return "Cooldown"
+                // FIX: Updated string as requested
+                return "Cool Down"
             } else {
                 return track.pace == .normal ? "Normal Pace" : "Brisk Pace"
             }

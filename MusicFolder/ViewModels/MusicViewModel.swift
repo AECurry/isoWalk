@@ -77,10 +77,6 @@ final class MusicViewModel {
 
     // Load or create track sequence for current pace/duration
     func loadTrackSequence(pace: PaceOptions, duration: DurationOptions) {
-        // TEMPORARY: Clear this specific sequence to force regeneration with correct slot count
-        // Remove this line after running once!
-        TrackSequenceStorage.delete(pace: pace, duration: duration)
-        
         currentTrackSequence = TrackSequenceStorage.getOrCreate(pace: pace, duration: duration)
     }
     

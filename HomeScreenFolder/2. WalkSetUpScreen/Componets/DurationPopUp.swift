@@ -78,7 +78,7 @@ struct DurationPopupModal: View {
             // Centered modal card
             VStack(spacing: 0) {
                 Text("Select Duration")
-                    .font(.custom("Inter-Bold", size: 24))
+                    .font(.custom("Inter-Bold", size: 32))
                     .foregroundColor(.white)
                     .padding(.vertical, 16)
 
@@ -86,8 +86,8 @@ struct DurationPopupModal: View {
                 
                 // Pace indicator
                 Text("For \(selectedPace.ratioDisplay) pace")
-                    .font(.custom("Inter-Regular", size: 14))
-                    .foregroundColor(.white.opacity(0.6))
+                    .font(.custom("Inter-Medium", size: 18))
+                    .foregroundColor(.white.opacity(0.9))
                     .padding(.vertical, 12)
 
                 ScrollView {
@@ -100,28 +100,30 @@ struct DurationPopupModal: View {
                                 let info = option.cycleInfo(for: selectedPace)
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
-                                        Text(option.displayName)
-                                            .font(.custom("Inter-Bold", size: 24))
+                                        // 👉 Moved total cycles to the top line
+                                        Text("\(option.displayName) - \(info.totalCycles) cycles")
+                                            .font(.custom("Inter-Bold", size: 22))
                                             .foregroundColor(selectedDuration == option
                                                 ? isoWalkColors.deepSpaceBlue
                                                 : .white)
+                                        
                                         Spacer()
+                                        
                                         if selectedDuration == option {
                                             Image(systemName: "checkmark")
                                                 .foregroundColor(.white)
+                                                .font(.system(size: 18, weight: .bold)) // 👉 Added weight to match the bold text
                                         }
                                     }
-                                    Text("\(info.totalCycles) cycles (\(info.normalCount) Normal · \(info.briskCount) Brisk)")
+                                    
+                                    // 👉 Bottom line is now shorter and cleaner
+                                    Text("(\(info.normalCount - 1) Normal • \(info.briskCount) Brisk • 1 Cooldown)")
                                         .font(.custom("Inter-Regular", size: 16))
                                         .foregroundColor(.white.opacity(0.7))
-                                    
-                                    if info.cooldownExtension > 0 {
-                                        Text("Final cooldown: \(info.finalNormalDuration) min (+\(info.cooldownExtension) min)")
-                                            .font(.custom("Inter-Regular", size: 14))
-                                            .foregroundColor(.white.opacity(0.5))
-                                    }
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.85)
                                 }
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
                                 .background(selectedDuration == option
                                     ? Color.white.opacity(0.15)
