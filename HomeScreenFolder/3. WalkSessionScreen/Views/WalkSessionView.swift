@@ -23,7 +23,6 @@ struct WalkSessionView: View {
     
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
-    @AppStorage("isDeveloperTestMode") private var isTestModeActive: Bool = false
     
     // NEW: Tooltip states
     @State private var showQuickStartTooltip = false
@@ -82,11 +81,8 @@ struct WalkSessionView: View {
                         onPlayPause: { viewModel.playPause() },
                         onStop: { coordinator.handleStopButtonTap() }
                     )
-                    
-                    DeveloperTestToggleView(isOn: $isTestModeActive)
-                        .padding(.top, 24)
                 }
-                .padding(.top, 8)
+                .padding(.top, 16)
                 
                 Spacer()
             }
@@ -132,7 +128,8 @@ struct WalkSessionView: View {
         .background {
             themeBackground
         }
-        .navigationBarHidden(true)
+        // ONLY the singular, modern hidden toolbar modifier here
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             let c = coordinator
             let vm = viewModel
@@ -157,21 +154,11 @@ struct WalkSessionView: View {
                 pace: pace,
                 musicMode: musicMode,
                 musicSelection: musicSelection,
-                isTesting: isTestModeActive
+                isTesting: false
             )
             
             // NEW: Show tooltips on second visit
             checkAndShowTooltips()
-        }
-        .onChange(of: isTestModeActive) { _, newValue in
-            viewModel.stopSession()
-            viewModel.initializeSession(
-                duration: duration,
-                pace: pace,
-                musicMode: musicMode,
-                musicSelection: musicSelection,
-                isTesting: newValue
-            )
         }
         .onDisappear {
             viewModel.saveSessionState()

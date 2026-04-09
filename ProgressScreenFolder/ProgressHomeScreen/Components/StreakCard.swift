@@ -33,7 +33,7 @@ struct StreakCard: View {
 
             // Walks This Month
             VStack(spacing: 4) {
-                Text("Walks This Month")
+                Text("This Month")
                     .font(.custom(theme.bodyFontName, size: labelFontSize))
                     .foregroundColor(theme.secondaryTextColor)
 

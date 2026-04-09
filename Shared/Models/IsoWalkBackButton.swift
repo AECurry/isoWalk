@@ -28,14 +28,14 @@ struct IsoWalkBackButton: View {
             }
             .buttonStyle(.plain)
             // 12pt here + 12pt padding on the button = exact 24pt placement from the edge
-            .padding(.leading, 12)
+            .padding(.leading, 32)
             
             Spacer()
         }
         // Forces the HStack to fill the width, anchoring the button firmly to the left
         .frame(maxWidth: .infinity)
         // Optical adjustment to align perfectly with the safe area
-        .padding(.top, -8)
+        .padding(.top, 8)
     }
 }
 

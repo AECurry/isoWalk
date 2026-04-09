@@ -51,6 +51,7 @@ struct BadgeFeaturedView: View {
                     SparkleView()
                 }
             }
+            .offset(y: -14)
             .rotationEffect(.degrees(isSpinning ? 360 : 0))
             .onChange(of: showReveal) { _, newValue in
                 if newValue { startRevealAnimation() }
