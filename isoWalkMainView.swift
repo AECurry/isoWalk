@@ -17,6 +17,10 @@ struct isoWalkMainView: View {
     @State private var showingSetup: Bool = false
     @State private var showingQuickStart: Bool = false
     @State private var showingBadges: Bool = false
+    
+    @AppStorage("isPremiumUser") private var isPremiumUser: Bool = false
+    @State private var showingPaywall: Bool = false
+    
     @State private var setupVM = WalkSetUpViewModel()
     @Environment(SessionManager.self) private var sessionManager
 
@@ -52,6 +56,12 @@ struct isoWalkMainView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
+            
+            .onAppear {
+                        if isPremiumUser == false {
+                            showingPaywall = true
+                        }
+                    }
 
             // MARK: - Nav Bar
             BottomNavBar(
@@ -84,13 +94,19 @@ struct isoWalkMainView: View {
         }
         
         // MARK: - Badges Cover
-        .fullScreenCover(isPresented: $showingBadges) {
-            BadgesScreenView(onDismiss: { showingBadges = false })
+                .fullScreenCover(isPresented: $showingBadges) {
+                    BadgesScreenView(onDismiss: { showingBadges = false })
+                }
+                
+                // MARK: - Paywall Cover
+                .fullScreenCover(isPresented: $showingPaywall) {
+                    PaywallView(isPresented: $showingPaywall)
+                }
+            }
         }
-    }
-}
 
 #Preview {
     isoWalkMainView()
         .environment(SessionManager())
 }
+
