@@ -4,10 +4,6 @@
 //
 //  Created by AnnElaine on 2/12/26.
 //
-//  APP ROOT — creates shared services and injects them into the environment.
-//  No business logic lives here. Both coordinators are created once and live
-//  for the entire app lifetime.
-//
 
 import SwiftUI
 import SwiftData
@@ -28,27 +24,37 @@ struct isoWalkApp: App {
     }()
     
     init() {
-        // Set default pace to "steady" (3-3) on first launch
-        if UserDefaults.standard.string(forKey: "lastSelectedPace") == nil {
-            UserDefaults.standard.set("steady", forKey: "lastSelectedPace")
-        }
+        // 1. Increment launch count
+        let currentCount = UserDefaults.standard.integer(forKey: "appLaunchCount")
+        UserDefaults.standard.set(currentCount + 1, forKey: "appLaunchCount")
+        print("🚀 App Launch Count: \(currentCount + 1)")
         
-        // Set default duration to "thirty" minutes on first launch
-        if UserDefaults.standard.string(forKey: "lastSelectedDuration") == nil {
-            UserDefaults.standard.set("thirty", forKey: "lastSelectedDuration")
-        }
-        
-        // ✅ NEW: Retroactive Quick Start unlock for existing users
-        migrateQuickStartFeature()
-        
-        // 🎬 DEMO MODE: Reset tooltips for presentation
-        #if DEBUG
-        resetTooltipsForDemo()
-        #endif
+        // ✅ Safe: Only touches lightweight UserDefaults memory
+        migratePaceAndDurationDefaults()
     }
     
-    // MARK: - Migration Helper
+    // MARK: - Migration Helper for Pace/Duration
     
+    private func migratePaceAndDurationDefaults() {
+        let needsMigration = !UserDefaults.standard.bool(forKey: "hasValidatedDefaults_v2")
+        
+        if needsMigration {
+            print("🔧 Running defaults migration for the very first time...")
+            
+            UserDefaults.standard.set(PaceOptions.brisk.rawValue, forKey: "lastPace")
+            UserDefaults.standard.set(DurationOptions.thirty.rawValue, forKey: "lastDuration")
+            UserDefaults.standard.set(true, forKey: "hasValidatedDefaults_v2")
+            
+            print("✅ Initial factory defaults configured successfully:")
+        } else {
+            print("ℹ️ First-time setup already complete. Respecting saved user preferences.")
+        }
+    }
+    
+    // MARK: - Migration Helper for Quick Start
+    
+    // ✅ MainActor tag guarantees SwiftData operations execute safely on the main queue
+    @MainActor
     private func migrateQuickStartFeature() {
         // Only run this check if the flag doesn't exist yet
         if UserDefaults.standard.object(forKey: "hasCompletedFirstWalk") == nil {
@@ -58,7 +64,6 @@ struct isoWalkApp: App {
             do {
                 let sessions = try context.fetch(descriptor)
                 if !sessions.isEmpty {
-                    // User has existing walks - unlock Quick Start!
                     UserDefaults.standard.set(true, forKey: "hasCompletedFirstWalk")
                     print("🔓 Quick Start unlocked for existing user (\(sessions.count) walks found)")
                 } else {
@@ -70,19 +75,14 @@ struct isoWalkApp: App {
         }
     }
     
-    // MARK: - Demo Helper
-    
-    private func resetTooltipsForDemo() {
-        // 🎬 UNCOMMENT THESE 3 LINES FOR MONDAY'S PRESENTATION:
-        UserDefaults.standard.removeObject(forKey: "hasSeenTooltip_quickStart")
-        UserDefaults.standard.removeObject(forKey: "hasSeenTooltip_hapticPace")
-        print("🎬 DEMO MODE: Tooltips reset for presentation")
-    }
-
     var body: some Scene {
         WindowGroup {
             isoWalkMainView()
                 .environment(sessionManager)
+                // ✅ Moved out of initialization and into an asynchronous view lifecycle block
+                .onAppear {
+                    migrateQuickStartFeature()
+                }
         }
         .modelContainer(sharedModelContainer)
         .onChange(of: scenePhase) { _, newPhase in

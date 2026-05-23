@@ -22,7 +22,6 @@ struct DurationPopUp: View {
     @AppStorage("dropdownCornerRadius") private var cornerRadius: Double = 12
     @AppStorage("dropdownShadowRadius") private var shadowRadius: Double = 4
 
-    // 👉 Pulls in your theme manager
     @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
     
     private var theme: IsoWalkTheme {
@@ -40,6 +39,7 @@ struct DurationPopUp: View {
                 withAnimation(.easeInOut(duration: 0.2)) { isExpanded = true }
             }) {
                 HStack {
+                    // ✅ Fixed: Always shows the binding value
                     Text(selectedDuration.displayName)
                         .font(.custom("Inter-Medium", size: 16))
                         .foregroundColor(.white)
@@ -94,13 +94,15 @@ struct DurationPopupModal: View {
                     VStack(spacing: 0) {
                         ForEach(DurationOptions.allCases) { option in
                             Button(action: {
+                                // ✅ Update selection
                                 selectedDuration = option
+                                // ✅ Sync with ViewModel's key immediately
+                                UserDefaults.standard.set(option.rawValue, forKey: "lastDuration")
                                 withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
                             }) {
                                 let info = option.cycleInfo(for: selectedPace)
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
-                                        // 👉 Moved total cycles to the top line
                                         Text("\(option.displayName) - \(info.totalCycles) cycles")
                                             .font(.custom("Inter-Bold", size: 22))
                                             .foregroundColor(selectedDuration == option
@@ -112,11 +114,10 @@ struct DurationPopupModal: View {
                                         if selectedDuration == option {
                                             Image(systemName: "checkmark")
                                                 .foregroundColor(.white)
-                                                .font(.system(size: 18, weight: .bold)) // 👉 Added weight to match the bold text
+                                                .font(.system(size: 18, weight: .bold))
                                         }
                                     }
                                     
-                                    // 👉 Bottom line is now shorter and cleaner
                                     Text("(\(info.normalCount - 1) Normal • \(info.briskCount) Brisk • 1 Cooldown)")
                                         .font(.custom("Inter-Regular", size: 16))
                                         .foregroundColor(.white.opacity(0.7))
@@ -163,12 +164,3 @@ struct DurationPopupModal: View {
     }
 }
 
-#Preview {
-    DurationPopUp(
-        selectedDuration: .constant(.thirty),
-        isExpanded: .constant(false),
-        selectedPace: .steady
-    )
-    .padding()
-    .background(isoWalkColors.parchment)
-}

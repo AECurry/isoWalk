@@ -14,22 +14,22 @@ import SwiftUI
 struct PacePopUp: View {
     @Binding var selectedPace: PaceOptions
     @Binding var isExpanded: Bool
-    @AppStorage("lastSelectedPace") private var lastSelectedPaceId: String = ""
 
+    // ✅ REMOVED: @AppStorage("lastSelectedPace") - It was conflicting with the ViewModel
     @AppStorage("dropdownWidth") private var width: Double = 320
     @AppStorage("dropdownHeight") private var height: Double = 64
     @AppStorage("dropdownCornerRadius") private var cornerRadius: Double = 12
     @AppStorage("dropdownShadowRadius") private var shadowRadius: Double = 4
 
-    // 👉 Pulls in your theme manager
     @AppStorage(IsoWalkTheme.selectedThemeKey) private var selectedThemeId: String = IsoWalkTheme.defaultThemeId
     
     private var theme: IsoWalkTheme {
         IsoWalkTheme.current(selectedId: selectedThemeId)
     }
 
+    // ✅ UPDATED: Always shows the ViewModel's source of truth
     private var displayText: String {
-        lastSelectedPaceId.isEmpty ? "Tap to select" : selectedPace.displayName
+        selectedPace.displayName
     }
 
     var body: some View {
@@ -64,20 +64,16 @@ struct PacePopUp: View {
 struct PacePopupModal: View {
     @Binding var selectedPace: PaceOptions
     @Binding var isExpanded: Bool
-    @AppStorage("lastSelectedPace") private var lastSelectedPaceId: String = ""
-    @AppStorage("dropdownCornerRadius") private var cornerRadius: Double = 12
-    @AppStorage("dropdownShadowRadius") private var shadowRadius: Double = 4
-
+    
+    // ✅ Updated to use the correct key used by the ViewModel
     var body: some View {
         ZStack {
-            // Dimmed backdrop — tap to dismiss
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
                 .onTapGesture {
                     withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
                 }
 
-            // Centered modal card
             VStack(spacing: 0) {
                 Text("Select Pace")
                     .font(.custom("Inter-Bold", size: 24))
@@ -91,20 +87,18 @@ struct PacePopupModal: View {
                         ForEach(PaceOptions.allCases) { option in
                             Button(action: {
                                 selectedPace = option
-                                lastSelectedPaceId = option.id
+                                // ✅ Save using the key the ViewModel expects
+                                UserDefaults.standard.set(option.rawValue, forKey: "lastPace")
                                 withAnimation(.easeInOut(duration: 0.2)) { isExpanded = false }
                             }) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
                                         Text(option.displayName)
                                             .font(.custom("Inter-Bold", size: 24))
-                                            .foregroundColor(selectedPace == option
-                                                ? isoWalkColors.deepSpaceBlue
-                                                : .white)
+                                            .foregroundColor(selectedPace == option ? isoWalkColors.deepSpaceBlue : .white)
                                         Spacer()
                                         if selectedPace == option {
-                                            Image(systemName: "checkmark")
-                                                .foregroundColor(.white)
+                                            Image(systemName: "checkmark").foregroundColor(.white)
                                         }
                                     }
                                     Text(option.description)
@@ -113,9 +107,7 @@ struct PacePopupModal: View {
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 14)
-                                .background(selectedPace == option
-                                    ? Color.white.opacity(0.15)
-                                    : Color.clear)
+                                .background(selectedPace == option ? Color.white.opacity(0.15) : Color.clear)
                             }
                             .buttonStyle(.plain)
 
@@ -146,16 +138,7 @@ struct PacePopupModal: View {
                     .shadow(color: .black.opacity(0.4), radius: 20, x: 0, y: 8)
             )
             .padding(.horizontal, 32)
-            .transition(.opacity.combined(with: .scale(scale: 0.95)))
         }
     }
 }
 
-#Preview {
-    PacePopUp(
-        selectedPace: .constant(.steady),
-        isExpanded: .constant(false)
-    )
-    .padding()
-    .background(isoWalkColors.parchment)
-}

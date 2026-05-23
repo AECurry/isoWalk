@@ -61,18 +61,36 @@ struct FeatureTooltip: View {
     }
 }
 
-// MARK: - Manager for Tooltip Display Logic
+// MARK: - FeatureTooltip.swift
 
 struct FeatureTooltipManager {
     
     static func shouldShow(_ featureKey: String) -> Bool {
-        let key = "hasSeenTooltip_\(featureKey)"
-        return !UserDefaults.standard.bool(forKey: key)
+        let launchCount = UserDefaults.standard.integer(forKey: "appLaunchCount")
+        let key = "lastSeenMilestone_\(featureKey)"
+        let lastSeen = UserDefaults.standard.integer(forKey: key)
+        
+        // 1. Milestone: 2nd Launch
+        // We show it if we are on launch #2 AND we haven't recorded seeing milestone 2 yet.
+        if launchCount == 2 && lastSeen < 2 {
+            return true
+        }
+        
+        // 2. Milestone: 30th Launch
+        // We show it if we are on launch #30 AND we haven't recorded seeing milestone 30 yet.
+        if launchCount == 30 && lastSeen < 30 {
+            return true
+        }
+        
+        return false
     }
     
     static func markAsSeen(_ featureKey: String) {
-        let key = "hasSeenTooltip_\(featureKey)"
-        UserDefaults.standard.set(true, forKey: key)
-        print("✅ Tooltip '\(featureKey)' marked as seen")
+        let launchCount = UserDefaults.standard.integer(forKey: "appLaunchCount")
+        let key = "lastSeenMilestone_\(featureKey)"
+        
+        // Record that they've seen the tooltip for this specific launch count
+        UserDefaults.standard.set(launchCount, forKey: key)
     }
 }
+

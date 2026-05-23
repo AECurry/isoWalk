@@ -17,12 +17,13 @@ struct isoWalkMainView: View {
     @State private var showingSetup: Bool = false
     @State private var showingQuickStart: Bool = false
     @State private var showingBadges: Bool = false
-    
-    @AppStorage("isPremiumUser") private var isPremiumUser: Bool = false
     @State private var showingPaywall: Bool = false
     
     @State private var setupVM = WalkSetUpViewModel()
     @Environment(SessionManager.self) private var sessionManager
+    
+    // ✅ Read from the shared singleton to get real-time premium status
+    private var storeVM: StoreViewModel { StoreViewModel.shared }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -40,33 +41,53 @@ struct isoWalkMainView: View {
             )) {
                 GetWalkingView(
                     selectedTab: $selectedTab,
-                    onStartWalking: { showingSetup = true },
+                    onStartWalking: {
+                        // ✅ Disable animation for instant transition
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) {
+                            showingSetup = true
+                        }
+                    },
                     onQuickStart: {
                         print("🚀 Quick Start triggered!")
-                        showingQuickStart = true
+                        // ✅ Disable animation for instant transition
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) {
+                            showingQuickStart = true
+                        }
                     }
                 )
                 .tag(0)
                 
-                ProgressScreenView(onShowBadges: { showingBadges = true })
-                    .tag(1)
+                ProgressScreenView(onShowBadges: {
+                    // ✅ Disable animation for instant transition
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        showingBadges = true
+                    }
+                })
+                .tag(1)
                 
                 FeaturesHomeScreenView()
                     .tag(2)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
-            
-            .onAppear {
-                        if isPremiumUser == false {
-                            showingPaywall = true
-                        }
-                    }
 
             // MARK: - Nav Bar
             BottomNavBar(
                 selectedTab: $selectedTab,
-                onTabReTap: { showingSetup = true }
+                onTabReTap: {
+                    // ✅ Disable animation for instant transition
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        showingSetup = true
+                    }
+                }
             )
         }
         .ignoresSafeArea(.keyboard)
@@ -75,8 +96,19 @@ struct isoWalkMainView: View {
         .fullScreenCover(isPresented: $showingSetup) {
             WalkSetUpView(
                 selectedTab: $selectedTab,
-                onDismiss: { showingSetup = false }
+                onDismiss: {
+                    // ✅ Disable animation when dismissing
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        showingSetup = false
+                    }
+                }
             )
+            // ✅ Remove the slide-up animation
+            .transaction { transaction in
+                transaction.disablesAnimations = true
+            }
         }
         
         // MARK: - Quick Start Cover (Long Press)
@@ -88,22 +120,74 @@ struct isoWalkMainView: View {
                 musicMode: setupVM.selectedMusicMode,
                 musicSelection: setupVM.musicViewModel.selection,
                 onDismissAll: {
-                    showingQuickStart = false
+                    // ✅ Disable animation when dismissing
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        showingQuickStart = false
+                    }
                 }
             )
+            // ✅ Remove the slide-up animation
+            .transaction { transaction in
+                transaction.disablesAnimations = true
+            }
         }
         
         // MARK: - Badges Cover
-                .fullScreenCover(isPresented: $showingBadges) {
-                    BadgesScreenView(onDismiss: { showingBadges = false })
+        .fullScreenCover(isPresented: $showingBadges) {
+            BadgesScreenView(onDismiss: {
+                // ✅ Disable animation when dismissing
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    showingBadges = false
                 }
-                
-                // MARK: - Paywall Cover
-                .fullScreenCover(isPresented: $showingPaywall) {
-                    PaywallView(isPresented: $showingPaywall)
+            })
+            // ✅ Remove the slide-up animation
+            .transaction { transaction in
+                transaction.disablesAnimations = true
+            }
+        }
+        
+        // MARK: - Paywall Cover
+        .fullScreenCover(isPresented: $showingPaywall) {
+            PaywallView(isPresented: $showingPaywall)
+            // ✅ Remove the slide-up animation
+            .transaction { transaction in
+                transaction.disablesAnimations = true
+            }
+        }
+        
+        // ✅ Smart paywall logic - only shows once after status is confirmed
+        .onChange(of: storeVM.hasCheckedStatus) { _, hasChecked in
+            if hasChecked && !storeVM.isPremiumUser && !hasUserDismissedPaywall() {
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    showingPaywall = true
                 }
             }
         }
+        
+        // ✅ Track when user dismisses paywall (even without purchasing)
+        .onChange(of: showingPaywall) { _, isShowing in
+            if !isShowing {
+                markPaywallAsDismissed()
+            }
+        }
+    }
+    
+    // MARK: - Paywall Dismissal Tracking
+    
+    private func hasUserDismissedPaywall() -> Bool {
+        UserDefaults.standard.bool(forKey: "hasSeenPaywall")
+    }
+    
+    private func markPaywallAsDismissed() {
+        UserDefaults.standard.set(true, forKey: "hasSeenPaywall")
+    }
+}
 
 #Preview {
     isoWalkMainView()
