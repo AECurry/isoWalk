@@ -61,24 +61,22 @@ struct FeatureTooltip: View {
     }
 }
 
-// MARK: - FeatureTooltip.swift
+// MARK: - FeatureTooltip Manager
 
 struct FeatureTooltipManager {
     
     static func shouldShow(_ featureKey: String) -> Bool {
         let launchCount = UserDefaults.standard.integer(forKey: "appLaunchCount")
-        let key = "lastSeenMilestone_\(featureKey)"
-        let lastSeen = UserDefaults.standard.integer(forKey: key)
+        let hasSeenKey = "hasSeenTooltip_\(featureKey)"
+        let hasSeen = UserDefaults.standard.bool(forKey: hasSeenKey)
         
-        // 1. Milestone: 2nd Launch
-        // We show it if we are on launch #2 AND we haven't recorded seeing milestone 2 yet.
-        if launchCount == 2 && lastSeen < 2 {
-            return true
+        // ✅ Don't show if already dismissed
+        if hasSeen {
+            return false
         }
         
-        // 2. Milestone: 30th Launch
-        // We show it if we are on launch #30 AND we haven't recorded seeing milestone 30 yet.
-        if launchCount == 30 && lastSeen < 30 {
+        // ✅ Show on 2nd launch OR 30th launch (whichever comes first)
+        if launchCount == 2 || launchCount == 30 {
             return true
         }
         
@@ -86,11 +84,11 @@ struct FeatureTooltipManager {
     }
     
     static func markAsSeen(_ featureKey: String) {
-        let launchCount = UserDefaults.standard.integer(forKey: "appLaunchCount")
-        let key = "lastSeenMilestone_\(featureKey)"
+        let hasSeenKey = "hasSeenTooltip_\(featureKey)"
+        UserDefaults.standard.set(true, forKey: hasSeenKey)
         
-        // Record that they've seen the tooltip for this specific launch count
-        UserDefaults.standard.set(launchCount, forKey: key)
+        let launchCount = UserDefaults.standard.integer(forKey: "appLaunchCount")
+        print("📌 Tooltip '\(featureKey)' marked as seen on launch #\(launchCount)")
     }
 }
 

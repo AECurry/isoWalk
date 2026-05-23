@@ -13,7 +13,7 @@ struct GetWalkingView: View {
     private var theme: IsoWalkTheme { IsoWalkTheme.current(selectedId: selectedThemeId) }
     
     @State private var setupVM = WalkSetUpViewModel()
-    @State private var showQuickStartTooltip = false // NEW
+    @State private var showQuickStartTooltip = false
     
     @Binding var selectedTab: Int
     
@@ -63,12 +63,15 @@ struct GetWalkingView: View {
                             message: "💡 Press and hold the 'Start Walking' button to quickly start your last walk",
                             position: .bottom,
                             onDismiss: {
-                                showQuickStartTooltip = false
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    showQuickStartTooltip = false
+                                }
                                 FeatureTooltipManager.markAsSeen("quickStart")
                             }
                         )
                         .offset(y: -80)
                         .zIndex(10)
+                        .transition(.opacity.combined(with: .scale))
                     }
                 }
                 .padding(.bottom, 124)
@@ -84,10 +87,12 @@ struct GetWalkingView: View {
     private func checkAndShowTooltips() {
         let hasCompletedFirst = UserDefaults.standard.bool(forKey: "hasCompletedFirstWalk")
         
-        // Only show Quick Start tooltip if feature is unlocked
+        // Only show Quick Start tooltip if feature is unlocked AND it's the right launch count
         if hasCompletedFirst && FeatureTooltipManager.shouldShow("quickStart") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                showQuickStartTooltip = true
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    showQuickStartTooltip = true
+                }
             }
         }
     }

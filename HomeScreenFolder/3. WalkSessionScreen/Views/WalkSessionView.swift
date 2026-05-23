@@ -34,7 +34,11 @@ struct WalkSessionView: View {
     let pace: PaceOptions
     let musicMode: MusicMode
     let musicSelection: MusicSelection
-    var onDismissAll: (() -> Void)?
+    
+    // ✅ NEW: Separate callbacks for different exit scenarios
+    var onBackToSetup: (() -> Void)? = nil        // Back button → Return to config
+    var onCompleteSession: (() -> Void)? = nil    // Session complete → Dismiss flow
+    var onDismissAll: (() -> Void)? = nil         // Quick Start flow → Dismiss everything
     
     private var currentBPM: Int {
         if viewModel.isBriskInterval {
@@ -92,7 +96,7 @@ struct WalkSessionView: View {
             if showHapticTooltip {
                 VStack {
                     Spacer()
-                        .frame(height: 200) // Positions tooltip below image
+                        .frame(height: 200)
                     
                     FeatureTooltip(
                         message: "💡 Double-tap the image to feel the walking pace as haptic vibrations",
@@ -128,24 +132,43 @@ struct WalkSessionView: View {
         .background {
             themeBackground
         }
-        // ONLY the singular, modern hidden toolbar modifier here
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             let c = coordinator
             let vm = viewModel
-            let dismissAll = onDismissAll
             
             vm.modelContext = modelContext
             
             c.onPauseForAlert    = { vm.pauseForAlert() }
             c.onResumeAfterAlert = { vm.resumeAfterAlert() }
-            c.onBackToSetup      = { vm.stopSession(); dismiss() }
-            c.onStopSession      = { vm.stopSession() }
-            c.onNavigateToTab    = { tab in
+            
+            // ✅ CRITICAL: Different behavior based on context
+            c.onBackToSetup = {
+                vm.stopSession()
+                
+                if let onBackToSetup = onBackToSetup {
+                    // Embedded in WalkSetUpView → Go back to config screen
+                    onBackToSetup()
+                } else if let onDismissAll = onDismissAll {
+                    // Quick Start flow → Dismiss everything
+                    onDismissAll()
+                } else {
+                    // Fallback → Use system dismiss
+                    dismiss()
+                }
+            }
+            
+            c.onStopSession = { vm.stopSession() }
+            
+            c.onNavigateToTab = { tab in
                 vm.stopSession()
                 selectedTab = tab
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    dismissAll?()
+                    if let onCompleteSession = onCompleteSession {
+                        onCompleteSession()
+                    } else if let onDismissAll = onDismissAll {
+                        onDismissAll()
+                    }
                 }
             }
             
@@ -157,7 +180,6 @@ struct WalkSessionView: View {
                 isTesting: false
             )
             
-            // NEW: Show tooltips on second visit
             checkAndShowTooltips()
         }
         .onDisappear {
@@ -176,7 +198,6 @@ struct WalkSessionView: View {
         } message: {
             Text(coordinator.alertType?.message ?? "")
         }
-        // 🎬 NEW: Shake to reset tooltips (DEBUG only)
         .onShake {
             #if DEBUG
             UserDefaults.standard.removeObject(forKey: "hasSeenTooltip_hapticPace")
@@ -191,9 +212,7 @@ struct WalkSessionView: View {
     // MARK: - Tooltip Logic
     
     private func checkAndShowTooltips() {
-        // Delay slightly so user settles into the screen
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            // Show haptic tooltip if not seen before
             if FeatureTooltipManager.shouldShow("hapticPace") {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     showHapticTooltip = true

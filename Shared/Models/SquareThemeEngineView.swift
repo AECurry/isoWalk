@@ -86,42 +86,53 @@ struct SquareThemeEngineView: View {
     // MARK: - Animation Logic
     
     private func applyThemeAnimation() {
+        // ✅ CRITICAL: Reset state WITHOUT animation
         rotation = 0
         scale = 1.0
         offsetX = 0
         offsetY = 0
 
-        DispatchQueue.main.async {
-            switch theme.animationType {
-            case .rotation(let speed):
-                withAnimation(.linear(duration: speed).repeatForever(autoreverses: false)) {
-                    rotation = 360
-                }
+        switch theme.animationType {
+        case .rotation(let speed):
+            withAnimation(.linear(duration: speed).repeatForever(autoreverses: false)) {
+                rotation = 360
+            }
 
-            case .pulse(let min, let max, let speed):
-                scale = min
+        case .pulse(let min, let max, let speed):
+            // ✅ Set initial value before animating
+            scale = min
+            // Small delay ensures the initial state is rendered before animation starts
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
                 withAnimation(.easeInOut(duration: speed).repeatForever(autoreverses: true)) {
                     scale = max
                 }
+            }
 
-            case .rotatingPulse(let rotSpeed, let minSc, let maxSc, let pulseSpeed):
+        case .rotatingPulse(let rotSpeed, let minSc, let maxSc, let pulseSpeed):
+            // ✅ FIX: Set initial scale BEFORE starting any animations
+            scale = minSc
+            
+            // Small delay ensures state is set before animations begin
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                // Start rotation
                 withAnimation(.linear(duration: rotSpeed).repeatForever(autoreverses: false)) {
                     rotation = 360
                 }
-                scale = minSc
+                
+                // Start pulse (synchronized start with rotation)
                 withAnimation(.easeInOut(duration: pulseSpeed).repeatForever(autoreverses: true)) {
                     scale = maxSc
                 }
-                
-            case .layeredAnimation(_, _, let overlayAnim):
-                // EXACTLY ONE SECOND PAUSE BEFORE WIND BLOWS
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    animateOverlay(overlayAnim)
-                }
-
-            case .video, .none:
-                break
             }
+            
+        case .layeredAnimation(_, _, let overlayAnim):
+            // ONE SECOND PAUSE BEFORE WIND BLOWS
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                animateOverlay(overlayAnim)
+            }
+
+        case .video, .none:
+            break
         }
     }
     
@@ -138,8 +149,10 @@ struct SquareThemeEngineView: View {
             
         case .pulse(let minSc, let maxSc, let speed):
             scale = minSc
-            withAnimation(.easeInOut(duration: speed).repeatForever(autoreverses: true)) {
-                scale = maxSc
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                withAnimation(.easeInOut(duration: speed).repeatForever(autoreverses: true)) {
+                    scale = maxSc
+                }
             }
             
         case .rotate(let speed):

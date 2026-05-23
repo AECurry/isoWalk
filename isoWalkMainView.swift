@@ -6,7 +6,6 @@
 //
 //  ROOT VIEW — intentionally dumb.
 //  Owns tab state, fullScreenCovers, and the single BottomNavBar instance.
-//  Has zero knowledge of walk sessions, alerts, or what any tab contains.
 //
 
 import SwiftUI
@@ -22,7 +21,7 @@ struct isoWalkMainView: View {
     @State private var setupVM = WalkSetUpViewModel()
     @Environment(SessionManager.self) private var sessionManager
     
-    // ✅ Read from the shared singleton to get real-time premium status
+    // Read from the shared singleton to get real-time premium status
     private var storeVM: StoreViewModel { StoreViewModel.shared }
 
     var body: some View {
@@ -42,7 +41,6 @@ struct isoWalkMainView: View {
                 GetWalkingView(
                     selectedTab: $selectedTab,
                     onStartWalking: {
-                        // ✅ Disable animation for instant transition
                         var transaction = Transaction()
                         transaction.disablesAnimations = true
                         withTransaction(transaction) {
@@ -51,7 +49,6 @@ struct isoWalkMainView: View {
                     },
                     onQuickStart: {
                         print("🚀 Quick Start triggered!")
-                        // ✅ Disable animation for instant transition
                         var transaction = Transaction()
                         transaction.disablesAnimations = true
                         withTransaction(transaction) {
@@ -62,7 +59,6 @@ struct isoWalkMainView: View {
                 .tag(0)
                 
                 ProgressScreenView(onShowBadges: {
-                    // ✅ Disable animation for instant transition
                     var transaction = Transaction()
                     transaction.disablesAnimations = true
                     withTransaction(transaction) {
@@ -81,7 +77,6 @@ struct isoWalkMainView: View {
             BottomNavBar(
                 selectedTab: $selectedTab,
                 onTabReTap: {
-                    // ✅ Disable animation for instant transition
                     var transaction = Transaction()
                     transaction.disablesAnimations = true
                     withTransaction(transaction) {
@@ -97,7 +92,11 @@ struct isoWalkMainView: View {
             WalkSetUpView(
                 selectedTab: $selectedTab,
                 onDismiss: {
-                    // ✅ Disable animation when dismissing
+                    // ✅ Backed out from setup state: dismiss smoothly back to home screen
+                    showingSetup = false
+                },
+                onCompleteSession: {
+                    // ✅ Session finished completely: hard drop back to home screen
                     var transaction = Transaction()
                     transaction.disablesAnimations = true
                     withTransaction(transaction) {
@@ -105,7 +104,6 @@ struct isoWalkMainView: View {
                     }
                 }
             )
-            // ✅ Remove the slide-up animation
             .transaction { transaction in
                 transaction.disablesAnimations = true
             }
@@ -120,7 +118,6 @@ struct isoWalkMainView: View {
                 musicMode: setupVM.selectedMusicMode,
                 musicSelection: setupVM.musicViewModel.selection,
                 onDismissAll: {
-                    // ✅ Disable animation when dismissing
                     var transaction = Transaction()
                     transaction.disablesAnimations = true
                     withTransaction(transaction) {
@@ -128,7 +125,6 @@ struct isoWalkMainView: View {
                     }
                 }
             )
-            // ✅ Remove the slide-up animation
             .transaction { transaction in
                 transaction.disablesAnimations = true
             }
@@ -137,14 +133,12 @@ struct isoWalkMainView: View {
         // MARK: - Badges Cover
         .fullScreenCover(isPresented: $showingBadges) {
             BadgesScreenView(onDismiss: {
-                // ✅ Disable animation when dismissing
                 var transaction = Transaction()
                 transaction.disablesAnimations = true
                 withTransaction(transaction) {
                     showingBadges = false
                 }
             })
-            // ✅ Remove the slide-up animation
             .transaction { transaction in
                 transaction.disablesAnimations = true
             }
@@ -153,13 +147,12 @@ struct isoWalkMainView: View {
         // MARK: - Paywall Cover
         .fullScreenCover(isPresented: $showingPaywall) {
             PaywallView(isPresented: $showingPaywall)
-            // ✅ Remove the slide-up animation
             .transaction { transaction in
                 transaction.disablesAnimations = true
             }
         }
         
-        // ✅ Smart paywall logic - only shows once after status is confirmed
+        // Smart paywall logic - only shows once after status is confirmed
         .onChange(of: storeVM.hasCheckedStatus) { _, hasChecked in
             if hasChecked && !storeVM.isPremiumUser && !hasUserDismissedPaywall() {
                 var transaction = Transaction()
@@ -170,15 +163,13 @@ struct isoWalkMainView: View {
             }
         }
         
-        // ✅ Track when user dismisses paywall (even without purchasing)
+        // Track when user dismisses paywall (even without purchasing)
         .onChange(of: showingPaywall) { _, isShowing in
             if !isShowing {
                 markPaywallAsDismissed()
             }
         }
     }
-    
-    // MARK: - Paywall Dismissal Tracking
     
     private func hasUserDismissedPaywall() -> Bool {
         UserDefaults.standard.bool(forKey: "hasSeenPaywall")
